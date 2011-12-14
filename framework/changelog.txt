@@ -1,0 +1,18 @@
+snova Changelog
+===================
+
+Changes in version 0.10.1(2011.xx.xx)
+-------------------------------------------
+Initial version
+
+** Features
+   * Plugin system
+   * Event driven framework
+   * Console admin tool
+      
+** Task
+   * NA
+
+
+
+
