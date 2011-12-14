@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="lib" path="lib/antlr-runtime-3.2.jar"/>
+	<classpathentry kind="lib" path="lib/commons-lang-2.4.jar"/>
+	<classpathentry kind="lib" path="lib/jsocks.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="lib/tykedog.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/snova-framework"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/arch"/>
+	<classpathentry kind="lib" path="/snova-framework/lib/netty-3.1.5.GA.jar" sourcepath="E:/Java/netty-3.2.7.Final/jar/netty-3.2.7.Final-sources.jar"/>
+	<classpathentry kind="lib" path="/snova-framework/lib/slf4j-api-1.6.4.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
