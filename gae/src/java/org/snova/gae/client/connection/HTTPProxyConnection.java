@@ -353,6 +353,11 @@ public class HTTPProxyConnection extends ProxyConnection
 		private int responseContentLength = 0;
 		private Buffer resBuffer = new Buffer(0);
 
+		private void clearBuffer()
+		{
+			resBuffer = new Buffer(0);
+		}
+		
 		private void fillResponseBuffer(ChannelBuffer buffer)
 		{
 			int contentlen = buffer.readableBytes();
@@ -364,7 +369,7 @@ public class HTTPProxyConnection extends ProxyConnection
 			{
 				waitingResponse.set(false);
 				doRecv(resBuffer);
-				resBuffer.clear();
+				clearBuffer();
 			}
 		}
 
@@ -378,6 +383,7 @@ public class HTTPProxyConnection extends ProxyConnection
 			updateSSLProxyConnectionStatus(DISCONNECTED);
 			waitingResponse.set(false);
 			close();
+			clearBuffer();
 		}
 
 		@Override
@@ -391,6 +397,7 @@ public class HTTPProxyConnection extends ProxyConnection
 			updateSSLProxyConnectionStatus(DISCONNECTED);
 			waitingResponse.set(false);
 			close();
+			clearBuffer();
 		}
 
 		@Override
