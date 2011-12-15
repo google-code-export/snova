@@ -7,7 +7,7 @@
  * @author yinqiwen [ 2010-8-22 | 01:56:45 PM ]
  *
  */
-package org.snova.gae.client.util;
+package org.snova.gae.client.shell.swing;
 
 import javax.swing.ImageIcon;
 

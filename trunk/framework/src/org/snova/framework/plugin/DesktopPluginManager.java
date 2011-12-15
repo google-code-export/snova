@@ -32,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.framework.common.AppData;
 import org.snova.framework.common.Constants;
+import org.snova.framework.util.SharedObjectHelper;
 
 /**
  *
@@ -306,12 +307,14 @@ public class DesktopPluginManager implements PluginManager
 			resolve.plugin = plugin;
 
 			logger.info("Load plugin:" + pluginName + " ...   Success");
+			SharedObjectHelper.getTrace().info("Load plugin:" + pluginName + " ...   Success");
 			return resolve;
 		}
 		catch (Exception e)
 		{
 			e.printStackTrace();
 			logger.error("Failed to load plugin.", e);
+			SharedObjectHelper.getTrace().error("Load plugin:" + pluginName + " ...   Failed");
 			// trace.error("Load plugin:" + pluginName + " ...   Failed");
 			plugins.remove(pluginName);
 		}
@@ -381,12 +384,12 @@ public class DesktopPluginManager implements PluginManager
 			plugin.state = PluginState.ACTIVATED;
 			storePluginsActiveState(plugin, ActiveState.ACTIVE);
 			logger.info("Active plugin:" + plugin.desc.name + " ...   Success");
+			SharedObjectHelper.getTrace().info("Active plugin:" + plugin.desc.name + " ...   Success");
 		}
 		catch (Exception e)
 		{
 			logger.error("Failed to active plugin:" + plugin.desc.name, e);
-			// logger.error("Active plugin:" + plugin.desc.name +
-			// " ...   Failed");
+			SharedObjectHelper.getTrace().error("Failed to active plugin:" + plugin.desc.name);
 		}
 	}
 
@@ -412,6 +415,7 @@ public class DesktopPluginManager implements PluginManager
 			plugin.state = PluginState.LOADED;
 			storePluginsActiveState(plugin, ActiveState.DEACTIIVE);
 			logger.info("Deactive plugin:" + name + " ...   Success");
+			SharedObjectHelper.getTrace().info("Deactive plugin:" + name + " ...   Success");
 		}
 	}
 
@@ -432,6 +436,7 @@ public class DesktopPluginManager implements PluginManager
 			// Runtime.getRuntime().addShutdownHook(new Thread(task));
 			// trace.notice("Unload plugin:" + name + " ...   Success");
 			logger.info("Unload plugin:" + name + " ...   Success");
+			SharedObjectHelper.getTrace().info("Unload plugin:" + name + " ...   Success");
 		}
 	}
 

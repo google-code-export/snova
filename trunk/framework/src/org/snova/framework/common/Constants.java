@@ -16,4 +16,5 @@ public interface Constants
 	public static final String FILE_SP = System.getProperty("file.separator");
 
 	public static final String OFFICIAL_SITE = "http://snova.googlecode.com";
+	public static final String OFFICIAL_TWITTER = "http://twitter.com/yinqiwen";
 }

@@ -55,18 +55,18 @@ public class SysTray {
         });
         popup.add(item);
 
-        item = new MenuItem("View Log");
-        item.setFont(new Font(null, Font.BOLD, 12));
-        item.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    Desktop.getDesktop().browse(AppData.getLogHome().toURI());
-                } catch (IOException ex) {
-                    Logger.getLogger(SysTray.class.getName()).log(Level.SEVERE, null, ex);
-                }
-            }
-        });
-        popup.add(item);
+//        item = new MenuItem("View Log");
+//        item.setFont(new Font(null, Font.BOLD, 12));
+//        item.addActionListener(new ActionListener() {
+//            public void actionPerformed(ActionEvent e) {
+//                try {
+//                    Desktop.getDesktop().browse(AppData.getLogHome().toURI());
+//                } catch (IOException ex) {
+//                    Logger.getLogger(SysTray.class.getName()).log(Level.SEVERE, null, ex);
+//                }
+//            }
+//        });
+//        popup.add(item);
 
         item = new MenuItem("Exit");
         item.setFont(new Font(null, Font.BOLD, 12));

@@ -13,10 +13,15 @@ package org.snova.framework.shell.swing;
 import java.awt.AWTException;
 import java.awt.Cursor;
 import java.awt.Desktop;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.Proxy.Type;
 import java.net.URI;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.Collection;
 import java.util.List;
-import java.util.prefs.Preferences;
 
 import javax.swing.BoxLayout;
 import javax.swing.JPanel;
@@ -24,16 +29,22 @@ import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.Unmarshaller;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.framework.Framework;
 import org.snova.framework.common.Constants;
 import org.snova.framework.common.Version;
+import org.snova.framework.config.DesktopFrameworkConfiguration;
+import org.snova.framework.config.SimpleSocketAddress;
 import org.snova.framework.plugin.DesktopPluginManager;
 import org.snova.framework.plugin.DesktopPluginManager.InstalledPlugin;
-import org.snova.framework.plugin.PluginManager;
+import org.snova.framework.plugin.ProductReleaseDetail;
+import org.snova.framework.plugin.ProductReleaseDetail.PluginReleaseDetail;
 import org.snova.framework.trace.Trace;
+import org.snova.framework.util.PreferenceHelper;
 import org.snova.framework.util.SharedObjectHelper;
 
 /**
@@ -42,7 +53,7 @@ import org.snova.framework.util.SharedObjectHelper;
  */
 public class MainFrame extends javax.swing.JFrame
 {
-
+	
 	/** Creates new form MainFrame */
 	public MainFrame()
 	{
@@ -64,10 +75,11 @@ public class MainFrame extends javax.swing.JFrame
 			logger.error("", e);
 		}
 		initComponents();
-		fm = new Framework(new GUITrace());
+		fm = new Framework(DesktopFrameworkConfiguration.getInstance(),
+		        DesktopPluginManager.getInstance(), new GUITrace());
 		this.setTitle(Constants.PROJECT_NAME + " V" + Version.value);
 		this.setIconImage(ImageUtil.FLAG.getImage());
-
+		
 		installPluginsUIPanel = new JPanel();
 		availablePluginsUIPanel = new JPanel();
 		installedPluginPanel.setViewportView(installPluginsUIPanel);
@@ -76,11 +88,11 @@ public class MainFrame extends javax.swing.JFrame
 		        BoxLayout.PAGE_AXIS));
 		availablePluginsUIPanel.setLayout(new BoxLayout(
 		        availablePluginsUIPanel, BoxLayout.PAGE_AXIS));
-
+		
 		// displayInstalledPlugins();
 		jTabbedPane2.addChangeListener(new ChangeListener()
 		{
-
+			
 			public void stateChanged(ChangeEvent e)
 			{
 				if (jTabbedPane2.getSelectedComponent() == installedPluginPanel)
@@ -104,19 +116,72 @@ public class MainFrame extends javax.swing.JFrame
 			logger.error(null, ex);
 		}
 		if (Boolean.TRUE.toString().equals(
-		        Preferences.getPreference(FrameworkConfigDialog.AUTO_CONNECT)))
+		        PreferenceHelper
+		                .getPreference(FrameworkConfigDialog.AUTO_CONNECT)))
 		{
 			updateexecuteStatus();
 		}
 	}
-
+	
+	static URLConnection openRemoteDescriptionFile(String urlstr)
+	{
+		URL url = null;
+		try
+		{
+			url = new URL(urlstr);
+			URLConnection conn = url.openConnection();
+			conn.connect();
+			return conn;
+		}
+		catch (Exception e)
+		{
+			DesktopFrameworkConfiguration conf = DesktopFrameworkConfiguration
+			        .getInstance();
+			SimpleSocketAddress localServAddr = conf
+			        .getLocalProxyServerAddress();
+			Proxy proxy = new Proxy(Type.HTTP, new InetSocketAddress(
+			        localServAddr.host, localServAddr.port));
+			URLConnection conn;
+			try
+			{
+				conn = url.openConnection(proxy);
+				conn.connect();
+				return conn;
+			}
+			catch (IOException e1)
+			{
+				logger.error("Failed to retrive desc file:" + url, e1);
+			}
+		}
+		return null;
+		
+	}
+	
+	static ProductReleaseDetail getProductUpdateDetail() throws Exception
+	{
+		DesktopFrameworkConfiguration conf = DesktopFrameworkConfiguration
+		        .getInstance();
+		URLConnection updateConn = openRemoteDescriptionFile(conf
+		        .getPluginRepository());
+		if (null == updateConn)
+		{
+			return null;
+		}
+		
+		JAXBContext updateContext = JAXBContext
+		        .newInstance(ProductReleaseDetail.class);
+		Unmarshaller updateUnmarshaller = updateContext.createUnmarshaller();
+		return (ProductReleaseDetail) updateUnmarshaller.unmarshal(updateConn
+		        .getInputStream());
+		
+	}
+	
 	private void displayAvailablePlugins()
 	{
 		availablePluginsUIPanel.removeAll();
-		UpdateCheck check = new UpdateCheck();
 		try
 		{
-			ProductReleaseDetail release = check.getProductReleaseDetail();
+			ProductReleaseDetail release = getProductUpdateDetail();
 			List<PluginReleaseDetail> plugins = release.plugins;
 			for (PluginReleaseDetail plugin : plugins)
 			{
@@ -125,27 +190,15 @@ public class MainFrame extends javax.swing.JFrame
 					availablePluginsUIPanel.add(new AvalablePluginPanel(this,
 					        plugin));
 				}
-
+				
 			}
-			// PluginReleaseDetail detail = new PluginReleaseDetail();
-			// detail.desc = "A new plugin named adsada!";
-			// detail.name = "SPAC";
-			// detail.version = "0.5.6";
-			// availablePluginsUIPanel.add(new
-			// AvalablePluginPanel(this,detail));
-			// detail = new PluginReleaseDetail();
-			// detail.desc = "A new plugin named adsada!";
-			// detail.name = "SasC";
-			// detail.version = "0.5.6";
-			// availablePluginsUIPanel.add(new
-			// AvalablePluginPanel(this,detail));
 		}
 		catch (Exception ex)
 		{
 			logger.error("", ex);
 		}
 	}
-
+	
 	private void displayInstalledPlugins()
 	{
 		installPluginsUIPanel.removeAll();
@@ -156,7 +209,7 @@ public class MainFrame extends javax.swing.JFrame
 			installPluginsUIPanel.add(new InstalledPluginPanel(this, plugin));
 		}
 	}
-
+	
 	/**
 	 * This method is called from within the constructor to initialize the form.
 	 * WARNING: Do NOT modify this code. The content of this method is always
@@ -167,7 +220,7 @@ public class MainFrame extends javax.swing.JFrame
 	// desc="Generated Code">//GEN-BEGIN:initComponents
 	private void initComponents()
 	{
-
+		
 		jTabbedPane1 = new javax.swing.JTabbedPane();
 		jPanel1 = new javax.swing.JPanel();
 		jScrollPane1 = new javax.swing.JScrollPane();
@@ -192,7 +245,7 @@ public class MainFrame extends javax.swing.JFrame
 		helpButton = new javax.swing.JButton();
 		twitterLabel = new javax.swing.JLabel();
 		statusLabel = new javax.swing.JLabel();
-
+		
 		setAlwaysOnTop(true);
 		setLocationByPlatform(true);
 		setResizable(false);
@@ -203,14 +256,14 @@ public class MainFrame extends javax.swing.JFrame
 				formWindowIconified(evt);
 			}
 		});
-
+		
 		statusTextArea.setBackground(new java.awt.Color(0, 0, 0));
 		statusTextArea.setColumns(20);
 		statusTextArea.setEditable(false);
 		statusTextArea.setForeground(new java.awt.Color(0, 204, 0));
 		statusTextArea.setRows(5);
 		jScrollPane1.setViewportView(statusTextArea);
-
+		
 		javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(
 		        jPanel1);
 		jPanel1.setLayout(jPanel1Layout);
@@ -222,14 +275,14 @@ public class MainFrame extends javax.swing.JFrame
 		        javax.swing.GroupLayout.Alignment.LEADING).addComponent(
 		        jScrollPane1, javax.swing.GroupLayout.Alignment.TRAILING,
 		        javax.swing.GroupLayout.DEFAULT_SIZE, 249, Short.MAX_VALUE));
-
+		
 		jTabbedPane1.addTab("Status", ImageUtil.SPEAKER, jPanel1);
-
+		
 		installedPluginPanel
 		        .setHorizontalScrollBarPolicy(javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 		jTabbedPane2.addTab("Installed", installedPluginPanel);
 		jTabbedPane2.addTab("Available", availableUIPanel);
-
+		
 		javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(
 		        jPanel2);
 		jPanel2.setLayout(jPanel2Layout);
@@ -241,34 +294,34 @@ public class MainFrame extends javax.swing.JFrame
 		        javax.swing.GroupLayout.Alignment.LEADING).addComponent(
 		        jTabbedPane2, javax.swing.GroupLayout.Alignment.TRAILING,
 		        javax.swing.GroupLayout.DEFAULT_SIZE, 249, Short.MAX_VALUE));
-
+		
 		jTabbedPane1.addTab("Plugins", ImageUtil.PLUGIN, jPanel2);
-
+		
 		appTitleLabel.setFont(appTitleLabel.getFont().deriveFont(
 		        appTitleLabel.getFont().getStyle() | java.awt.Font.BOLD,
 		        appTitleLabel.getFont().getSize() + 4));
-		appTitleLabel.setText("hyk-proxy GUI Launcher");
-
-		appDescLabel.setText("<html>The GUI launcher of hyk-proxy");
-
+		appTitleLabel.setText("snova GUI Launcher");
+		
+		appDescLabel.setText("<html>The GUI launcher of snova");
+		
 		versionLabel.setFont(versionLabel.getFont().deriveFont(
 		        versionLabel.getFont().getStyle() | java.awt.Font.BOLD));
 		versionLabel.setText("Product Version:");
-
+		
 		appVendorLabel.setText("yinqiwen@gmail.com");
-
+		
 		appVersionLabel.setText(Version.value);
-
+		
 		vendorLabel.setFont(vendorLabel.getFont().deriveFont(
 		        vendorLabel.getFont().getStyle() | java.awt.Font.BOLD));
 		vendorLabel.setText("Vendor:");
-
+		
 		homepageLabel.setFont(homepageLabel.getFont().deriveFont(
 		        homepageLabel.getFont().getStyle() | java.awt.Font.BOLD));
 		homepageLabel.setText("Home:");
-
+		
 		appHomepageLabel
-		        .setText("<html><font color=\"Blue\"> <u>hyk-proxy.googlecode.com</u></font></html>");
+		        .setText("<html><font color=\"Blue\"> <u>snova.googlecode.com</u></font></html>");
 		appHomepageLabel.addMouseListener(new java.awt.event.MouseAdapter()
 		{
 			public void mouseClicked(java.awt.event.MouseEvent evt)
@@ -284,9 +337,9 @@ public class MainFrame extends javax.swing.JFrame
 				        appHomepageLabelMouseMoved(evt);
 			        }
 		        });
-
+		
 		jLabel2.setIcon(ImageUtil.FLAG);
-
+		
 		javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(
 		        jPanel3);
 		jPanel3.setLayout(jPanel3Layout);
@@ -417,9 +470,9 @@ public class MainFrame extends javax.swing.JFrame
 		                                                        javax.swing.GroupLayout.PREFERRED_SIZE)
 		                                                .addContainerGap(38,
 		                                                        Short.MAX_VALUE))));
-
+		
 		jTabbedPane1.addTab("About", ImageUtil.ABOUT, jPanel3);
-
+		
 		executeButton.setIcon(ImageUtil.START);
 		executeButton.setText("Start");
 		executeButton.addActionListener(new java.awt.event.ActionListener()
@@ -429,7 +482,7 @@ public class MainFrame extends javax.swing.JFrame
 				executeButtonActionPerformed(evt);
 			}
 		});
-
+		
 		exitButton.setIcon(ImageUtil.EXIT);
 		exitButton.setText("Exit");
 		exitButton.addActionListener(new java.awt.event.ActionListener()
@@ -439,7 +492,7 @@ public class MainFrame extends javax.swing.JFrame
 				exitButtonActionPerformed(evt);
 			}
 		});
-
+		
 		jButton4.setIcon(ImageUtil.CONFIG);
 		jButton4.setText("Config");
 		jButton4.addActionListener(new java.awt.event.ActionListener()
@@ -449,7 +502,7 @@ public class MainFrame extends javax.swing.JFrame
 				jButton4ActionPerformed(evt);
 			}
 		});
-
+		
 		helpButton.setIcon(ImageUtil.HELP);
 		helpButton.setText("Help");
 		helpButton.addActionListener(new java.awt.event.ActionListener()
@@ -459,7 +512,7 @@ public class MainFrame extends javax.swing.JFrame
 				helpButtonActionPerformed(evt);
 			}
 		});
-
+		
 		twitterLabel.setIcon(ImageUtil.TWITTER);
 		twitterLabel
 		        .setText("<html><font color=\"Blue\"> <u>@yinqiwen</u></font></html>");
@@ -478,9 +531,9 @@ public class MainFrame extends javax.swing.JFrame
 				        twitterLabelMouseMoved(evt);
 			        }
 		        });
-
+		
 		statusLabel.setText("Idle");
-
+		
 		javax.swing.GroupLayout layout = new javax.swing.GroupLayout(
 		        getContentPane());
 		getContentPane().setLayout(layout);
@@ -579,57 +632,57 @@ public class MainFrame extends javax.swing.JFrame
 		                                        .addComponent(twitterLabel)
 		                                        .addComponent(statusLabel))
 		                        .addContainerGap()));
-
+		
 		pack();
 	}// </editor-fold>//GEN-END:initComponents
-
+	
 	public void exit()
 	{
 		System.exit(1);
 	}
-
+	
 	private void exitButtonActionPerformed(java.awt.event.ActionEvent evt)
 	{// GEN-FIRST:event_exitButtonActionPerformed
 		exit();
 	}// GEN-LAST:event_exitButtonActionPerformed
-
+	
 	private void formWindowIconified(java.awt.event.WindowEvent evt)
 	{// GEN-FIRST:event_formWindowIconified
 		setVisible(false);
 	}// GEN-LAST:event_formWindowIconified
-
+	
 	private void helpButtonActionPerformed(java.awt.event.ActionEvent evt)
 	{// GEN-FIRST:event_helpButtonActionPerformed
 		go2Webpage(Constants.OFFICIAL_SITE);
 	}// GEN-LAST:event_helpButtonActionPerformed
-
+	
 	private void twitterLabelMouseClicked(java.awt.event.MouseEvent evt)
 	{// GEN-FIRST:event_twitterLabelMouseClicked
 		go2Webpage(Constants.OFFICIAL_TWITTER);
 	}// GEN-LAST:event_twitterLabelMouseClicked
-
+	
 	private void twitterLabelMouseMoved(java.awt.event.MouseEvent evt)
 	{// GEN-FIRST:event_twitterLabelMouseMoved
 		evt.getComponent().setCursor(
 		        Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 	}// GEN-LAST:event_twitterLabelMouseMoved
-
+	
 	private void appHomepageLabelMouseClicked(java.awt.event.MouseEvent evt)
 	{// GEN-FIRST:event_appHomepageLabelMouseClicked
 		go2Webpage(Constants.OFFICIAL_SITE);
 	}// GEN-LAST:event_appHomepageLabelMouseClicked
-
+	
 	private void appHomepageLabelMouseMoved(java.awt.event.MouseEvent evt)
 	{// GEN-FIRST:event_appHomepageLabelMouseMoved
 		evt.getComponent().setCursor(
 		        Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 	}// GEN-LAST:event_appHomepageLabelMouseMoved
-
+	
 	private void jButton4ActionPerformed(java.awt.event.ActionEvent evt)
 	{// GEN-FIRST:event_jButton4ActionPerformed
 		getConfigDialog().start();
 	}// GEN-LAST:event_jButton4ActionPerformed
-
+	
 	private void updateexecuteStatus()
 	{
 		if (!hasStarted)
@@ -661,12 +714,12 @@ public class MainFrame extends javax.swing.JFrame
 			});
 		}
 	}
-
+	
 	private void executeButtonActionPerformed(java.awt.event.ActionEvent evt)
 	{// GEN-FIRST:event_executeButtonActionPerformed
 		updateexecuteStatus();
 	}// GEN-LAST:event_executeButtonActionPerformed
-
+	
 	public void go2Webpage(String site)
 	{
 		try
@@ -678,9 +731,9 @@ public class MainFrame extends javax.swing.JFrame
 		{
 			logger.error("Failed to go to web site!", e);
 		}
-
+		
 	}
-
+	
 	/**
 	 * @param args
 	 *            the command line arguments
@@ -695,7 +748,7 @@ public class MainFrame extends javax.swing.JFrame
 			}
 		});
 	}
-
+	
 	private FrameworkConfigDialog getConfigDialog()
 	{
 		if (null == config)
@@ -704,57 +757,59 @@ public class MainFrame extends javax.swing.JFrame
 		}
 		return config;
 	}
-
+	
 	// Variables declaration - do not modify//GEN-BEGIN:variables
-	private javax.swing.JLabel appHomepageLabel;
-	private javax.swing.JScrollPane availableUIPanel;
-	private javax.swing.JButton executeButton;
-	private javax.swing.JButton exitButton;
-	private javax.swing.JButton helpButton;
-	private javax.swing.JScrollPane installedPluginPanel;
-	private javax.swing.JButton jButton4;
-	private javax.swing.JLabel jLabel2;
-	private javax.swing.JPanel jPanel1;
-	private javax.swing.JPanel jPanel2;
-	private javax.swing.JPanel jPanel3;
-	private javax.swing.JScrollPane jScrollPane1;
-	private javax.swing.JTabbedPane jTabbedPane1;
-	private javax.swing.JTabbedPane jTabbedPane2;
-	private javax.swing.JLabel statusLabel;
-	private javax.swing.JTextArea statusTextArea;
-	private javax.swing.JLabel twitterLabel;
+	private javax.swing.JLabel	    appHomepageLabel;
+	private javax.swing.JScrollPane	availableUIPanel;
+	private javax.swing.JButton	    executeButton;
+	private javax.swing.JButton	    exitButton;
+	private javax.swing.JButton	    helpButton;
+	private javax.swing.JScrollPane	installedPluginPanel;
+	private javax.swing.JButton	    jButton4;
+	private javax.swing.JLabel	    jLabel2;
+	private javax.swing.JPanel	    jPanel1;
+	private javax.swing.JPanel	    jPanel2;
+	private javax.swing.JPanel	    jPanel3;
+	private javax.swing.JScrollPane	jScrollPane1;
+	private javax.swing.JTabbedPane	jTabbedPane1;
+	private javax.swing.JTabbedPane	jTabbedPane2;
+	private javax.swing.JLabel	    statusLabel;
+	private javax.swing.JTextArea	statusTextArea;
+	private javax.swing.JLabel	    twitterLabel;
 	// End of variables declaration//GEN-END:variables
-	private JPanel installPluginsUIPanel;
-	private JPanel availablePluginsUIPanel;
-	private boolean hasStarted = false;
-	private FrameworkConfigDialog config;
-	private Framework fm;
-	private DesktopPluginManager pm = DesktopPluginManager.getInstance();
-	protected Logger logger = LoggerFactory.getLogger(getClass());
-	Trace trace = new GUITrace();
-
+	private JPanel	                installPluginsUIPanel;
+	private JPanel	                availablePluginsUIPanel;
+	private boolean	                hasStarted	= false;
+	private FrameworkConfigDialog	config;
+	private Framework	            fm;
+	private DesktopPluginManager	pm	       = DesktopPluginManager
+	                                                   .getInstance();
+	protected static Logger	        logger	   = LoggerFactory
+	                                                   .getLogger(MainFrame.class);
+	Trace	                        trace	   = new GUITrace();
+	
 	class GUITrace implements Trace
 	{
-
+		
 		public void info(final String string)
 		{
 			statusTextArea.append(string);
 			statusTextArea.append(System.getProperty("line.separator"));
 			statusLabel.setText(string);
 		}
-
+		
 		public void error(final String string)
 		{
 			statusTextArea.append(string);
 			statusTextArea.append(System.getProperty("line.separator"));
 			statusLabel.setText(string);
 		}
-
+		
 		public void notice(final String string)
 		{
 			statusTextArea.append(string);
 			statusTextArea.append(System.getProperty("line.separator"));
-
+			
 		}
 	}
 }

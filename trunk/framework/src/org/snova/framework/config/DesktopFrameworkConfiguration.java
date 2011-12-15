@@ -97,6 +97,19 @@ public class DesktopFrameworkConfiguration implements FrameworkConfiguration
 	{
 		this.proxyEventServiceHandler = handlerName;
 	}
+	
+	private String pluginRepository = "";
+
+	public String getPluginRepository()
+    {
+    	return pluginRepository;
+    }
+
+	@XmlElement
+	public void setPluginRepository(String pluginRepository)
+    {
+    	this.pluginRepository = pluginRepository;
+    }
 
 	public void init() throws Exception
 	{

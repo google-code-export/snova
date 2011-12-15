@@ -7,5 +7,5 @@
     
     <!-- Can choose in plugins, default is GAE -->
 	<ProxyEventHandler>GAE</ProxyEventHandler>
-	<PluginRepository></PluginRepository>
+	<PluginRepository>http://snova.googlecode.com/svn/trunk/repository/plugins.xml</PluginRepository>
 </Configure>
