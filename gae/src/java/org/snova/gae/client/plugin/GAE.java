@@ -3,11 +3,15 @@ package org.snova.gae.client.plugin;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.ImageIcon;
+import javax.swing.JPanel;
+
 import org.arch.event.Event;
 import org.arch.event.EventHandler;
 import org.arch.event.EventHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.snova.framework.plugin.GUIPlugin;
 import org.snova.framework.plugin.Plugin;
 import org.snova.framework.plugin.PluginContext;
 import org.snova.gae.client.admin.GAEAdmin;
@@ -18,12 +22,14 @@ import org.snova.gae.client.config.GAEClientConfiguration.ProxyType;
 import org.snova.gae.client.connection.ProxyConnection;
 import org.snova.gae.client.connection.ProxyConnectionManager;
 import org.snova.gae.client.handler.ClientProxyEventHandler;
+import org.snova.gae.client.shell.swing.GAEConfigPanel;
+import org.snova.gae.client.shell.swing.GAEImageUtil;
 import org.snova.gae.common.GAEConstants;
 import org.snova.gae.common.event.GAEEvents;
 import org.snova.gae.common.event.RequestSharedAppIDEvent;
 import org.snova.gae.common.event.RequestSharedAppIDResultEvent;
 
-public class GAE implements Plugin
+public class GAE implements GUIPlugin
 {
 	protected static Logger logger = LoggerFactory.getLogger(GAE.class);
 	ClientProxyEventHandler handler = new ClientProxyEventHandler();
@@ -169,4 +175,18 @@ public class GAE implements Plugin
 	{
 		return new GAEAdmin();
 	}
+
+	@Override
+    public ImageIcon getIcon()
+    {
+		 return GAEImageUtil.APPENGINE;
+    }
+
+	@Override
+    public JPanel getConfigPanel()
+    {
+	    return panel;
+    }
+	
+	private GAEConfigPanel panel =  new GAEConfigPanel();
 }

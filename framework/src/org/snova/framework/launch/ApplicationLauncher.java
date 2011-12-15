@@ -21,6 +21,7 @@ import org.snova.framework.Framework;
 import org.snova.framework.common.Constants;
 import org.snova.framework.config.DesktopFrameworkConfiguration;
 import org.snova.framework.plugin.DesktopPluginManager;
+import org.snova.framework.shell.swing.MainFrame;
 import org.snova.framework.trace.TUITrace;
 
 /**
@@ -69,7 +70,7 @@ public class ApplicationLauncher
 		}
 		else if(args[0].equals("gui"))
 		{
-			
+			MainFrame.main(null);
 		}
 		
 	}

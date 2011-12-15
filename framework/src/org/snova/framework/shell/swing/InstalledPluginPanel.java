@@ -19,7 +19,6 @@ import org.slf4j.LoggerFactory;
 import org.snova.framework.plugin.DesktopPluginManager;
 import org.snova.framework.plugin.DesktopPluginManager.InstalledPlugin;
 import org.snova.framework.plugin.GUIPlugin;
-import org.snova.framework.plugin.PluginManager;
 import org.snova.framework.plugin.PluginState;
 import org.snova.framework.util.SharedObjectHelper;
 
@@ -253,11 +252,11 @@ public class InstalledPluginPanel extends javax.swing.JPanel
 				{
 					if (plugin.state.equals(PluginState.ACTIVATED))
 					{
-						pm.deactivePlugin(plugin.desc.name, owner.trace);
+						pm.deactivePlugin(plugin.desc.name);
 					}
 					else
 					{
-						pm.activatePlugin(plugin, owner.trace);
+						pm.activatePlugin(plugin);
 					}
 					EventQueue.invokeLater(new Runnable()
 					{
@@ -280,7 +279,7 @@ public class InstalledPluginPanel extends javax.swing.JPanel
 
 	private void removeButtonActionPerformed(java.awt.event.ActionEvent evt)
 	{// GEN-FIRST:event_removeButtonActionPerformed
-		Misc.getGlobalThreadPool().submit(new Runnable()
+		SharedObjectHelper.getGlobalThreadPool().submit(new Runnable()
 		{
 
 			public void run()
@@ -288,8 +287,8 @@ public class InstalledPluginPanel extends javax.swing.JPanel
 				DesktopPluginManager pm = DesktopPluginManager.getInstance();
 				try
 				{
-					pm.deactivePlugin(plugin.desc.name, owner.trace);
-					pm.unloadPlugin(plugin.desc.name, owner.trace);
+					pm.deactivePlugin(plugin.desc.name);
+					pm.unloadPlugin(plugin.desc.name);
 					EventQueue.invokeLater(new Runnable()
 					{
 
