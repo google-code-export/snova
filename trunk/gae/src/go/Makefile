@@ -5,7 +5,7 @@ DIRS := codec\
 		service\
 		handler\
 		entry
-
+		
 all:
 	@for dir in $(DIRS); do make -C $$dir; echo; done
 

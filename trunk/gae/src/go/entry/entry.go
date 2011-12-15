@@ -24,8 +24,9 @@ func init() {
 	http.HandleFunc("/admin", AdminEntry)
 	//http.HandleFunc("/signout", SignoutEntry)
 	http.HandleFunc("/invoke", HTTPEventDispatch)
+	http.HandleFunc("/_ah/start", BackendInit)
 	//warmup request is no available in GO runtime now
-	//http.HandleFunc("/_ah/warmup", InitGAEServer)
+	http.HandleFunc("/_ah/warmup", InitGAEServer)
 	xmpp.RegisterChatHandler(XMPPEventDispatch)
 	//http.HandleFunc("/_ah/xmpp/message/chat/", XMPPEventDispatch)
 }
@@ -39,12 +40,11 @@ func initGAEProxyServer(ctx appengine.Context) {
 	}
 }
 
-//func InitGAEServer(w http.ResponseWriter, r *http.Request) {
-//	ctx := appengine.NewContext(r)
-//
-//	w.WriteHeader(http.StatusOK)
-//	
-//}
+func InitGAEServer(w http.ResponseWriter, r *http.Request) {
+	ctx := appengine.NewContext(r)
+	initGAEProxyServer(ctx)
+	w.WriteHeader(http.StatusOK)
+}
 
 const adminFrom = `
 <html>
@@ -132,7 +132,9 @@ func IndexEntry(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, indexForm, Version, Version)
 }
 
-
+func BackendInit(w http.ResponseWriter, r *http.Request) {
+   w.WriteHeader(http.StatusOK)
+}
 
 type HTTPEventSendService struct {
 	writer http.ResponseWriter
@@ -141,6 +143,7 @@ type HTTPEventSendService struct {
 func (serv *HTTPEventSendService) GetMaxDataPackageSize() int {
 	return -1
 }
+
 func (serv *HTTPEventSendService) Send(buf *bytes.Buffer) {
 	headers := serv.writer.Header()
 	headers.Add("Content-Type", "application/octet-stream")
@@ -211,3 +214,4 @@ func HTTPEventDispatch(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx.Errorf("Failed to parse HTTP event:" + cause)
 }
+

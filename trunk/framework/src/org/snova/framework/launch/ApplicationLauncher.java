@@ -65,7 +65,12 @@ public class ApplicationLauncher
 		{
 			fr = new Framework(DesktopFrameworkConfiguration.getInstance(),
 			        DesktopPluginManager.getInstance(), new TUITrace());
+			fr.start();
 		}
-		fr.start();
+		else if(args[0].equals("gui"))
+		{
+			
+		}
+		
 	}
 }

@@ -3,6 +3,7 @@
  */
 package org.arch.event;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -150,6 +151,11 @@ public class EventDispatcher
 	public NamedEventHandler getNamedEventHandler(String name)
 	{
 		return eventHandlerTable.get(name);
+	}
+	
+	public Collection<NamedEventHandler> getAllNamedEventHandlers()
+	{
+		return eventHandlerTable.values();
 	}
 
 }
