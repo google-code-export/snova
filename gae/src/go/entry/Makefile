@@ -3,11 +3,12 @@
 # license that can be found in the LICENSE file.
 
 include $(GOROOT)/src/Make.inc
+include ../Inc.mk
 
 TARG=entry
 GOFILES=\
 	entry.go\
 
-export GCIMPORTS=-I../service/_obj -I../handler/_obj -I../se/_obj -I../event/_obj -I$(GOAPPENGINEROOT)/goroot/pkg/linux_amd64/
+export GCIMPORTS=-I../service/_obj -I../handler/_obj -I../se/_obj -I../event/_obj -I$(APPENGINE_PKG)
 include $(GOROOT)/src/Make.pkg
 
