@@ -3,10 +3,10 @@ package service
 import (
 	"appengine"
 	"appengine/datastore"
-	"appengine/memcache"
+	//"appengine/memcache"
 	"appengine/capability"
 	"event"
-	"bytes"
+	//"bytes"
 	"strings"
 	//"codec"
 	//"strconv"
@@ -120,19 +120,19 @@ func SaveUser(ctx appengine.Context, user *event.User) {
 		ctx.Errorf("Failed to put user:%s data in datastore:%s", user.Email, err.String())
 		return
 	}
-	var buf bytes.Buffer
-	user.Encode(&buf)
-	memitem1 := &memcache.Item{
-		Key:   USER_CACHE_KEY_PREFIX + user.Email,
-		Value: buf.Bytes(),
-	}
-	memitem2 := &memcache.Item{
-		Key:   USER_CACHE_KEY_PREFIX + user.AuthToken,
-		Value: buf.Bytes(),
-	}
+	//var buf bytes.Buffer
+	//user.Encode(&buf)
+	//memitem1 := &memcache.Item{
+	//	Key:   USER_CACHE_KEY_PREFIX + user.Email,
+	//	Value: buf.Bytes(),
+	//}
+	//memitem2 := &memcache.Item{
+	//	Key:   USER_CACHE_KEY_PREFIX + user.AuthToken,
+	//	Value: buf.Bytes(),
+	//}
 	// Add the item to the memcache, if the key does not already exist
-	memcache.Set(ctx, memitem1)
-	memcache.Set(ctx, memitem2)
+	//memcache.Set(ctx, memitem1)
+	//memcache.Set(ctx, memitem2)
 	UserTable[USER_CACHE_KEY_PREFIX+user.AuthToken] = user
 	UserTable[USER_CACHE_KEY_PREFIX+user.Email] = user
 }
@@ -142,14 +142,14 @@ func GetUserFromCache(ctx appengine.Context, name string) *event.User {
 	if exist {
 		return user
 	}
-	if item, err := memcache.Get(ctx, USER_CACHE_KEY_PREFIX+name); err == nil {
-		buf := bytes.NewBuffer(item.Value)
-		user = new(event.User)
-		if user.Decode(buf) {
-			UserTable[USER_CACHE_KEY_PREFIX+name] = user
-			return user
-		}
-	}
+	//if item, err := memcache.Get(ctx, USER_CACHE_KEY_PREFIX+name); err == nil {
+	//	buf := bytes.NewBuffer(item.Value)
+	//	user = new(event.User)
+	//	if user.Decode(buf) {
+	//		UserTable[USER_CACHE_KEY_PREFIX+name] = user
+	//		return user
+	//	}
+	//}
 	return nil
 }
 
@@ -165,18 +165,18 @@ func GetUserWithName(ctx appengine.Context, name string) *event.User {
 		return nil
 	}
 	user = PropertyList2User(item)
-	var buf bytes.Buffer
-	user.Encode(&buf)
-	memitem := &memcache.Item{
-		Key:   USER_CACHE_KEY_PREFIX + user.Email,
-		Value: buf.Bytes(),
-	}
-	memitem2 := &memcache.Item{
-		Key:   USER_CACHE_KEY_PREFIX + user.AuthToken,
-		Value: buf.Bytes(),
-	}
-	memcache.Set(ctx, memitem)
-	memcache.Set(ctx, memitem2)
+	//var buf bytes.Buffer
+	//user.Encode(&buf)
+	//memitem := &memcache.Item{
+	//	Key:   USER_CACHE_KEY_PREFIX + user.Email,
+	//	Value: buf.Bytes(),
+	//}
+	//memitem2 := &memcache.Item{
+	//	Key:   USER_CACHE_KEY_PREFIX + user.AuthToken,
+	//	Value: buf.Bytes(),
+	//}
+	//memcache.Set(ctx, memitem)
+	//memcache.Set(ctx, memitem2)
 	return user
 }
 
@@ -229,14 +229,14 @@ func SaveGroup(ctx appengine.Context, grp *event.Group) {
 		ctx.Errorf("Failed to put group:%s data in datastore:%s", grp.Name, err.String())
 		return
 	}
-	var buf bytes.Buffer
-	grp.Encode(&buf)
-	memitem1 := &memcache.Item{
-		Key:   GROUP_CACHE_KEY_PREFIX + grp.Name,
-		Value: buf.Bytes(),
-	}
+	//var buf bytes.Buffer
+	//grp.Encode(&buf)
+	//memitem1 := &memcache.Item{
+	//	Key:   GROUP_CACHE_KEY_PREFIX + grp.Name,
+	//	Value: buf.Bytes(),
+	//}
 	// Add the item to the memcache, if the key does not already exist
-	memcache.Set(ctx, memitem1)
+	//memcache.Set(ctx, memitem1)
 	GroupTable[GROUP_CACHE_KEY_PREFIX+grp.Name] = grp
 }
 
@@ -245,14 +245,14 @@ func GetGroup(ctx appengine.Context, name string) *event.Group {
 	if exist {
 		return group
 	}
-	if item, err := memcache.Get(ctx, GROUP_CACHE_KEY_PREFIX+name); err == nil {
-		buf := bytes.NewBuffer(item.Value)
-		group = new(event.Group)
-		if group.Decode(buf) {
-			GroupTable[GROUP_CACHE_KEY_PREFIX+name] = group
-			return group
-		}
-	}
+	//if item, err := memcache.Get(ctx, GROUP_CACHE_KEY_PREFIX+name); err == nil {
+	//	buf := bytes.NewBuffer(item.Value)
+	//	group = new(event.Group)
+	//	if group.Decode(buf) {
+	//		GroupTable[GROUP_CACHE_KEY_PREFIX+name] = group
+	//		return group
+	//	}
+	//}
 	var item datastore.PropertyList
 	key := datastore.NewKey(ctx, "ProxyGroup", name, 0, nil)
 	if err := datastore.Get(ctx, key, &item); err != nil {
@@ -260,13 +260,13 @@ func GetGroup(ctx appengine.Context, name string) *event.Group {
 		return nil
 	}
 	group = PropertyList2Group(item)
-	var buf bytes.Buffer
-	group.Encode(&buf)
-	memitem := &memcache.Item{
-		Key:   GROUP_CACHE_KEY_PREFIX + group.Name,
-		Value: buf.Bytes(),
-	}
-	memcache.Set(ctx, memitem)
+	//var buf bytes.Buffer
+	//group.Encode(&buf)
+	//memitem := &memcache.Item{
+	//	Key:   GROUP_CACHE_KEY_PREFIX + group.Name,
+	//	Value: buf.Bytes(),
+	//}
+	//memcache.Set(ctx, memitem)
 	return group
 }
 
@@ -296,8 +296,8 @@ func DeleteUser(ctx appengine.Context, user *event.User) {
 	key2 := USER_CACHE_KEY_PREFIX + user.AuthToken
 	UserTable[key1] = nil, false
 	UserTable[key2] = nil, false
-	memcache.Delete(ctx, key1)
-	memcache.Delete(ctx, key2)
+	//memcache.Delete(ctx, key1)
+	//memcache.Delete(ctx, key2)
 }
 
 func DeleteGroup(ctx appengine.Context, group *event.Group) {
@@ -305,7 +305,7 @@ func DeleteGroup(ctx appengine.Context, group *event.Group) {
 	datastore.Delete(ctx, key)
 	key1 := GROUP_CACHE_KEY_PREFIX + group.Name
 	GroupTable[key1] = nil, false
-	memcache.Delete(ctx, key1)
+	//memcache.Delete(ctx, key1)
 }
 
 func IsRootUser(ctx appengine.Context, token string) bool {

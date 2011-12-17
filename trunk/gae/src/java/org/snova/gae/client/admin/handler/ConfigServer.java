@@ -79,11 +79,13 @@ public class ConfigServer implements CommandHandler
 		NodeList rangeLimit = doc.getElementsByTagName("RangeFetchLimit");
 		NodeList compressor = doc.getElementsByTagName("Compressor");
 		NodeList encrypter = doc.getElementsByTagName("Encrypter");
+		NodeList isMaster = doc.getElementsByTagName("IsMaster");
 		cfg.setMaxXMPPDataPackageSize(Integer.parseInt(maxxmpp.item(0).getTextContent().trim()));
 		cfg.setFetchRetryCount(Integer.parseInt(fetchRetry.item(0).getTextContent().trim()));
 		cfg.setRangeFetchLimit(Integer.parseInt(rangeLimit.item(0).getTextContent().trim()));
 		cfg.setCompressor(CompressorType.valueOf(compressor.item(0).getTextContent().trim().toUpperCase()));
 		cfg.setEncrypter(EncryptType.valueOf(encrypter.item(0).getTextContent().trim().toUpperCase()));
+		cfg.setMasterNode(Boolean.parseBoolean(isMaster.item(0).getTextContent().trim().toLowerCase()));
 		return cfg;
 	}
 	

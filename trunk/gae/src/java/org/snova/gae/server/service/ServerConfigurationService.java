@@ -41,10 +41,6 @@ public class ServerConfigurationService
 	        .getDatastoreService();
 	private static AsyncDatastoreService asyncdatastore = DatastoreServiceFactory
 	        .getAsyncDatastoreService();
-	protected static AsyncMemcacheService asyncCache = MemcacheServiceFactory
-	        .getAsyncMemcacheService();
-	protected static MemcacheService cache = MemcacheServiceFactory
-	        .getMemcacheService();
 	private static GAEServerConfiguration cfg;
 
 	private static Entity toEntity(GAEServerConfiguration cfg)
@@ -55,7 +51,7 @@ public class ServerConfigurationService
 		entity.setProperty("RangeFetchLimit", "" + cfg.getRangeFetchLimit());
 		entity.setProperty("Compressor", "" + cfg.getCompressor().toString());
 		entity.setProperty("Encrypter", "" + cfg.getEncrypter().toString());
-		entity.setProperty("ProxyEnable", "" + cfg.isProxyEnable());
+		entity.setProperty("IsMaster", cfg.isMasterNode() ? "1":"0");
 		//entity.setProperty("TrafficStatEnable", "" + cfg.isTrafficStatEnable());
 		Set<String> set = cfg.getCompressFilter();
 		StringBuilder buffer = new StringBuilder();
@@ -76,12 +72,31 @@ public class ServerConfigurationService
 	private static GAEServerConfiguration fromEntity(Entity entity)
 	{
 		GAEServerConfiguration cfg = new GAEServerConfiguration();
-		cfg.setFetchRetryCount(Integer.parseInt((String) entity.getProperty("FetchRetryCount")));
-		cfg.setMaxXMPPDataPackageSize(Integer.parseInt((String) entity.getProperty("MaxXMPPDataPackageSize")));
-		cfg.setRangeFetchLimit(Integer.parseInt((String) entity.getProperty("RangeFetchLimit")));
-		cfg.setCompressor(CompressorType.valueOf((String) entity.getProperty("Compressor")));
-		cfg.setEncrypter(EncryptType.valueOf((String) entity.getProperty("Encrypter")));
-		cfg.setProxyEnable(Boolean.valueOf((String) entity.getProperty("ProxyEnable")));
+		if(null != entity.getProperty("FetchRetryCount"))
+		{
+			cfg.setFetchRetryCount(Integer.parseInt((String) entity.getProperty("FetchRetryCount")));
+		}
+		if(null != entity.getProperty("MaxXMPPDataPackageSize"))
+		{
+			cfg.setMaxXMPPDataPackageSize(Integer.parseInt((String) entity.getProperty("MaxXMPPDataPackageSize")));
+		}
+		if(null != entity.getProperty("RangeFetchLimit"))
+		{
+			cfg.setRangeFetchLimit(Integer.parseInt((String) entity.getProperty("RangeFetchLimit")));
+		}
+		if(null != entity.getProperty("Compressor"))
+		{
+			cfg.setCompressor(CompressorType.valueOf((String) entity.getProperty("Compressor")));
+		}
+		if(null != entity.getProperty("Encrypter"))
+		{
+			cfg.setEncrypter(EncryptType.valueOf((String) entity.getProperty("Encrypter")));
+		}
+		if(null != entity.getProperty("IsMaster"))
+		{
+			cfg.setMasterNode(Integer.valueOf((String) entity.getProperty("IsMaster")) == 1);
+		}
+	
 		String str = (String) entity.getProperty("CompressFilter");
 		if(null != str)
 		{
@@ -104,30 +119,17 @@ public class ServerConfigurationService
 	{
 		if(null == cfg)
 		{
-			byte[] content = (byte[]) cache.get("ServerConfig:");
-			if(null != content)
-			{
-				Buffer buf = Buffer.wrapReadableContent(content);
-				cfg = new GAEServerConfiguration();
-				cfg.decode(buf);
-			}
-			else
-			{
-				Key key = KeyFactory.createKey("ServerConfig", 1);
-				try
-                {
-	                Entity entity = datastore.get(key);
-	                cfg = fromEntity(entity);
-	                Buffer buffer = new Buffer(256);
-	                cfg.encode(buffer);
-	                asyncCache.put("ServerConfig:", buffer.toArray());
-                }
-                catch (EntityNotFoundException e)
-                {
-                	saveServerConfig(new GAEServerConfiguration());    
-                	cfg = getServerConfig();
-                }
-			}
+			Key key = KeyFactory.createKey("ServerConfig", 1);
+			try
+            {
+                Entity entity = datastore.get(key);
+                cfg = fromEntity(entity);
+            }
+            catch (EntityNotFoundException e)
+            {
+            	saveServerConfig(new GAEServerConfiguration());    
+            	cfg = getServerConfig();
+            }
 			
 		}
 		return cfg;
@@ -168,9 +170,6 @@ public class ServerConfigurationService
 	private static void saveServerConfig(GAEServerConfiguration cfg)
 	{
 		ServerConfigurationService.cfg = cfg;
-		Buffer buf = new Buffer(256);
-    	cfg.encode(buf);
-    	asyncCache.put("ServerConfig:", buf.toArray());  
     	Entity entity = toEntity(cfg);
     	asyncdatastore.put(entity);
 	}

@@ -92,7 +92,7 @@ public class DesktopFrameworkConfiguration implements FrameworkConfiguration
 		return proxyEventServiceHandler;
 	}
 
-	@XmlElement
+	@XmlElement(name = "ProxyEventHandler")
 	public void setProxyEventHandler(String handlerName)
 	{
 		this.proxyEventServiceHandler = handlerName;
@@ -105,7 +105,7 @@ public class DesktopFrameworkConfiguration implements FrameworkConfiguration
     	return pluginRepository;
     }
 
-	@XmlElement
+	@XmlElement(name = "PluginRepository")
 	public void setPluginRepository(String pluginRepository)
     {
     	this.pluginRepository = pluginRepository;

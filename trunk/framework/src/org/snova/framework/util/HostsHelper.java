@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.snova.gae.client.util;
+package org.snova.framework.util;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -37,7 +37,7 @@ public class HostsHelper
 	        	String value = (String) entry.getValue();
 	        	key = key.trim();
 	        	value = value.trim();
-	        	String[] splits = value.split(",");
+	        	String[] splits = value.split("[,|;|\\|]");
 	        	List<String> mappings = Arrays.asList(splits);
 	        	hostsMappingTable.put(key, new ListSelector<String>(mappings));
 	        }

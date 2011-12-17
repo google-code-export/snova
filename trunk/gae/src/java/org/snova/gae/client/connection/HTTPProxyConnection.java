@@ -45,13 +45,13 @@ import org.jboss.netty.handler.ssl.SslHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.framework.config.SimpleSocketAddress;
+import org.snova.framework.util.HostsHelper;
 import org.snova.framework.util.SharedObjectHelper;
 import org.snova.gae.client.config.GAEClientConfiguration;
 import org.snova.gae.client.config.GAEClientConfiguration.ConnectionMode;
 import org.snova.gae.client.config.GAEClientConfiguration.GAEServerAuth;
 import org.snova.gae.client.config.GAEClientConfiguration.ProxyInfo;
 import org.snova.gae.client.config.GAEClientConfiguration.ProxyType;
-import org.snova.gae.client.util.HostsHelper;
 import org.snova.gae.common.GAEConstants;
 import org.snova.gae.common.http.HttpServerAddress;
 
@@ -95,6 +95,15 @@ public class HTTPProxyConnection extends ProxyConnection
 	@Override
 	protected void setAvailable(boolean flag) {
 		waitingResponse.set(flag);
+	}
+	
+	@Override
+	protected void doClose()
+	{
+	    if(clientChannel != null && clientChannel.isOpen())
+	    {
+	    	clientChannel.close();
+	    }
 	}
 
 	@Override

@@ -142,14 +142,14 @@ public class SslCertificateHelper
 		// using the hash code of the user's name and home path, keeps anonymity
 		// but also gives user a chance to distinguish between each other
 		final X500Principal x500principal = new X500Principal(
-		        "CN = hyk-proxy Framework Root Fake CA, "
+		        "CN = Snova Framework Root Fake CA, "
 		                + "L = "
 		                + Integer.toHexString(System.getProperty("user.name")
 		                        .hashCode())
 		                + Integer.toHexString(System.getProperty("user.home")
 		                        .hashCode()) + ", "
-		                + "O = hyk-proxy Root Fake CA, "
-		                + "OU = hyk-proxy Root Fake CA, " + "C = XX");
+		                + "O = Snova Root Fake CA, "
+		                + "OU = Snova Root Fake CA, " + "C = XX");
 
 		certGen.setSerialNumber(serialNumber);
 		certGen.setSubjectDN(x500principal);
@@ -288,7 +288,6 @@ public class SslCertificateHelper
 		// KeyStore.
 		// System.out.println("#####" + KeyStore.getDefaultType());
 		KeyStore ks = KeyStore.getInstance("bks", "BC");
-		System.out.println("#####" + ks.getProvider().getName());
 		ks.load(null, null);
 		ks.setKeyEntry(CA_ALIAS, pair.getPrivate(), KS_PASS.toCharArray(),
 		        new Certificate[] { cert });
@@ -297,7 +296,6 @@ public class SslCertificateHelper
 		ks = KeyStore.getInstance("bks", "BC");
 		ks.load(new FileInputStream(CA_FILE), KS_PASS.toCharArray());
 		Object obj = ks.getCertificate("RootCAPriKey");
-		System.out.println("#######" + obj.getClass().getName());
 		// final Certificate cert =
 		// rootca.getCertificate(SslCertificateService.ZAPROXY_JKS_ALIAS);
 		final PemWriter pw = new PemWriter(new FileWriter(

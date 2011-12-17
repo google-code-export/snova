@@ -9,23 +9,23 @@
  */
 package org.snova.framework.plugin;
 
-
 /**
  *
  */
 public interface Plugin
 {
 	public void onLoad(PluginContext context) throws Exception;
-
+	
 	public void onActive(PluginContext context) throws Exception;
-
+	
 	public void onUnload(PluginContext context) throws Exception;
-
+	
 	public void onDeactive(PluginContext context) throws Exception;
-
+	
+	public void onStart() throws Exception;
+	
+	public void onStop() throws Exception;
+	
 	public Runnable getAdminInterface();
 	
-	
-	
-
 }

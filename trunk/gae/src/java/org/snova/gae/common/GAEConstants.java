@@ -13,8 +13,8 @@ public interface GAEConstants
 	public static final String SERVER_CONF_NAME = "gae-server.xml";
 	public static final String HTTP_INVOKE_PATH = "/invoke";
 	public static final String BACKEND_INSTANCE_NAME = "worker";
-	public static final String XMPP_CLIENT_NAME = "hyk-proxy-gae";
-	public static final String RESERVED_GOOGLECN_HOST_MAPPING = "GoogleCN";
+	public static final String XMPP_CLIENT_NAME = "snova-gae";
+	public static final String RESERVED_GOOGLECN_IP_MAPPING = "GoogleCNIP";
 	public static final String RESERVED_GOOGLEHTTPS_HOST_MAPPING = "GoogleHttps";
 	public static final String PREFERED_GOOGLE_PROXY = "PreferedGoogleProxy";
 	
@@ -39,11 +39,15 @@ public interface GAEConstants
 	public static final int BLACKLIST_OPERATION_EVENT_TYPE = 2016;
 	public static final int REQUEST_SHARED_APPID_EVENT_TYPE = 2017;
 	public static final int REQUEST_SHARED_APPID_RESULT_EVENT_TYPE = 2018;
+	public static final int SHARE_APPID_EVENT_TYPE = 2019;
 	public static final int ADMIN_RESPONSE_EVENT_TYPE = 2020;
 	public static final int SERVER_CONFIG_EVENT_TYPE = 2050;
 	
+	public static final String SNOVA_MASTER_APPID = "snova-master";
+	
 	public static final String USER_ENTITY_NAME = "ProxyUser";
 	public static final String GROUP_ENTITY_NAME = "ProxyGroup";
+	public static final String SHARED_APPID_ENTITY_NAME = "SharedAppID";
 	public static final String ROOT_NAME = "root";
 	public static final String ROOT_GROUP_NAME = "root";
 

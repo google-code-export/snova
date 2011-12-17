@@ -45,16 +45,16 @@ public class GAEServerConfiguration implements CodecObject
 
 	private CompressorType compressor = CompressorType.SNAPPY;
 	private EncryptType encrypter = EncryptType.SE1;
-	private boolean proxyEnable = true;
+	private boolean isMasterNode = false;
 
-	public boolean isProxyEnable() 
+	public boolean isMasterNode() 
 	{
-		return proxyEnable;
+		return isMasterNode;
 	}
 
-	public void setProxyEnable(boolean proxyEnable) 
+	public void setMasterNode(boolean proxyEnable) 
 	{
-		this.proxyEnable = proxyEnable;
+		this.isMasterNode = proxyEnable;
 	}
 
 	private Set<String> compressFilter = new HashSet<String>();
@@ -144,7 +144,7 @@ public class GAEServerConfiguration implements CodecObject
 		BufferHelper.writeVarInt(buffer, rangeFetchLimit);
 		BufferHelper.writeVarInt(buffer, compressor.getValue());
 		BufferHelper.writeVarInt(buffer, encrypter.getValue());
-		BufferHelper.writeBoolean(buffer, proxyEnable);
+		BufferHelper.writeBoolean(buffer, isMasterNode);
 		BufferHelper.writeSet(buffer, compressFilter);
 
 		return true;
@@ -161,7 +161,7 @@ public class GAEServerConfiguration implements CodecObject
 			compressor = CompressorType
 			        .fromInt(BufferHelper.readVarInt(buffer));
 			encrypter = EncryptType.fromInt(BufferHelper.readVarInt(buffer));
-			proxyEnable = BufferHelper.readBool(buffer);
+			isMasterNode = BufferHelper.readBool(buffer);
 			compressFilter = BufferHelper.readSet(buffer, String.class);
 		}
 		catch (Exception e)
@@ -178,18 +178,18 @@ public class GAEServerConfiguration implements CodecObject
 		String colu3 = "RangeFetchLimit";
 		String colu4 = "Compressor";
 		String colu5 = "Encrypter";
-		String colu6 = "ProxyEnable";
+		String colu6 = "IsMaster";
 		String colu7 = "CompressFilter";
 		final String formater = "%" + colu1.length() + "s %" + colu2.length()
 		        + "s %" + colu3.length() + "s %" + colu4.length() + "s %"
 		        + colu5.length() + "s %" + colu6.length() + "s"+ colu7.length() + "s";
 		String header = String.format(formater, "FetchRetryCount",
 		        "MaxXMPPDataPackageSize", "RangeFetchLimit", "Compressor",
-		        "Encrypter","ProxyEnable", "CompressFilter");
+		        "Encrypter","IsMaster", "CompressFilter");
 		ps.println(header);
 		String output = String.format(formater, "" + fetchRetryCount, ""
 		        + maxXMPPDataPackageSize, "" + rangeFetchLimit,
-		        compressor.toString(), encrypter.toString(), Boolean.toString(proxyEnable),
+		        compressor.toString(), encrypter.toString(), Boolean.toString(isMasterNode),
 		        getCompressFilter().toString());
 		ps.println(output);
 	}

@@ -79,6 +79,21 @@ public class GAEClientConfiguration
 		public String passwd;
 		@XmlAttribute
 		public boolean backendEnable;
+		
+		public void init()
+		{
+			if (user == null || user.equals(""))
+			{
+				user = GAEConstants.ANONYMOUSE_NAME;
+			}
+			if (passwd == null || passwd.equals(""))
+			{
+				passwd = GAEConstants.ANONYMOUSE_NAME;
+			}
+			appid = appid.trim();
+			user = user.trim();
+			passwd = passwd.trim();
+		}
 	}
 
 	public static class MasterNode
@@ -220,11 +235,11 @@ public class GAEClientConfiguration
 	@XmlElements(@XmlElement(name = "WorkerNode"))
 	private List<GAEServerAuth> serverAuths = new LinkedList<GAEServerAuth>();
 
+	@XmlTransient
 	public void setGAEServerAuths(List<GAEServerAuth> serverAuths)
 	{
 		this.serverAuths = serverAuths;
 	}
-
 	public List<GAEServerAuth> getGAEServerAuths()
 	{
 		return serverAuths;
@@ -313,6 +328,7 @@ public class GAEClientConfiguration
 		return CompressorType.valueOf(compressor.toUpperCase());
 	}
 
+	@XmlTransient
 	public void setCompressorType(CompressorType type)
 	{
 		compressor = type.toString();
@@ -336,6 +352,7 @@ public class GAEClientConfiguration
 		return EncryptType.valueOf(encrypter.toUpperCase());
 	}
 
+	@XmlTransient
 	public void setEncrypterType(EncryptType type)
 	{
 		this.encrypter = type.toString();
@@ -472,17 +489,7 @@ public class GAEClientConfiguration
 					i--;
 					continue;
 				}
-				if (auth.user == null || auth.user.equals(""))
-				{
-					auth.user = GAEConstants.ANONYMOUSE_NAME;
-				}
-				if (auth.passwd == null || auth.passwd.equals(""))
-				{
-					auth.passwd = GAEConstants.ANONYMOUSE_NAME;
-				}
-				auth.appid = auth.appid.trim();
-				auth.user = auth.user.trim();
-				auth.passwd = auth.passwd.trim();
+				auth.init();
 			}
 		}
 
@@ -513,6 +520,13 @@ public class GAEClientConfiguration
 		if (localProxy == null || localProxy.host.contains("google"))
 		{
 			simpleURLEnable = true;
+		}
+		
+		if(null == masterNode || masterNode.appid == null)
+		{
+			masterNode = new MasterNode();
+			masterNode.appid = GAEConstants.SNOVA_MASTER_APPID;
+			masterNode.backendEnable = false;
 		}
 	}
 

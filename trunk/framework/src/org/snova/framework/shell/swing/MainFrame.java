@@ -135,6 +135,7 @@ public class MainFrame extends javax.swing.JFrame
 		}
 		catch (Exception e)
 		{
+			logger.error("Failed to retrive desc file:" + url, e);
 			DesktopFrameworkConfiguration conf = DesktopFrameworkConfiguration
 			        .getInstance();
 			SimpleSocketAddress localServAddr = conf
@@ -300,7 +301,7 @@ public class MainFrame extends javax.swing.JFrame
 		appTitleLabel.setFont(appTitleLabel.getFont().deriveFont(
 		        appTitleLabel.getFont().getStyle() | java.awt.Font.BOLD,
 		        appTitleLabel.getFont().getSize() + 4));
-		appTitleLabel.setText("snova GUI Launcher");
+		appTitleLabel.setText("Snova GUI Launcher");
 		
 		appDescLabel.setText("<html>The GUI launcher of snova");
 		

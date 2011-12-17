@@ -19,6 +19,8 @@ import org.snova.framework.common.Version;
 import org.snova.framework.launch.ApplicationLauncher;
 import org.snova.framework.plugin.DesktopPluginManager;
 import org.snova.framework.plugin.DesktopPluginManager.InstalledPlugin;
+import org.snova.framework.trace.TUITrace;
+import org.snova.framework.util.SharedObjectHelper;
 
 /**
  *
@@ -33,6 +35,7 @@ public class Admin
 	public static void main(String[] args) throws IOException
 	{
 		ApplicationLauncher.initLoggerConfig();
+		SharedObjectHelper.setTrace(new TUITrace());
 		DesktopPluginManager pm = DesktopPluginManager.getInstance();
 		pm.loadPlugins();
 		Collection<InstalledPlugin> plugins = pm.getAllInstalledPlugins();

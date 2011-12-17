@@ -101,4 +101,18 @@ public class SPAC implements Plugin
 	{
 		return null;
 	}
+
+	@Override
+    public void onStart() throws Exception
+    {
+	    // TODO Auto-generated method stub
+	    
+    }
+
+	@Override
+    public void onStop() throws Exception
+    {
+	    // TODO Auto-generated method stub
+	    
+    }
 }

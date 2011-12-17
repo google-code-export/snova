@@ -18,7 +18,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.framework.plugin.DesktopPluginManager;
 import org.snova.framework.plugin.DesktopPluginManager.InstalledPlugin;
-import org.snova.framework.plugin.GUIPlugin;
 import org.snova.framework.plugin.PluginState;
 import org.snova.framework.util.SharedObjectHelper;
 

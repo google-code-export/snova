@@ -3,9 +3,9 @@ package service
 import (
 	"appengine"
 	"appengine/datastore"
-	"appengine/memcache"
+	//"appengine/memcache"
 	"event"
-	"bytes"
+	//"bytes"
 	//"codec"
 	"strconv"
 	"strings"
@@ -18,7 +18,7 @@ func initServerConfig() *event.GAEServerConfig {
 	cfg.MaxXMPPDataPackageSize = 40960
 	cfg.CompressType = event.C_SNAPPY
 	cfg.EncryptType = event.E_SE1
-	cfg.ProxyEnable = 1
+	cfg.IsMaster = 0
 	cfg.CompressFilter = make(map[string]string)
 	return cfg
 }
@@ -48,8 +48,8 @@ func toPropertyList() datastore.PropertyList {
 		Value: strconv.Itoa64(int64(ServerConfig.EncryptType)),
 	})
 	ret = append(ret, datastore.Property{
-		Name:  "ProxyEnable",
-		Value: strconv.Itoa64(int64(ServerConfig.ProxyEnable)),
+		Name:  "IsMaster",
+		Value: strconv.Itoa64(int64(ServerConfig.IsMaster)),
 	})
 	var tmp string
 	for key, _ := range ServerConfig.CompressFilter {
@@ -81,9 +81,9 @@ func fromPropertyList(item datastore.PropertyList) {
 		case "EncryptType":
 			tmp, _ := strconv.Atoui64(v.Value.(string))
 			ServerConfig.EncryptType = uint32(tmp)
-		case "ProxyEnable":
+		case "IsMaster":
 			tmp, _ := strconv.Atoui64(v.Value.(string))
-			ServerConfig.ProxyEnable = uint8(tmp)
+			ServerConfig.IsMaster = uint8(tmp)
 		case "CompressFilter":
 			str := v.Value.(string)
 			ss := strings.Split(str, ";")
@@ -104,23 +104,18 @@ func SaveServerConfig(ctx appengine.Context) {
 	if err != nil {
 		return
 	}
-	var buf bytes.Buffer
-	ServerConfig.Encode(&buf)
-	memitem := &memcache.Item{
-		Key:   "ServerConfig:",
-		Value: buf.Bytes(),
+	if ServerConfig.IsMaster == 1{
+	   InitMasterService(ctx)
 	}
-	// Add the item to the memcache, if the key does not already exist
-	memcache.Set(ctx, memitem)
 }
 
 func LoadServerConfig(ctx appengine.Context) {
-	if item, err := memcache.Get(ctx, "ServerConfig:"); err == nil {
-		buf := bytes.NewBuffer(item.Value)
-		if ServerConfig.Decode(buf) {
-			return
-		}
-	}
+	//if item, err := memcache.Get(ctx, "ServerConfig:"); err == nil {
+	//	buf := bytes.NewBuffer(item.Value)
+	//	if ServerConfig.Decode(buf) {
+	//		return
+	//	}
+	//}
 	var item datastore.PropertyList
 	key := datastore.NewKey(ctx, "ServerConfig", "", 1, nil)
 	if err := datastore.Get(ctx, key, &item); err != nil {
@@ -128,16 +123,17 @@ func LoadServerConfig(ctx appengine.Context) {
 		return
 	}
 	fromPropertyList(item)
-	var buf bytes.Buffer
-	ServerConfig.Encode(&buf)
-	memitem := &memcache.Item{
-		Key:   "ServerConfig:",
-		Value: buf.Bytes(),
-	}
-	memcache.Set(ctx, memitem)
+	//var buf bytes.Buffer
+	//ServerConfig.Encode(&buf)
+	//memitem := &memcache.Item{
+	//	Key:   "ServerConfig:",
+	//	Value: buf.Bytes(),
+	//}
+	//memcache.Set(ctx, memitem)
 }
 
 func HandlerConfigEvent(ctx appengine.Context,ev *event.ServerConfigEvent)event.Event{
+   //ctx.Infof("Operation is  :%d",  ev.Operation)
    switch ev.Operation{
       case event.GET_CONFIG_REQ:
 	     res := new(event.ServerConfigEvent)
@@ -152,7 +148,7 @@ func HandlerConfigEvent(ctx appengine.Context,ev *event.ServerConfigEvent)event.
 	     res := new(event.ServerConfigEvent)
 		 res.Operation = event.SET_CONFIG_RES
 		 res.Cfg = ServerConfig
-	    return res
+	     return res
    }
    return nil
 }

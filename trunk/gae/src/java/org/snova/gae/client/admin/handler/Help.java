@@ -28,12 +28,13 @@ public class Help implements CommandHandler
                                          "   -- To delete group use \"groupdel\" command." + System.getProperty("line.separator") + 
                                          "   -- To change password use \"passwd\" command." + System.getProperty("line.separator") + 
                                          "   -- To config server use \"servercfg\" command." + System.getProperty("line.separator") + 
-//                                         "   -- To control the traffic for a user use \"traffic\" command." + System.getProperty("line.separator") + 
+                                         "   -- To share your appid use \"share\" command." + System.getProperty("line.separator") + 
+                                         "   -- To unshare your appid use \"unshare\" command." + System.getProperty("line.separator") + 
                                          "   -- To print help use \"help\" command." + System.getProperty("line.separator") + 
                                          "   -- To add/delete web site to blacklist use \"blacklist\" command." + System.getProperty("line.separator") + 
                                          "   -- To exit use \"exit\" command." +  System.getProperty("line.separator") + 
                                          "   -- To get information about most common admin usage, please use help command." + System.getProperty("line.separator") + 
-                                         "   -- If you have any questions, please visit to hyk-proxy website http://hyk-proxy.googlecode.com/";
+                                         "   -- If you have any questions, please visit to snova website http://snova.googlecode.com/";
 	   
 	@Override
 	public void execute(String[] args)

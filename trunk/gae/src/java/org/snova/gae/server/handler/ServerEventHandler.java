@@ -24,6 +24,7 @@ import org.snova.gae.common.config.GAEServerConfiguration;
 import org.snova.gae.common.event.CompressEvent;
 import org.snova.gae.common.event.EncryptEvent;
 import org.snova.gae.common.event.ServerConfigEvent;
+import org.snova.gae.common.event.ShareAppIDEvent;
 import org.snova.gae.server.service.EventSendService;
 import org.snova.gae.server.service.MasterNodeService;
 import org.snova.gae.server.service.ServerConfigurationService;
@@ -65,11 +66,6 @@ public class ServerEventHandler implements EventHandler
 		int type = tv.type;
 		switch (type)
 		{
-			case GAEConstants.REQUEST_SHARED_APPID_EVENT_TYPE:
-			{
-				response = MasterNodeService.randomRetrieveAppIds();
-				break;
-			}
 			case GAEConstants.AUTH_REQUEST_EVENT_TYPE:
 			case GAEConstants.USER_OPERATION_EVENT_TYPE:
 			case GAEConstants.GROUP_OPERATION_EVENT_TYPE:
@@ -139,6 +135,17 @@ public class ServerEventHandler implements EventHandler
 			{
 				ServerConfigEvent ev = (ServerConfigEvent) event;
 				response = ServerConfigurationService.handleServerConfig(tags,ev);
+				break;
+			}
+			case GAEConstants.SHARE_APPID_EVENT_TYPE:
+			{
+				ShareAppIDEvent ev = (ShareAppIDEvent) event;
+				response = MasterNodeService.HandleShareEvent(ev);
+				break;
+			}
+			case GAEConstants.REQUEST_SHARED_APPID_EVENT_TYPE:
+			{
+				response = MasterNodeService.randomRetrieveAppIds();
 				break;
 			}
 			default:

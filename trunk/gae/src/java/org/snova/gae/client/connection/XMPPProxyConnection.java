@@ -66,7 +66,7 @@ public class XMPPProxyConnection extends ProxyConnection implements
 		}
 	}
 
-	public void close()
+	public void doClose()
 	{
 		xmppConnection.disconnect();
 		rawConnectionTable.remove(address.getJid());

@@ -39,38 +39,40 @@ import org.snova.framework.util.SharedObjectHelper;
  */
 public class DesktopPluginManager implements PluginManager
 {
-	private Map<String, InstalledPlugin> plugins = new HashMap<String, InstalledPlugin>();
+	private Map<String, InstalledPlugin>	plugins	 = new HashMap<String, InstalledPlugin>();
 	// private Map<String, RemoveMarkTask> removingTasks = new HashMap<String,
 	// PluginManager.RemoveMarkTask>();
-	protected Logger logger = LoggerFactory.getLogger(getClass());
-	protected static Properties pluginsStat = new Properties();
-	private static DesktopPluginManager instance = new DesktopPluginManager();
-
+	protected Logger	                 logger	     = LoggerFactory
+	                                                         .getLogger(getClass());
+	protected static Properties	         pluginsStat	= new Properties();
+	private static DesktopPluginManager	 instance	 = new DesktopPluginManager();
+	
 	static enum ActiveState
 	{
 		ACTIVE, DEACTIIVE
 	}
-
+	
 	private DesktopPluginManager()
 	{
-        try
-        {
-        	FileInputStream fis = new FileInputStream(AppData.getUserPluginState());
-	        pluginsStat.load(fis);
+		try
+		{
+			FileInputStream fis = new FileInputStream(
+			        AppData.getUserPluginState());
+			pluginsStat.load(fis);
 			fis.close();
-        }
-        catch (Exception e)
-        {
-        	logger.error("Failed to load plugins state file.", e);
-        }
+		}
+		catch (Exception e)
+		{
+			logger.error("Failed to load plugins state file.", e);
+		}
 		
 	}
-
+	
 	public boolean isPluginInstalled(String name)
 	{
 		return plugins.containsKey(name);
 	}
-
+	
 	private ActiveState getPersistentPluginActiveState(String name)
 	{
 		String value = pluginsStat.getProperty(name);
@@ -80,14 +82,15 @@ public class DesktopPluginManager implements PluginManager
 		}
 		return ActiveState.ACTIVE;
 	}
-
+	
 	private void storePluginsActiveState(InstalledPlugin plugin,
 	        ActiveState state)
 	{
 		try
 		{
 			pluginsStat.setProperty(plugin.desc.name, state.toString() + "");
-			FileOutputStream fos = new FileOutputStream(AppData.getUserPluginState());
+			FileOutputStream fos = new FileOutputStream(
+			        AppData.getUserPluginState());
 			pluginsStat.store(fos, "");
 			fos.close();
 		}
@@ -96,31 +99,31 @@ public class DesktopPluginManager implements PluginManager
 			logger.error("Can not store plugins state file.", e);
 		}
 	}
-
+	
 	public static DesktopPluginManager getInstance()
 	{
 		return instance;
 	}
-
+	
 	public static class InstalledPlugin
 	{
-		public PluginContext context;
-		public JarClassLoader classloader;
-		public Plugin plugin;
-		public PluginDescription desc;
-		public PluginState state;
+		public PluginContext		context;
+		public JarClassLoader		classloader;
+		public Plugin		     plugin;
+		public PluginDescription	desc;
+		public PluginState		 state;
 	}
-
+	
 	public Collection<InstalledPlugin> getAllInstalledPlugins()
 	{
 		return plugins.values();
 	}
-
+	
 	public InstalledPlugin getInstalledPlugin(String name)
 	{
 		return plugins.get(name);
 	}
-
+	
 	protected static void retrieveJarFiles(String dir, List<String> jarFiles)
 	{
 		File dirfile = new File(dir);
@@ -140,9 +143,9 @@ public class DesktopPluginManager implements PluginManager
 				}
 			}
 		}
-
+		
 	}
-
+	
 	public PluginDescription getPluginDescription(String name)
 	{
 		InstalledPlugin plugin = plugins.get(name);
@@ -152,7 +155,7 @@ public class DesktopPluginManager implements PluginManager
 		}
 		return null;
 	}
-
+	
 	protected String extractPluginZipFile(File zipFile)
 	{
 		try
@@ -190,18 +193,18 @@ public class DesktopPluginManager implements PluginManager
 		}
 		finally
 		{
-			//zipFile.delete();
+			// zipFile.delete();
 			try
-            {
-	            FileHelper.moveFile(zipFile, AppData.getInstalledPlugins());
-            }
-            catch (IOException e)
-            {
-            	logger.error("Failed to move to installed dir", e);
-            }
+			{
+				FileHelper.moveFile(zipFile, AppData.getInstalledPlugins());
+			}
+			catch (IOException e)
+			{
+				logger.error("Failed to move to installed dir", e);
+			}
 		}
 	}
-
+	
 	public InstalledPlugin loadPlugin(File zipFile)
 	{
 		try
@@ -222,7 +225,7 @@ public class DesktopPluginManager implements PluginManager
 			return null;
 		}
 	}
-
+	
 	private InstalledPlugin resolvePlugin(String dir)
 	{
 		File home = null;
@@ -277,7 +280,7 @@ public class DesktopPluginManager implements PluginManager
 		}
 		return null;
 	}
-
+	
 	protected InstalledPlugin loadPlugin(InstalledPlugin resolve)
 	{
 		String pluginName = resolve.desc.name;
@@ -305,24 +308,26 @@ public class DesktopPluginManager implements PluginManager
 			plugin.onLoad(resolve.context);
 			resolve.state = PluginState.LOADED;
 			resolve.plugin = plugin;
-
+			
 			logger.info("Load plugin:" + pluginName + " ...   Success");
-			SharedObjectHelper.getTrace().info("Load plugin:" + pluginName + " ...   Success");
+			SharedObjectHelper.getTrace().info(
+			        "Load plugin:" + pluginName + " ...   Success");
 			return resolve;
 		}
 		catch (Exception e)
 		{
 			e.printStackTrace();
 			logger.error("Failed to load plugin.", e);
-			SharedObjectHelper.getTrace().error("Load plugin:" + pluginName + " ...   Failed");
+			SharedObjectHelper.getTrace().error(
+			        "Load plugin:" + pluginName + " ...   Failed");
 			// trace.error("Load plugin:" + pluginName + " ...   Failed");
 			plugins.remove(pluginName);
 		}
-
+		
 		return null;
-
+		
 	}
-
+	
 	public void loadPlugins()
 	{
 		if (AppData.getPluginsHome().exists()
@@ -349,7 +354,7 @@ public class DesktopPluginManager implements PluginManager
 						logger.error("Failed to resolve plugin in dir :"
 						        + fname, e);
 					}
-
+					
 				}
 				else if (fname.endsWith(".zip"))
 				{
@@ -371,7 +376,7 @@ public class DesktopPluginManager implements PluginManager
 			}
 		}
 	}
-
+	
 	public void activatePlugin(InstalledPlugin plugin)
 	{
 		if (plugin.state == PluginState.ACTIVATED)
@@ -384,15 +389,17 @@ public class DesktopPluginManager implements PluginManager
 			plugin.state = PluginState.ACTIVATED;
 			storePluginsActiveState(plugin, ActiveState.ACTIVE);
 			logger.info("Active plugin:" + plugin.desc.name + " ...   Success");
-			SharedObjectHelper.getTrace().info("Active plugin:" + plugin.desc.name + " ...   Success");
+			SharedObjectHelper.getTrace().info(
+			        "Active plugin:" + plugin.desc.name + " ...   Success");
 		}
 		catch (Exception e)
 		{
 			logger.error("Failed to active plugin:" + plugin.desc.name, e);
-			SharedObjectHelper.getTrace().error("Failed to active plugin:" + plugin.desc.name);
+			SharedObjectHelper.getTrace().error(
+			        "Failed to active plugin:" + plugin.desc.name);
 		}
 	}
-
+	
 	public void activatePlugins()
 	{
 		Collection<InstalledPlugin> c = plugins.values();
@@ -405,7 +412,7 @@ public class DesktopPluginManager implements PluginManager
 			}
 		}
 	}
-
+	
 	public void deactivePlugin(String name) throws Exception
 	{
 		InstalledPlugin plugin = plugins.get(name);
@@ -415,10 +422,11 @@ public class DesktopPluginManager implements PluginManager
 			plugin.state = PluginState.LOADED;
 			storePluginsActiveState(plugin, ActiveState.DEACTIIVE);
 			logger.info("Deactive plugin:" + name + " ...   Success");
-			SharedObjectHelper.getTrace().info("Deactive plugin:" + name + " ...   Success");
+			SharedObjectHelper.getTrace().info(
+			        "Deactive plugin:" + name + " ...   Success");
 		}
 	}
-
+	
 	public void unloadPlugin(String name) throws Exception
 	{
 		InstalledPlugin plugin = plugins.get(name);
@@ -436,8 +444,63 @@ public class DesktopPluginManager implements PluginManager
 			// Runtime.getRuntime().addShutdownHook(new Thread(task));
 			// trace.notice("Unload plugin:" + name + " ...   Success");
 			logger.info("Unload plugin:" + name + " ...   Success");
-			SharedObjectHelper.getTrace().info("Unload plugin:" + name + " ...   Success");
+			SharedObjectHelper.getTrace().info(
+			        "Unload plugin:" + name + " ...   Success");
 		}
 	}
-
+	
+	@Override
+	public void startPlugins()
+	{
+		Collection<InstalledPlugin> c = plugins.values();
+		for (InstalledPlugin plugin : c)
+		{
+			if (plugin.state.equals(PluginState.ACTIVATED))
+			{
+				
+				try
+				{
+					plugin.plugin.onStart();
+					SharedObjectHelper.getTrace().info(
+					        "Start plugin:" + plugin.desc.name
+					                + " ...   Success");
+				}
+				catch (Exception e)
+				{
+					logger.error("Failed to start plugin:" + plugin.desc.name,
+					        e);
+					SharedObjectHelper.getTrace().error(
+					        "Failed to start plugin:" + plugin.desc.name);
+				}
+			}
+		}
+		
+	}
+	
+	@Override
+	public void stopPlugins()
+	{
+		Collection<InstalledPlugin> c = plugins.values();
+		for (InstalledPlugin plugin : c)
+		{
+			if (plugin.state.equals(PluginState.ACTIVATED))
+			{
+				try
+				{
+					plugin.plugin.onStop();
+					SharedObjectHelper.getTrace().info(
+					        "Stop plugin:" + plugin.desc.name
+					                + " ...   Success");
+				}
+				catch (Exception e)
+				{
+					logger.error("Failed to stop plugin:" + plugin.desc.name, e);
+					SharedObjectHelper.getTrace().error(
+					        "Failed to stop plugin:" + plugin.desc.name);
+				}
+			}
+		}
+		
+	}
+	
 }
