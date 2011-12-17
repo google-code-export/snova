@@ -1,6 +1,6 @@
 snova-gae Changelog
 ===================
-Changes in version 0.10.1 (2011.XX.XX)
+Changes in version 0.10.1 (2011.12.18)
 -------------------------------------------
 Initial version
 
@@ -8,8 +8,10 @@ Initial version
    * HTTP/HTTPS/XMPP transport support
    * Compress/Encrypt transport(Snappy/FastLZ/LZF/QuickLZ, SE1) 
    * Java/Go server implementation
-   * Simple hosts configuration
-   * Google proxy chain support()
+   * Google proxy chain support
+   
+** Note
+   * Do NOT use XMPP transport in general case since free quota is only 10000/day
    
 ** Task
    * NA

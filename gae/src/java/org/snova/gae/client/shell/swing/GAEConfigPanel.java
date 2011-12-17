@@ -29,12 +29,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.framework.shell.swing.ImageUtil;
 import org.snova.framework.util.SharedObjectHelper;
+import org.snova.gae.client.admin.handler.ShareAppID;
+import org.snova.gae.client.admin.handler.UnShareAppID;
 import org.snova.gae.client.config.GAEClientConfiguration;
 import org.snova.gae.client.config.GAEClientConfiguration.ConnectionMode;
 import org.snova.gae.client.config.GAEClientConfiguration.GAEServerAuth;
 import org.snova.gae.client.config.GAEClientConfiguration.ProxyInfo;
 import org.snova.gae.client.config.GAEClientConfiguration.ProxyType;
 import org.snova.gae.client.config.GAEClientConfiguration.XmppAccount;
+import org.snova.gae.client.connection.ProxyConnection;
+import org.snova.gae.client.connection.ProxyConnectionManager;
 import org.snova.gae.common.CompressorType;
 import org.snova.gae.common.EncryptType;
 
@@ -1421,11 +1425,20 @@ public class GAEConfigPanel extends javax.swing.JPanel
 					{
 						GAEClientConfiguration cfg = GAEClientConfiguration
 						        .getInstance();
-						// String result = ClientUtils.getMasterNodeService(cfg)
+						GAEServerAuth auth = new GAEServerAuth();
+						auth.appid = cfg.getMasterNode().appid;
+						auth.init();
+						ProxyConnection conn = ProxyConnectionManager
+						        .getInstance().getClientConnectionByAuth(auth,
+						                false);
+						ShareAppID action = new ShareAppID(conn);
+						String result = action.share(shareAppIdTextField
+						        .getText().trim(), shareEmailAccount.getText()
+						        .trim());
 						// .shareMyAppId(
 						// shareAppIdTextField.getText().trim(),
 						// shareEmailAccount.getText().trim());
-						// JOptionPane.showMessageDialog(null, result);
+						JOptionPane.showMessageDialog(null, result);
 					}
 					catch (Exception ex)
 					{
@@ -1452,11 +1465,25 @@ public class GAEConfigPanel extends javax.swing.JPanel
 					{
 						GAEClientConfiguration cfg = GAEClientConfiguration
 						        .getInstance();
+						GAEServerAuth auth = new GAEServerAuth();
+						auth.appid = cfg.getMasterNode().appid;
+						auth.init();
+						ProxyConnection conn = ProxyConnectionManager
+						        .getInstance().getClientConnectionByAuth(auth,
+						                false);
 						// String result = ClientUtils.getMasterNodeService(cfg)
 						// .unshareMyAppid(
 						// shareAppIdTextField.getText().trim(),
 						// shareEmailAccount.getText().trim());
 						// JOptionPane.showMessageDialog(null, result);
+						UnShareAppID action = new UnShareAppID(conn);
+						String result = action.unshare(shareAppIdTextField
+						        .getText().trim(), shareEmailAccount.getText()
+						        .trim());
+						// .shareMyAppId(
+						// shareAppIdTextField.getText().trim(),
+						// shareEmailAccount.getText().trim());
+						JOptionPane.showMessageDialog(null, result);
 					}
 					catch (Exception ex)
 					{

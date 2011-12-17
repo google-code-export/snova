@@ -10,7 +10,6 @@
  */
 package org.snova.framework.shell.swing;
 
-import org.snova.framework.plugin.GUIPlugin;
 import org.snova.framework.plugin.PluginDescription;
 
 /**

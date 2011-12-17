@@ -1,7 +1,7 @@
 snova Changelog
 ===================
 
-Changes in version 0.10.1(2011.xx.xx)
+Changes in version 0.10.1(2011.12.18)
 -------------------------------------------
 Initial version
 
@@ -9,6 +9,8 @@ Initial version
    * Plugin system
    * Event driven framework
    * Console admin tool
+   * Simple local hosts mapping configuration
+   * GAE support
       
 ** Task
    * NA

@@ -53,6 +53,10 @@ func (dispatcher *DispatchEventHandler) handleRecvEvent(ctx appengine.Context, h
 		res = service.HandlerBalcklistEvent(ctx, ev.(*event.BlackListOperationEvent))
 	case event.SERVER_CONFIG_EVENT_TYPE:
 		res = service.HandlerConfigEvent(ctx,ev.(*event.ServerConfigEvent))
+    case event.SHARE_APPID_EVENT_TYPE:
+		res = service.HandleShareEvent(ctx,ev.(*event.ShareAppIDEvent))
+	case event.REQUEST_SHARED_APPID_EVENT_TYPE:
+		res = service.RetrieveAppIds(ctx)
 	}
 	return res
 }
@@ -73,7 +77,7 @@ func splitBuffer(buf *bytes.Buffer, hash uint32, size uint32, tags *event.EventH
 			seg.Total = total
 			blen := size
 			buflen = uint32(buf.Len())
-			if blen < buflen {
+			if blen > buflen {
 				blen = buflen
 			}
 			b := make([]byte, blen)
@@ -119,7 +123,9 @@ func (dispatcher *DispatchEventHandler) OnEvent(header *event.EventHeader, ev ev
 		event.EncodeEventWithTags(&buf, y, tags)
 		if sendservice.GetMaxDataPackageSize() > 0 && buf.Len() > sendservice.GetMaxDataPackageSize() {
 			bufs := splitBuffer(&buf, uint32(ev.GetHash()), uint32(sendservice.GetMaxDataPackageSize()), tags)
+			//ctx.Infof("Buff total len %d while split len is %d",  buf.Len(), sendservice.GetMaxDataPackageSize())
 			for _, x := range bufs {
+		    	//ctx.Infof("Send  message with len %d",  x.Len())
 				sendservice.Send(x)
 			}
 		} else {

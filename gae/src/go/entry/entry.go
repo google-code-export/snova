@@ -168,7 +168,16 @@ func (serv *XMPPEventSendService) Send(buf *bytes.Buffer) {
 	msg.Sender = serv.jid
 	msg.To = []string{serv.from}
 	msg.Type = "chat"
-	msg.Send(serv.ctx)
+	retryCount := service.ServerConfig.RetryFetchCount
+	for retryCount > 0 {
+	   err := msg.Send(serv.ctx)
+	   if nil == err{
+	      return
+	   }
+	   retryCount--
+	   serv.ctx.Errorf("Failed to send xmpp(%d:%d bytes) for reason:%s", len(body),buf.Len(),err.String())
+	}
+	
 }
 
 func XMPPEventDispatch(ctx appengine.Context, m *xmpp.Message) {

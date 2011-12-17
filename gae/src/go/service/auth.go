@@ -5,8 +5,7 @@ import (
 	"appengine/capability"
 	"event"
 	"rand"
-	//"bytes"
-	//"fmt"
+	"time"
 )
 
 const ANONYMOUSE_NAME = "anonymouse"
@@ -14,8 +13,10 @@ const SEED = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz~!@#
 
 func generateRandomString(n int) string {
 	s := ""
+	src := rand.NewSource(time.Nanoseconds())
+	rnd := rand.New(src)
 	for i := 0; i < n; i++ {
-		index := rand.Intn(len(SEED))
+		index := rnd.Intn(len(SEED))
 		s += SEED[index : index+1]
 	}
 	return s

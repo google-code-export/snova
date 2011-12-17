@@ -14,9 +14,9 @@
 	</Compress-Filter>
 
 	<MaxXMPPDataPackageSize>40960</MaxXMPPDataPackageSize>
-	<FetchRetryCount>3</FetchRetryCount>
+	<FetchRetryCount>1</FetchRetryCount>
 	<RangeFetchLimit>262144</RangeFetchLimit>
 	<Compressor>Snappy</Compressor>
 	<Encrypter>SE1</Encrypter>
-	<ProxyEnable>true</ProxyEnable>
+	<IsMaster>false</IsMaster>
 </Configure>

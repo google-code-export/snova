@@ -9,7 +9,7 @@ package org.snova.framework.common;
  */
 public interface Constants
 {
-	public static final String PROJECT_NAME = "snova";
+	public static final String PROJECT_NAME = "Snova";
 	public static final String APP_HOME = "SNOVA_HOME";
 	public static final String CONF_FILE = "snova.xml";
 	public static final String PLUGIN_DESC_FILE = "plugin.xml";

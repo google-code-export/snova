@@ -33,6 +33,7 @@ public class Framework
 
 	private boolean isStarted = false;
 	private FrameworkConfiguration config;
+	private PluginManager pm;
 	
 	public Framework(FrameworkConfiguration config, PluginManager pm, Trace trace)
 	{
@@ -46,6 +47,7 @@ public class Framework
 		
 		pm.loadPlugins();
 		pm.activatePlugins();
+		this.pm = pm;
 		
 	}
 
@@ -58,7 +60,7 @@ public class Framework
 				server.close();
 				server = null;
 			}
-
+			pm.stopPlugins();
 			isStarted = false;
 		}
 		catch (Exception e)
@@ -83,6 +85,7 @@ public class Framework
 		try
 		{
 			stop();
+			pm.startPlugins();
 			this.config = cfg;
 			//CoreConfiguration config= CoreConfiguration.getInstance();
 			server = new HttpLocalProxyServer(

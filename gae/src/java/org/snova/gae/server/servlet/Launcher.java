@@ -11,6 +11,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.gae.common.event.GAEEvents;
 import org.snova.gae.server.handler.ServerEventHandler;
+import org.snova.gae.server.service.MasterNodeService;
+import org.snova.gae.server.service.ServerConfigurationService;
 
 /**
  * @author yinqiwen
@@ -27,6 +29,10 @@ public class Launcher extends HttpServlet
 		{
 			ServerEventHandler handler = new ServerEventHandler();
 			GAEEvents.init(handler, true);
+			if(ServerConfigurationService.getServerConfig().isMasterNode())
+			{
+				MasterNodeService.init();
+			}
 			if (logger.isInfoEnabled())
 			{
 				logger.info("hyk-proxy v2 GAE Server init success!");

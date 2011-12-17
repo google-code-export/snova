@@ -13,6 +13,7 @@ import org.arch.event.http.HTTPRequestEvent;
 import org.arch.util.ListSelector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.snova.framework.util.SharedObjectHelper;
 import org.snova.gae.client.config.GAEClientConfiguration;
 import org.snova.gae.client.config.GAEClientConfiguration.GAEServerAuth;
 import org.snova.gae.client.config.GAEClientConfiguration.XmppAccount;
@@ -37,6 +38,7 @@ public class ProxyConnectionManager
 	
 	public boolean init(List<GAEServerAuth> gaeAuths)
 	{
+		close();
 		List<GAEServerAuth> auths = new ArrayList<GAEClientConfiguration.GAEServerAuth>();
 		auths.addAll(gaeAuths);
 		for (GAEServerAuth auth : GAEClientConfiguration.getInstance()
@@ -59,6 +61,8 @@ public class ProxyConnectionManager
 			int size = auths.size();
 			logger.info("Success to connect " + size + " GAE server"
 			        + (size > 1 ? "s" : ""));
+			SharedObjectHelper.getTrace().info("Success to connect " + size + " GAE server"
+			        + (size > 1 ? "s" : ""));
 		}
 		seletor = new ListSelector<GAEServerAuth>(auths);
 		return true;
@@ -75,7 +79,7 @@ public class ProxyConnectionManager
 	}
 	
 	private boolean addProxyConnection(List<ProxyConnection> connlist,
-	        ProxyConnection connection)
+	        ProxyConnection connection, boolean allowAdd)
 	{
 		if (!connlist.isEmpty())
 		{
@@ -83,16 +87,20 @@ public class ProxyConnectionManager
 		}
 		else
 		{
-			if(!connection.auth())
+			if (!connection.auth())
 			{
 				return false;
 			}
 		}
-		connlist.add(connection);
+		if (allowAdd)
+		{
+			connlist.add(connection);
+		}
 		return true;
 	}
 	
-	public ProxyConnection getClientConnectionByAuth(GAEServerAuth auth)
+	public ProxyConnection getClientConnectionByAuth(GAEServerAuth auth,
+	        boolean storeConnection)
 	{
 		ProxyConnection connection = null;
 		List<ProxyConnection> connlist = conntionTable.get(auth.appid);
@@ -120,7 +128,7 @@ public class ProxyConnectionManager
 			case HTTPS:
 			{
 				connection = new HTTPProxyConnection(auth);
-				if(!addProxyConnection(connlist, connection))
+				if (!addProxyConnection(connlist, connection, storeConnection))
 				{
 					return null;
 				}
@@ -134,7 +142,8 @@ public class ProxyConnectionManager
 					try
 					{
 						connection = new XMPPProxyConnection(auth, account);
-						if(!addProxyConnection(connlist, connection))
+						if (!addProxyConnection(connlist, connection,
+						        storeConnection))
 						{
 							return null;
 						}
@@ -157,6 +166,11 @@ public class ProxyConnectionManager
 		return connection;
 	}
 	
+	public ProxyConnection getClientConnectionByAuth(GAEServerAuth auth)
+	{
+		return getClientConnectionByAuth(auth, true);
+	}
+	
 	public ProxyConnection getClientConnection(HTTPRequestEvent event)
 	{
 		String appid = null != event ? GAEClientConfiguration.getInstance()
@@ -173,9 +187,16 @@ public class ProxyConnectionManager
 		return getClientConnectionByAuth(auth);
 	}
 	
-	public void routine()
+	public void close()
 	{
-		
+		for (List<ProxyConnection> connlist : conntionTable.values())
+		{
+			for (ProxyConnection conn : connlist)
+			{
+				conn.close();
+			}
+		}
+		conntionTable.clear();
 	}
 	
 }

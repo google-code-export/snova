@@ -70,10 +70,10 @@ public class FetchServiceHandler
 		}
 		GAEServerConfiguration cfg = ServerConfigurationService
 		        .getServerConfig();
-		if (!cfg.isProxyEnable())
+		if (cfg.isMasterNode())
 		{
 			fillErrorResponse(errorResponse,
-			        "Proxy service is no enable by admin.");
+			        "Current snova node is master which provide none proxy service.");
 			return errorResponse;
 		}
 		Object[] attachment = (Object[]) req.getAttachment();

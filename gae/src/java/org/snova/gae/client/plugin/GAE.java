@@ -11,9 +11,9 @@ import org.arch.event.EventHandler;
 import org.arch.event.EventHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.snova.framework.plugin.GUIPlugin;
 import org.snova.framework.plugin.Plugin;
 import org.snova.framework.plugin.PluginContext;
+import org.snova.framework.shell.swing.GUIPlugin;
 import org.snova.gae.client.admin.GAEAdmin;
 import org.snova.gae.client.config.GAEClientConfiguration;
 import org.snova.gae.client.config.GAEClientConfiguration.GAEServerAuth;
@@ -25,11 +25,12 @@ import org.snova.gae.client.handler.ClientProxyEventHandler;
 import org.snova.gae.client.shell.swing.GAEConfigPanel;
 import org.snova.gae.client.shell.swing.GAEImageUtil;
 import org.snova.gae.common.GAEConstants;
+import org.snova.gae.common.event.AdminResponseEvent;
 import org.snova.gae.common.event.GAEEvents;
 import org.snova.gae.common.event.RequestSharedAppIDEvent;
 import org.snova.gae.common.event.RequestSharedAppIDResultEvent;
 
-public class GAE implements GUIPlugin
+public class GAE implements Plugin
 {
 	protected static Logger logger = LoggerFactory.getLogger(GAE.class);
 	ClientProxyEventHandler handler = new ClientProxyEventHandler();
@@ -50,12 +51,12 @@ public class GAE implements GUIPlugin
 			{
 				// try GoogleCN
 				info = new ProxyInfo();
-				info.host = GAEConstants.RESERVED_GOOGLECN_HOST_MAPPING;
+				info.host = GAEConstants.RESERVED_GOOGLECN_IP_MAPPING;
 				info.port = 80;
 				GAEClientConfiguration.getInstance().setLocalProxy(info);
 				return initProxyConnections(auths);
 			}
-			else if (info.host == GAEConstants.RESERVED_GOOGLECN_HOST_MAPPING)
+			else if (info.host == GAEConstants.RESERVED_GOOGLECN_IP_MAPPING)
 			{
 				// try GoogleHttps
 				info = new ProxyInfo();
@@ -106,6 +107,11 @@ public class GAE implements GUIPlugin
 							appids.add(s);
 						}
 					}
+					else if(header.type == GAEConstants.ADMIN_RESPONSE_EVENT_TYPE)
+					{
+						AdminResponseEvent ev = (AdminResponseEvent) event;
+						logger.error("Failed to get shared appid:" + ev.errorCause);
+					}
 					synchronized (appids)
 					{
 						appids.notify();
@@ -135,27 +141,7 @@ public class GAE implements GUIPlugin
 	{
 		ClientProxyEventHandler handler = new ClientProxyEventHandler();
 		GAEEvents.init(handler, false);
-		List<GAEServerAuth> auths = GAEClientConfiguration.getInstance()
-		        .getGAEServerAuths();
-		if (null == auths || auths.isEmpty())
-		{
-			List<String> appids = fetchSharedAppIDs();
-			if (null != appids && !appids.isEmpty())
-			{
-				List<GAEServerAuth> sharedAuths = new ArrayList<GAEServerAuth>();
-				for (String appid : appids)
-				{
-					GAEServerAuth auth = new GAEServerAuth();
-					auth.appid = appid;
-					auth.user = GAEConstants.ANONYMOUSE_NAME;
-					auth.passwd = GAEConstants.ANONYMOUSE_NAME;
-					sharedAuths.add(auth);
-				}
-				initProxyConnections(sharedAuths);
-				return;
-			}
-		}
-		initProxyConnections(auths);
+		
 	}
 
 	@Override
@@ -177,16 +163,34 @@ public class GAE implements GUIPlugin
 	}
 
 	@Override
-    public ImageIcon getIcon()
+    public void onStart() throws Exception
     {
-		 return GAEImageUtil.APPENGINE;
+		List<GAEServerAuth> auths = GAEClientConfiguration.getInstance()
+		        .getGAEServerAuths();
+		if (null == auths || auths.isEmpty())
+		{
+			List<String> appids = fetchSharedAppIDs();
+			if (null != appids && !appids.isEmpty())
+			{
+				List<GAEServerAuth> sharedAuths = new ArrayList<GAEServerAuth>();
+				for (String appid : appids)
+				{
+					GAEServerAuth auth = new GAEServerAuth();
+					auth.appid = appid;
+					auth.init();
+					sharedAuths.add(auth);
+				}
+				initProxyConnections(sharedAuths);
+				return;
+			}
+		}
+		initProxyConnections(auths);
+	    
     }
 
 	@Override
-    public JPanel getConfigPanel()
+    public void onStop() throws Exception
     {
-	    return panel;
+	    ProxyConnectionManager.getInstance().close();
     }
-	
-	private GAEConfigPanel panel =  new GAEConfigPanel();
 }

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <plugin name="GAE" version="0.10.1">
    <depend/>
-   <entryClass>org.snova.gae.client.plugin.GAE</entryClass>   
+   <entryClass>org.snova.gae.client.shell.swing.GUIPluginWrapper</entryClass>   
    <description>
       Default plugin, powered by Google AppEngine.
    </description>

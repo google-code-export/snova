@@ -12,6 +12,7 @@ GOFILES=\
 	fetch.go\
 	config.go\
 	common.go\
+	master.go\
 
 export GCIMPORTS=-I../codec/_obj -I../snappy/_obj -I../se/_obj -I../event/_obj -I$(APPENGINE_PKG)
 include $(GOROOT)/src/Make.pkg

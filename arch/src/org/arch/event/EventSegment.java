@@ -32,6 +32,7 @@ public class EventSegment extends Event implements Comparable<EventSegment>
 	        int k = buffer.read(b);
 	        if(k != len)
 	        {
+	        	System.out.println("############k = " + k + ", and len = " + len);
 	        	return false;
 	        }
 	        content = Buffer.wrapReadableContent(b);
@@ -40,7 +41,7 @@ public class EventSegment extends Event implements Comparable<EventSegment>
         {
 	        return false;
         }
-	    return false;
+	    return true;
     }
 
 	@Override

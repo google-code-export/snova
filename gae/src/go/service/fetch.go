@@ -21,9 +21,6 @@ func buildHTTPRequest(ev *event.HTTPRequestEvent) *http.Request {
 			req.Header.Add(header.Name, header.Value)
 		}
 	}
-	//if ev.Content.Len() > 0{
-	//  req.Body.Read(ev.Content.Bytes())
-	//}
 	return req
 }
 
@@ -53,8 +50,8 @@ func fillErrorResponse(ev *event.HTTPResponseEvent, cause string) {
 
 func Fetch(context appengine.Context, ev *event.HTTPRequestEvent) event.Event {
 	errorResponse := new(event.HTTPResponseEvent)
-	if ServerConfig.ProxyEnable == 0{
-	    fillErrorResponse(errorResponse, "Proxy service is no enable by admin.")
+	if ServerConfig.IsMaster == 1{
+	    fillErrorResponse(errorResponse, "Proxy service is no enable in snova master node.")
 		return errorResponse 
 	}
 	req := buildHTTPRequest(ev)

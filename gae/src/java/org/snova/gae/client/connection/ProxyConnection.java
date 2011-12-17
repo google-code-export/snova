@@ -267,6 +267,10 @@ public abstract class ProxyConnection
 			case Event.RESERVED_SEGMENT_EVENT_TYPE:
 			{
 				EventSegment segment = (EventSegment) ev;
+				if(logger.isDebugEnabled())
+				{
+					logger.debug("Recv a segment event[" + segment.sequence + ":" + segment.total + "]");
+				}
 				Buffer evntContent = GAEEventHelper.mergeEventSegment(segment,
 				        null);
 				if (null != evntContent)
@@ -288,6 +292,7 @@ public abstract class ProxyConnection
 			case GAEConstants.ADMIN_RESPONSE_EVENT_TYPE:
 			case GAEConstants.GROUOP_LIST_RESPONSE_EVENT_TYPE:
 			case GAEConstants.USER_LIST_RESPONSE_EVENT_TYPE:
+			case GAEConstants.REQUEST_SHARED_APPID_RESULT_EVENT_TYPE:
 			{
 				break;
 			}

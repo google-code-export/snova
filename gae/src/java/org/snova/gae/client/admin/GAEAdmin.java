@@ -14,6 +14,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.snova.framework.trace.TUITrace;
+import org.snova.framework.util.SharedObjectHelper;
 import org.snova.gae.client.admin.handler.AddGroup;
 import org.snova.gae.client.admin.handler.AddUser;
 import org.snova.gae.client.admin.handler.Blacklist;
@@ -27,6 +29,8 @@ import org.snova.gae.client.admin.handler.Exit;
 import org.snova.gae.client.admin.handler.Help;
 import org.snova.gae.client.admin.handler.ListGroups;
 import org.snova.gae.client.admin.handler.ListUsers;
+import org.snova.gae.client.admin.handler.ShareAppID;
+import org.snova.gae.client.admin.handler.UnShareAppID;
 import org.snova.gae.client.config.GAEClientConfiguration;
 import org.snova.gae.client.config.GAEClientConfiguration.GAEServerAuth;
 import org.snova.gae.client.connection.ProxyConnection;
@@ -98,8 +102,8 @@ public class GAEAdmin implements Runnable
 		handlers.put(DeleteGroup.COMMAND, new DeleteGroup(connection));
 		handlers.put(Blacklist.COMMAND, new Blacklist(connection));
 		handlers.put(ConfigServer.COMMAND, new ConfigServer(connection));
-//		handlers.put(Traffic.COMMAND, new Traffic());
-//		handlers.put(Stat.COMMAND, new Stat(userInfo));
+		handlers.put(UnShareAppID.COMMAND, new UnShareAppID(connection));
+		handlers.put(ShareAppID.COMMAND, new ShareAppID(connection));
 		handlers.put(Help.COMMAND, new Help());
 	}
 
@@ -121,12 +125,13 @@ public class GAEAdmin implements Runnable
 			GAEClientConfiguration.getInstance().setGAEServerAuths(Arrays.asList(auth));
 			GAEClientConfiguration.getInstance().setCompressorType(CompressorType.NONE);
 			GAEClientConfiguration.getInstance().setEncrypterType(EncryptType.NONE);
+			
 			if(!GAE.initProxyConnections(Arrays.asList(auth)))
 			{
 				GAEAdmin.exit("");
 			}
 
-			connection = ProxyConnectionManager.getInstance().getClientConnectionByAuth(null);
+			connection = ProxyConnectionManager.getInstance().getClientConnection(null);
 			this.userInfo = new User();
 			userInfo.setEmail(user);
 			userInfo.setPasswd(passwd);

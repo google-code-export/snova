@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Configure>
-    <MasterNode appid="snova-master"/>
-    
-    <WorkerNode appid="hykserver" backendEnable="false"/>
+    <WorkerNode appid="" />
     <!-- Can config more than 1 hyk-proxy-server -->
     <!-- <WorkerNode appid="" user="" passwd=""  backendEnable="false"/> -->
     
@@ -29,7 +27,7 @@
 	<!--Can choose from SE1/None -->
 	<Encrypter>SE1</Encrypter>
 	<ConnectionPoolSize>7</ConnectionPoolSize>
-	<FetchLimitSize>250000</FetchLimitSize>
+	<FetchLimitSize>512000</FetchLimitSize>
 	<!-- for big file(>=1m) & video -->
 	<ConcurrentRangeFetchWorker>3</ConcurrentRangeFetchWorker>
 

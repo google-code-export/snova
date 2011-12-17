@@ -28,10 +28,11 @@ const (
 	USER_LIST_RESPONSE_EVENT_TYPE          = 2014
 	GROUOP_LIST_RESPONSE_EVENT_TYPE        = 2015
 	BLACKLIST_OPERATION_EVENT_TYPE         = 2016
-	REQUEST_SHARED_APPID_EVENT_TYPE        = 2017
-	REQUEST_SHARED_APPID_RESULT_EVENT_TYPE = 2018
 	ADMIN_RESPONSE_EVENT_TYPE              = 2020
 	SERVER_CONFIG_EVENT_TYPE               = 2050
+	REQUEST_SHARED_APPID_EVENT_TYPE        = 2017
+	REQUEST_SHARED_APPID_RESULT_EVENT_TYPE = 2018
+	SHARE_APPID_EVENT_TYPE                 = 2019
 )
 
 const (
@@ -298,13 +299,9 @@ func (msg *HTTPMessageEvent) GetHeader(name string) string {
 func (msg *HTTPMessageEvent) DoEncode(buffer *bytes.Buffer) bool {
 	var slen int = msg.Headers.Len()
 	codec.WriteUvarint(buffer, uint64(slen))
-	//fmt.Printf("#######headers=%d\n",slen)
 	for i := 0; i < slen; i++ {
-	    //fmt.Printf("#######Type=%T\n", msg.Headers.At(i))
 		header, ok := (msg.Headers.At(i)).(*NameValuePair)
 		if ok {
-		    //fmt.Printf("#######Name=%s\n", header.Name)
-			//fmt.Printf("#######Value=%s\n", header.Value)
 			codec.WriteVarString(buffer, header.Name)
 			codec.WriteVarString(buffer, header.Value)
 		}
@@ -421,7 +418,7 @@ type SegmentEvent struct {
 func (seg *SegmentEvent) Encode(buffer *bytes.Buffer) bool {
 	codec.WriteUvarint(buffer, uint64(seg.Sequence))
 	codec.WriteUvarint(buffer, uint64(seg.Total))
-	buffer.Write(seg.Content.Bytes())
+	codec.WriteVarBytes(buffer, seg.Content.Bytes())
 	return true
 }
 func (seg *SegmentEvent) Decode(buffer *bytes.Buffer) bool {
@@ -666,19 +663,20 @@ type ServerConfigEvent struct {
 }
 
 func (ev *ServerConfigEvent) Encode(buffer *bytes.Buffer) bool {
-	ev.Cfg.Encode(buffer)
 	codec.WriteUvarint(buffer, uint64(ev.Operation))
+	ev.Cfg.Encode(buffer)
 	return true
 }
 func (ev *ServerConfigEvent) Decode(buffer *bytes.Buffer) bool {
-    ev.Cfg = new(GAEServerConfig)
-	if !ev.Cfg.Decode(buffer) {
-		return false
-	}
-	tmp, err := codec.ReadUvarint(buffer)
+    tmp, err := codec.ReadUvarint(buffer)
 	if err != nil {
 		return false
 	}
+	ev.Cfg = new(GAEServerConfig)
+	if !ev.Cfg.Decode(buffer) {
+		return false
+	}
+	
 	ev.Operation = uint32(tmp)
 	return true
 }
@@ -846,5 +844,108 @@ func (ev *BlackListOperationEvent) GetType() uint32 {
 	return BLACKLIST_OPERATION_EVENT_TYPE
 }
 func (ev *BlackListOperationEvent) GetVersion() uint32 {
+	return 1
+}
+
+const (
+	APPID_SHARE uint32 = 0
+	APPID_UNSHARE  uint32 = 1
+)
+
+type ShareAppIDEvent struct{
+    Operation uint32
+	AppId string
+	Email string
+	HashField
+	Attachement
+}
+
+func (ev *ShareAppIDEvent) Encode(buffer *bytes.Buffer) bool {
+	codec.WriteUvarint(buffer, uint64(ev.Operation))
+	codec.WriteVarString(buffer, ev.AppId)
+	codec.WriteVarString(buffer, ev.Email)
+	return true
+}
+func (ev *ShareAppIDEvent) Decode(buffer *bytes.Buffer) bool {
+	tmp, err := codec.ReadUvarint(buffer)
+	if err != nil {
+		return false
+	}
+	ev.Operation = uint32(tmp)
+	var ok bool
+	ev.AppId, ok = codec.ReadVarString(buffer)
+	if !ok {
+		return false
+	}
+	ev.Email, ok = codec.ReadVarString(buffer)
+	if !ok {
+		return false
+	}
+	return true
+}
+
+func (ev *ShareAppIDEvent) GetType() uint32 {
+	return SHARE_APPID_EVENT_TYPE
+}
+func (ev *ShareAppIDEvent) GetVersion() uint32 {
+	return 1
+}
+
+type RequestAppIDEvent struct{
+	HashField
+	Attachement
+}
+
+func (ev *RequestAppIDEvent) Encode(buffer *bytes.Buffer) bool {
+	return true
+}
+func (ev *RequestAppIDEvent) Decode(buffer *bytes.Buffer) bool {
+	return true
+}
+
+func (ev *RequestAppIDEvent) GetType() uint32 {
+	return REQUEST_SHARED_APPID_EVENT_TYPE
+}
+func (ev *RequestAppIDEvent) GetVersion() uint32 {
+	return 1
+}
+
+type RequestAppIDResponseEvent struct{
+    AppIDs []string
+	HashField
+	Attachement
+}
+
+func (ev *RequestAppIDResponseEvent) Encode(buffer *bytes.Buffer) bool {
+    if nil == ev.AppIDs{
+	   codec.WriteUvarint(buffer, 0)
+	   return true;
+    }
+    codec.WriteUvarint(buffer, uint64(len(ev.AppIDs)))
+	for _,appid:= range ev.AppIDs{
+	   codec.WriteVarString(buffer, appid)
+	}
+	return true
+}
+func (ev *RequestAppIDResponseEvent) Decode(buffer *bytes.Buffer) bool {
+	tmp, err := codec.ReadUvarint(buffer)
+	if err != nil {
+		return false
+	}
+	ev.AppIDs = make([]string, int(tmp))
+	var ok bool
+	for i:=0 ; i< int(tmp);i++{
+	   ev.AppIDs[i], ok = codec.ReadVarString(buffer)
+	   if !ok {
+		  return false
+	   }
+	}
+	return true
+}
+
+func (ev *RequestAppIDResponseEvent) GetType() uint32 {
+	return REQUEST_SHARED_APPID_RESULT_EVENT_TYPE
+}
+func (ev *RequestAppIDResponseEvent) GetVersion() uint32 {
 	return 1
 }
