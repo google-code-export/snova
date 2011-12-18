@@ -1,8 +1,6 @@
 
 ##Third proxy client
 $TOR="127.0.0.1:9050";
-$PUFF="127.0.0.1:1984";
-$APJP="127.0.0.1:10000";
 $SSHD="socks5:127.0.0.1:7070";
 
 ##Reserved proxy implementation
@@ -16,12 +14,12 @@ $SELECTED1=$GAE;
 $SELECTED2=$SEATTLE;
 $SELECTED3=$PHP;
 
-def onInit()
+def OnInit()
 {
   ##Do your business
 }
 
-def onRoutine()
+def OnRoutine()
 {
    #Do your routine business here
    #eg: $output=system("./mysh.sh");
@@ -30,7 +28,7 @@ def onRoutine()
    return 10;
 }
 
-def firstSelectProxy(protocol, method, url, headers)
+def SelectProxy(protocol, method, url, headers)
 {
      #Set your https proxy here
      if $protocol=="https"
