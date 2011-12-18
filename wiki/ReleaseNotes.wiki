@@ -1,0 +1,13 @@
+#summary Snova Release Notes
+#labels Featured
+
+_You can download the latest version of the Snova [http://code.google.com/p/snova/downloads/list here]
+
+Snova - Release Notes
+===Version 0.11.1111 - (2011.11.11--2011.12.18)===
+ * Go/Java实现的GAE server端.
+ * Snappy压缩支持.
+ * 插件体系.
+ * 用户鉴权支持.
+ * AppID共享.
+ * 简单的GUI shell. 
