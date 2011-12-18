@@ -3,13 +3,17 @@
  */
 package org.snova.spac.plugin;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+
+import org.antlr.runtime.RecognitionException;
 import org.arch.event.EventDispatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.framework.plugin.Plugin;
 import org.snova.framework.plugin.PluginContext;
 import org.snova.spac.handler.SpacProxyEventHandler;
-import org.snova.spac.handler.forward.DirectProxyEventHandler;
 import org.snova.spac.script.CSLApiImpl;
 import org.snova.spac.script.Commands;
 import org.tykedog.csl.interpreter.CSL;
@@ -21,18 +25,26 @@ import org.tykedog.csl.interpreter.CSL;
 public class SPAC implements Plugin
 {
 	protected static Logger logger = LoggerFactory.getLogger(SPAC.class);
+	protected long tstamp = -1;
 
 	@Override
 	public void onLoad(PluginContext context) throws Exception
 	{
 
 	}
-
-	@Override
-	public void onActive(PluginContext context) throws Exception
+	
+	private CSL reloadCSL() throws IOException, RecognitionException
 	{
+		String file = getClass().getResource("/spac.csl").getFile();
+		File f = new File(file);
+		long tmp = f.lastModified();
+		if(tmp != tstamp)
+		{
+			tstamp = tmp;
+		}
+		InputStream is = getClass().getResourceAsStream("/spac.csl");
 		CSL csl = CSL.Builder
-		        .build(getClass().getResourceAsStream("/spac.csl"));
+		        .build(is);
 		csl.setCalculator(new CSLApiImpl());
 		csl.setComparator(new CSLApiImpl());
 		csl.addFunction(Commands.INT);
@@ -41,10 +53,18 @@ public class SPAC implements Plugin
 		csl.addFunction(Commands.GETRESCODE);
 		csl.addFunction(Commands.SYSTEM);
 		csl.addFunction(Commands.LOG);
-		EventDispatcher.getSingletonInstance().registerNamedEventHandler(new SpacProxyEventHandler());
-		EventDispatcher.getSingletonInstance().registerNamedEventHandler(new DirectProxyEventHandler());
+		is.close();
+		return csl;
+	}
 
-		final CSL tmp = csl;
+	@Override
+	public void onActive(PluginContext context) throws Exception
+	{
+		
+		final SpacProxyEventHandler handler = new SpacProxyEventHandler();
+		EventDispatcher.getSingletonInstance().registerNamedEventHandler(handler);
+
+		final CSL tmp = reloadCSL();
 		try
 		{
 			tmp.invoke("onInit", null);
@@ -64,6 +84,8 @@ public class SPAC implements Plugin
 					try
 					{
 						Thread.sleep(waittime);
+						CSL csl = reloadCSL();
+						handler.setScriptEngine(csl);
 						Integer nextwait = (Integer) tmp.invoke("onRoutine",
 						        null);
 						waittime = nextwait.longValue();

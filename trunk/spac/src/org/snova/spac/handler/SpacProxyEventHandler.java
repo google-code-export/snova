@@ -14,30 +14,39 @@ import org.arch.event.EventHeader;
 import org.arch.event.NamedEventHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-
+import org.snova.spac.handler.session.SessionManager;
+import org.tykedog.csl.interpreter.CSL;
 
 /**
  *
  */
 public class SpacProxyEventHandler implements NamedEventHandler
 {
-	protected Logger logger = LoggerFactory.getLogger(getClass());
+	protected Logger	logger	    = LoggerFactory.getLogger(getClass());
+	
+	private SessionManager	 sessionManager	= new SessionManager();
+	private CSL scriptEngine;
 
+	public void setScriptEngine(CSL scriptEngine)
+    {
+		if(this.scriptEngine != scriptEngine)
+		{
+			this.scriptEngine = scriptEngine;
+			sessionManager.setScriptEngine(this.scriptEngine);
+		}
+    }
 
+	@Override
+	public void onEvent(EventHeader header, Event event)
+	{
+		sessionManager.handleEvent(header, event);
+	}
 	
 	@Override
-    public void onEvent(EventHeader header, Event event)
-    {
-	    // TODO Auto-generated method stub
-	    
-    }
-
-	@Override
-    public String getName()
-    {
-	    // TODO Auto-generated method stub
-	    return "SPAC";
-    }
-
+	public String getName()
+	{
+		// TODO Auto-generated method stub
+		return "SPAC";
+	}
+	
 }

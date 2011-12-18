@@ -1,9 +1,9 @@
 spac plugin  Read Me
-http://hyk-proxy.googlecode.com 
+http://snova.googlecode.com 
 
-This file is part of hyk-proxy.                                   
+This file is part of snova.                                   
                                                                   
-hyk-proxy is free software: you can redistribute it and/or modify 
+snova is free software: you can redistribute it and/or modify 
 it under the terms of the GNU General Public License as           
 published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.                   
@@ -18,13 +18,12 @@ along with hyk-proxy(client & server & plugin).  If not, see <http://www.gnu.org
 
 Dependencies
 ------------
-You need to install hyk-proxy framework first.
+You need to install snova framework first.
 
 INSTALL:
 For GUI:
   Click tab penel 'Plugins', you can find a way to install it online.
 For CLI:
-  1. Download hyk-proxy-spac-[version].zip in <hyk-proxy>/plugins
-  2. Unzip the downloaded package
-  3. Restart hyk-proxy
+  1. Download snova-spac-[version].zip in <snova>/plugins
+  3. Restart snova
  

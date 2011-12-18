@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 
-<project name="hyk-proxy-spac" default="release">
+<project name="snova-spac" default="release">
 	<property name="root" value="." />
 		<property name="srcroot" value="${root}/src" />
 		<property name="releasedir" value="${root}/release" />
@@ -11,13 +11,13 @@
 		<property name="lib" value="${root}/lib" />
 		<property name="etc" value="${root}/etc" />
 		<property name="release" value="release" />
-		<property name="version" value="0.5.0" />
+		<property name="version" value="0.11.1218" />
 	    <property name="release_dir_name" value="spac" />
-		<property name="project_name" value="hyk-proxy-spac" />
+		<property name="project_name" value="snova-spac" />
 
 		<target name="prepare">
 			<mkdir dir="${classes}"/>
-			<copy todir="${lib}" file="${root}/../core/lib/core.jar" />
+			<copy todir="${lib}" file="${root}/../framework/lib/framework.jar" />
 		</target>
 
 		<target name="compile" depends="prepare">
