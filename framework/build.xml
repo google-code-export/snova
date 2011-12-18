@@ -14,7 +14,7 @@
 	<property name="docs" value="${root}/docs" />
 	<property name="shell" value="${root}/shell" />
 	<property name="release" value="release" />
-	<property name="version" value="0.10.1" />
+	<property name="version" value="0.11.1111" />
 	<property name="versionfile" value="org/snova/framework/common/Version.java" />
 	<property name="project_name" value="snova" />
 	<property name="releasename" value="${project_name}-${version}"/>
@@ -83,7 +83,7 @@
 			<fileset dir="${shell}" />
 		</copy>
 		
-		<unzip dest="${binreleasedir}/plugins" src="../gae/snova-gae-0.10.1.zip"/>
+		<unzip dest="${binreleasedir}/plugins" src="../gae/snova-gae-0.11.1111.zip"/>
 
 		<copy todir="${binreleasedir}" file="${root}/readme.txt" />
 		<copy todir="${binreleasedir}" file="${root}/changelog.txt" />

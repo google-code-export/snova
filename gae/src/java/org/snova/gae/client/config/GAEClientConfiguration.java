@@ -384,35 +384,90 @@ public class GAEClientConfiguration
 		return connectionPoolSize;
 	}
 
-	private String injectRangeHeaderSites;
-	private List<String> injectRangeHeaderSiteSet = new LinkedList<String>();
+	//private String injectRangeHeaderSites;
+	//private List<String> injectRangeHeaderSiteSet = new LinkedList<String>();
 
-	@XmlElement(name = "InjectRangeHeaderSites")
-	void setInjectRangeHeaderSites(String injectRangeHeaderSites)
+	static class InjectRangeHeaderMatcher
 	{
-		this.injectRangeHeaderSites = injectRangeHeaderSites;
-		String[] sites = injectRangeHeaderSites.split(";");
-		for (String s : sites)
+		@XmlElements(@XmlElement(name = "Site"))
+		List<String> sites;
+		@XmlElements(@XmlElement(name = "URL"))
+		List<String> urls;
+		
+		@XmlTransient
+		List<String> injectRangeHeaderSiteSet = new LinkedList<String>();
+		@XmlTransient
+		List<String> injectRangeHeaderURLSet = new LinkedList<String>();
+		
+		void init()
 		{
-			injectRangeHeaderSiteSet.add(s.trim());
-		}
-	}
-
-	String getInjectRangeHeaderSites()
-	{
-		return injectRangeHeaderSites;
-	}
-
-	public boolean isInjectRangeHeaderSitesMatchHost(String host)
-	{
-		for (String site : injectRangeHeaderSiteSet)
-		{
-			if (!site.isEmpty() && host.indexOf(site) != -1)
+			if(null != sites)
 			{
-				return true;
+				for(String s:sites)
+				{
+					String[] ss = s.split("[,|;|\\|]");
+					for(String k:ss)
+					{
+						if(!k.trim().isEmpty())
+						{
+							injectRangeHeaderSiteSet.add(k.trim());
+						}		
+					}
+				}
+			}
+			if(null != urls)
+			{
+				for(String s:urls)
+				{
+					String[] ss = s.split("[,|;|\\|]");
+					for(String k:ss)
+					{
+						if(!k.trim().isEmpty())
+						{
+							injectRangeHeaderURLSet.add(k.trim());
+						}		
+					}
+				}
 			}
 		}
-		return false;
+		boolean siteMatched(String host)
+		{
+			for (String site : injectRangeHeaderSiteSet)
+			{
+				if (!site.isEmpty() && host.indexOf(site) != -1)
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+		boolean urlMatched(String url)
+		{
+			for (String site : injectRangeHeaderURLSet)
+			{
+				if (!site.isEmpty() && url.indexOf(site) != -1)
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+	}
+	@XmlElement(name = "InjectRangeHeader")
+	InjectRangeHeaderMatcher rangeMatcher;
+
+//	String getInjectRangeHeaderSites()
+//	{
+//		return injectRangeHeaderSites;
+//	}
+
+	public boolean isInjectRangeHeaderSiteMatched(String host)
+	{
+		return rangeMatcher.siteMatched(host);
+	}
+	public boolean isInjectRangeHeaderURLMatched(String url)
+	{
+		return rangeMatcher.urlMatched(url);
 	}
 
 	private int fetchLimitSize;
@@ -524,10 +579,12 @@ public class GAEClientConfiguration
 		
 		if(null == masterNode || masterNode.appid == null)
 		{
+			boolean backendEnable = null != masterNode?masterNode.backendEnable:false;
 			masterNode = new MasterNode();
 			masterNode.appid = GAEConstants.SNOVA_MASTER_APPID;
-			masterNode.backendEnable = false;
+			masterNode.backendEnable = backendEnable;
 		}
+		rangeMatcher.init();
 	}
 
 	static class GoogleProxyChain

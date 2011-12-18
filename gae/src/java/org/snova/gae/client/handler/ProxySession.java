@@ -54,39 +54,39 @@ import org.snova.gae.common.http.SetCookieHeaderValue;
  */
 public class ProxySession
 {
-	protected static Logger logger = LoggerFactory
-	        .getLogger(ProxySession.class);
-	private ProxyConnectionManager connectionManager = ProxyConnectionManager
-	        .getInstance();
-	private ProxyConnection connection = null;
-
-	private Integer sessionID;
-	private Channel localHTTPChannel;
-	private HTTPRequestEvent proxyEvent;
-	private boolean isHttps;
-	private String httpspath;
-	private ProxySessionStatus status = ProxySessionStatus.INITED;
-
-	private Map<Long, Buffer> rangeFetchContents = new HashMap<Long, Buffer>();
-	private boolean isOriginalContainsRangeHeader = false;
-	private long waitingWriteStreamPos = -1;
-	private long waitingFetchStreamPos = 0;
-	private Buffer uploadBuffer = new Buffer(0);
-
-	private RangeChunkedInput rangeChunk = null;
-
+	protected static Logger	       logger	                     = LoggerFactory
+	                                                                     .getLogger(ProxySession.class);
+	private ProxyConnectionManager	connectionManager	         = ProxyConnectionManager
+	                                                                     .getInstance();
+	private ProxyConnection	       connection	                 = null;
+	
+	private Integer	               sessionID;
+	private Channel	               localHTTPChannel;
+	private HTTPRequestEvent	   proxyEvent;
+	private boolean	               isHttps;
+	private String	               httpspath;
+	private ProxySessionStatus	   status	                     = ProxySessionStatus.INITED;
+	
+	private Map<Long, Buffer>	   rangeFetchContents	         = new HashMap<Long, Buffer>();
+	private boolean	               isOriginalContainsRangeHeader	= false;
+	private long	               waitingWriteStreamPos	     = -1;
+	private long	               waitingFetchStreamPos	     = 0;
+	private Buffer	               uploadBuffer	                 = new Buffer(0);
+	
+	private RangeChunkedInput	   rangeChunk	                 = null;
+	
 	// private Map<Long, ScheduledFuture> rangeRetryTaskTable;
-
+	
 	class RangeChunkedInput implements ChunkedInput
 	{
-		private LinkedList<ChannelBuffer> bufList = new LinkedList<ChannelBuffer>();
-
+		private LinkedList<ChannelBuffer>	bufList	= new LinkedList<ChannelBuffer>();
+		
 		@Override
 		public boolean hasNextChunk() throws Exception
 		{
 			return waitingWriteStreamPos >= 0;
 		}
-
+		
 		public void offer(ChannelBuffer buf)
 		{
 			synchronized (bufList)
@@ -95,7 +95,7 @@ public class ProxySession
 				bufList.notify();
 			}
 		}
-
+		
 		@Override
 		public Object nextChunk() throws Exception
 		{
@@ -112,7 +112,7 @@ public class ProxySession
 				return bufList.removeFirst();
 			}
 		}
-
+		
 		@Override
 		public void close() throws Exception
 		{
@@ -122,18 +122,18 @@ public class ProxySession
 			}
 		}
 	}
-
+	
 	public ProxySession(Integer id, Channel localChannel)
 	{
 		this.sessionID = id;
 		this.localHTTPChannel = localChannel;
 	}
-
+	
 	public ProxySessionStatus getStatus()
 	{
 		return status;
 	}
-
+	
 	private RangeChunkedInput getRangeChunkedInput()
 	{
 		if (null == rangeChunk)
@@ -142,7 +142,7 @@ public class ProxySession
 		}
 		return rangeChunk;
 	}
-
+	
 	// private void saveRangeRetryTask(ScheduledFuture future, RangeHeaderValue
 	// v)
 	// {
@@ -166,7 +166,7 @@ public class ProxySession
 	// }
 	//
 	// }
-
+	
 	// private void cancelAllRangeRetryTask()
 	// {
 	// if (null != rangeRetryTaskTable)
@@ -177,7 +177,7 @@ public class ProxySession
 	// }
 	// }
 	// }
-
+	
 	private HTTPRequestEvent cloneHeaders(HTTPRequestEvent event)
 	{
 		HTTPRequestEvent newEvent = new HTTPRequestEvent();
@@ -190,12 +190,12 @@ public class ProxySession
 		}
 		return newEvent;
 	}
-
+	
 	public Integer getSessionID()
 	{
 		return sessionID;
 	}
-
+	
 	private ProxyConnection getClientConnection(HTTPRequestEvent event)
 	{
 		if (null == connection)
@@ -204,12 +204,12 @@ public class ProxySession
 		}
 		return connection;
 	}
-
+	
 	private ProxyConnection getConcurrentClientConnection(HTTPRequestEvent event)
 	{
 		return connectionManager.getClientConnection(event);
 	}
-
+	
 	private boolean rangeFetch(RangeHeaderValue originRange, long limitSize,
 	        int wokerNum)
 	{
@@ -275,13 +275,13 @@ public class ProxySession
 					getConcurrentClientConnection(newEvent).send(newEvent);
 				}
 			});
-
+			
 			if (-1 == waitingWriteStreamPos)
 			{
 				waitingWriteStreamPos = begin;
 			}
 			waitingFetchStreamPos = start;
-
+			
 		}
 		if (waitingWriteStreamPos >= limit)
 		{
@@ -291,7 +291,7 @@ public class ProxySession
 		}
 		return true;
 	}
-
+	
 	private synchronized void handleMultiRangeFetchResponse(HTTPResponseEvent ev)
 	{
 		String contentRangeValue = ev
@@ -302,9 +302,9 @@ public class ProxySession
 		}
 		if (null == contentRangeValue)
 		{
-			logger.error("No content range header in response:" + ev);
 			if (ev.statusCode >= 400)
 			{
+				logger.error("No content range header in response:" + ev);
 				close(null);
 			}
 			if (ev.statusCode == 302)
@@ -316,7 +316,11 @@ public class ProxySession
 					proxyEvent.url = location;
 					proxyEvent.setHeader("Range", xrange);
 					getConcurrentClientConnection(proxyEvent).send(proxyEvent);
-					logger.info("Redirect in multi range fetching.");
+					if (logger.isDebugEnabled())
+					{
+						logger.debug("Redirect in multi range fetching.");
+					}
+					
 				}
 			}
 			return;
@@ -356,7 +360,7 @@ public class ProxySession
 		}
 		rangeFetch(range, contentRange.getInstanceLength(), 1);
 	}
-
+	
 	private HttpResponse buildHttpResponse(HTTPResponseEvent ev, HttpChunk chunk)
 	{
 		if (null == ev)
@@ -364,7 +368,7 @@ public class ProxySession
 			return new DefaultHttpResponse(HttpVersion.HTTP_1_1,
 			        HttpResponseStatus.REQUEST_TIMEOUT);
 		}
-
+		
 		int status = ev.statusCode;
 		if (!isOriginalContainsRangeHeader
 		        && HttpResponseStatus.PARTIAL_CONTENT.getCode() == status)
@@ -373,7 +377,7 @@ public class ProxySession
 		}
 		HttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1,
 		        HttpResponseStatus.valueOf(status));
-
+		
 		List<KeyValuePair<String, String>> headers = ev.getHeaders();
 		for (KeyValuePair<String, String> header : headers)
 		{
@@ -390,7 +394,10 @@ public class ProxySession
 			}
 			else
 			{
-				if (null != header.getValue() && null != header.getName())
+				if (null != header.getValue()
+				        && null != header.getName()
+				        && !header.getName().equals(
+				                HttpHeaders.Names.CONTENT_LENGTH))
 				{
 					response.addHeader(header.getName(), header.getValue());
 				}
@@ -437,7 +444,7 @@ public class ProxySession
 			response.setHeader(HttpHeaders.Names.CONTENT_LENGTH, ""
 			        + ev.content.readableBytes());
 		}
-
+		
 		if (ev.content.readable())
 		{
 			ChannelBuffer bufer = ChannelBuffers.wrappedBuffer(
@@ -448,7 +455,7 @@ public class ProxySession
 		}
 		return response;
 	}
-
+	
 	private void handleNormalFetchResponse(HTTPResponseEvent ev)
 	{
 		ContentRangeHeaderValue contentRange = null;
@@ -491,14 +498,14 @@ public class ProxySession
 					localHTTPChannel.write(getRangeChunkedInput());
 				}
 			});
-
+			
 		}
 		else
 		{
 			status = ProxySessionStatus.SESSION_COMPLETED;
 		}
 	}
-
+	
 	private void handleRangeUploadResponse(HTTPResponseEvent ev)
 	{
 		ContentRangeHeaderValue contentRange = null;
@@ -540,7 +547,7 @@ public class ProxySession
 			}
 		}
 	}
-
+	
 	public void handleResponse(Event res)
 	{
 		if (res instanceof HTTPResponseEvent)
@@ -588,7 +595,7 @@ public class ProxySession
 			close(null);
 		}
 	}
-
+	
 	private void handleConnect(HTTPRequestEvent event)
 	{
 		isHttps = true;
@@ -629,18 +636,18 @@ public class ProxySession
 				{
 					InetSocketAddress remote = (InetSocketAddress) localHTTPChannel
 					        .getRemoteAddress();
-
+					
 					SSLEngine engine = sslContext.createSSLEngine(remote
 					        .getAddress().getHostAddress(), remote.getPort());
 					engine.setUseClientMode(false);
 					localHTTPChannel.getPipeline().addBefore("decoder", "ssl",
 					        new SslHandler(engine));
 				}
-
+				
 			}
 		});
 	}
-
+	
 	private void adjustEvent(HTTPRequestEvent event)
 	{
 		StringBuffer urlbuffer = new StringBuffer();
@@ -656,10 +663,10 @@ public class ProxySession
 				        event.getHeader(HttpHeaders.Names.HOST));
 			}
 		}
-
+		
 		urlbuffer.append(event.url);
 		event.url = urlbuffer.toString();
-
+		
 		proxyEvent = event;
 		isOriginalContainsRangeHeader = proxyEvent
 		        .containsHeader(HttpHeaders.Names.RANGE);
@@ -676,9 +683,10 @@ public class ProxySession
 		}
 		else
 		{
-			if (GAEClientConfiguration.getInstance()
-			        .isInjectRangeHeaderSitesMatchHost(
-			                proxyEvent.getHeader(HttpHeaders.Names.HOST)))
+			GAEClientConfiguration cfg = GAEClientConfiguration.getInstance();
+			if (cfg.isInjectRangeHeaderSiteMatched(proxyEvent
+			        .getHeader(HttpHeaders.Names.HOST))
+			        || cfg.isInjectRangeHeaderURLMatched(event.url))
 			{
 				if (logger.isDebugEnabled())
 				{
@@ -690,9 +698,9 @@ public class ProxySession
 				        new RangeHeaderValue(0, fetchSizeLimit - 1).toString());
 			}
 		}
-
+		
 	}
-
+	
 	protected boolean isProxyRequestReady(HTTPRequestEvent event)
 	{
 		int contentLength = event.getContentLength();
@@ -702,7 +710,7 @@ public class ProxySession
 		}
 		return true;
 	}
-
+	
 	public void handle(HTTPRequestEvent event)
 	{
 		if (event.method.equalsIgnoreCase(HttpMethod.CONNECT.getName()))
@@ -719,7 +727,7 @@ public class ProxySession
 			}
 		}
 	}
-
+	
 	private void completeProxyRequest(Buffer buffer)
 	{
 		int length = proxyEvent.getContentLength();
@@ -739,12 +747,12 @@ public class ProxySession
 			status = ProxySessionStatus.WATING_RANGE_UPLOAD_RESPONSE;
 		}
 	}
-
+	
 	private void completeProxyRequest(HTTPChunkEvent event)
 	{
 		completeProxyRequest(Buffer.wrapReadableContent(event.content));
 	}
-
+	
 	public void handle(HTTPChunkEvent event)
 	{
 		if (!isProxyRequestReady(proxyEvent))
@@ -756,7 +764,7 @@ public class ProxySession
 			uploadBuffer.write(event.content);
 		}
 	}
-
+	
 	public void close(HttpResponse res)
 	{
 		waitingWriteStreamPos = -1;
@@ -789,7 +797,7 @@ public class ProxySession
 						logger.error("Send fake 408 to browser since session closed while no response sent.");
 					}
 					localHTTPChannel.write(res);
-
+					
 				}
 				break;
 			}

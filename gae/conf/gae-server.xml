@@ -15,7 +15,7 @@
 
 	<MaxXMPPDataPackageSize>40960</MaxXMPPDataPackageSize>
 	<FetchRetryCount>1</FetchRetryCount>
-	<RangeFetchLimit>262144</RangeFetchLimit>
+	<RangeFetchLimit>512000</RangeFetchLimit>
 	<Compressor>Snappy</Compressor>
 	<Encrypter>SE1</Encrypter>
 	<IsMaster>false</IsMaster>

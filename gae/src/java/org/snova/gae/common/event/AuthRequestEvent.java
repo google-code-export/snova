@@ -20,6 +20,10 @@ import org.snova.gae.common.GAEConstants;
 @EventVersion(1)
 public class AuthRequestEvent extends Event
 {
+	public static final int AUTH_SUCCESS = 1;
+	public static final int AUTH_FAIELD = -1;
+	public static final int AUTH_TRANSPORT_FAILED = -2;
+	
 	public String appid;
 	public String user;
 	public String passwd;

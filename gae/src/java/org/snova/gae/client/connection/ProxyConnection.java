@@ -92,15 +92,16 @@ public abstract class ProxyConnection
 	{
 		doClose();
 		closeRelevantSessions(null);
-		authTokenLock.set(-1);
+		authTokenLock.set(AuthRequestEvent.AUTH_TRANSPORT_FAILED);
 		setAuthToken((AuthResponseEvent) null);
 	}
 	
-	public boolean auth()
+	public int auth()
 	{
 		if (null != authToken)
 		{
-			return true;
+			authTokenLock.set(AuthRequestEvent.AUTH_SUCCESS);
+			return AuthRequestEvent.AUTH_SUCCESS;
 		}
 		AuthRequestEvent event = new AuthRequestEvent();
 		event.appid = auth.appid.trim();
@@ -111,7 +112,9 @@ public abstract class ProxyConnection
 		authTokenLock.set(0);
 		if (!send(event))
 		{
-			return false;
+			logger.error("Failed to send auth request event.");
+			authTokenLock.set(AuthRequestEvent.AUTH_TRANSPORT_FAILED);
+			return AuthRequestEvent.AUTH_TRANSPORT_FAILED;
 		}
 		synchronized (authTokenLock)
 		{
@@ -124,10 +127,20 @@ public abstract class ProxyConnection
 			}
 			catch (InterruptedException e)
 			{
-				return false;
+				authTokenLock.set(AuthRequestEvent.AUTH_FAIELD);
+				return AuthRequestEvent.AUTH_FAIELD;
 			}
 		}
-		return authToken != null && !authToken.isEmpty();
+		if(authToken != null && !authToken.isEmpty())
+		{
+			return AuthRequestEvent.AUTH_SUCCESS;
+		}
+		return getAuthResultCode();
+	}
+	
+	public int getAuthResultCode()
+	{
+		return  authTokenLock.get();
 	}
 	
 	public String getAuthToken()
@@ -183,7 +196,11 @@ public abstract class ProxyConnection
 				        + " queue session[" + attach.second + "] event:");
 				logger.debug(event.toString());
 			}
-			queuedEvents.add(event);
+			synchronized (queuedEvents)
+            {
+				queuedEvents.add(event);
+            }
+			
 			return true;
 		}
 		setAvailable(false);
@@ -343,13 +360,21 @@ public abstract class ProxyConnection
 			return;
 		}
 		handleRecvEvent(ev);
-		if (!queuedEvents.isEmpty())
-		{
-			if (isReady())
+		Event queuedEvent = null;
+		synchronized (queuedEvents)
+        {
+			if (!queuedEvents.isEmpty())
 			{
-				Event qe = queuedEvents.removeFirst();
-				send(qe);
+				if (isReady())
+				{
+					queuedEvent = queuedEvents.removeFirst();
+				}
 			}
+        }
+		if(null != queuedEvent)
+		{
+			send(queuedEvent);
 		}
+		
 	}
 }

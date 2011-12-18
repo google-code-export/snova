@@ -43,44 +43,7 @@ public class GAE implements Plugin
 
 	public static boolean initProxyConnections(List<GAEServerAuth> auths)
 	{
-		if (!ProxyConnectionManager.getInstance().init(auths))
-		{
-			ProxyInfo info = GAEClientConfiguration.getInstance()
-			        .getLocalProxy();
-			if (null == info || info.host == null)
-			{
-				// try GoogleCN
-				info = new ProxyInfo();
-				info.host = GAEConstants.RESERVED_GOOGLECN_IP_MAPPING;
-				info.port = 80;
-				GAEClientConfiguration.getInstance().setLocalProxy(info);
-				return initProxyConnections(auths);
-			}
-			else if (info.host == GAEConstants.RESERVED_GOOGLECN_IP_MAPPING)
-			{
-				// try GoogleHttps
-				info = new ProxyInfo();
-				info.host = GAEConstants.RESERVED_GOOGLEHTTPS_HOST_MAPPING;
-				info.port = 443;
-				info.type = ProxyType.HTTPS;
-				GAEClientConfiguration.getInstance().setLocalProxy(info);
-				return initProxyConnections(auths);
-			}
-			else
-			{
-				logger.error("Failed to connect GAE server.");
-				return false;
-			}
-		}
-		else
-		{
-			// ProxyInfo info = GAEClientConfiguration.getInstance()
-			// .getLocalProxy();
-			// PreferenceHelper.savePreference(GAEConstants.PREFERED_GOOGLE_PROXY,
-			// info != null ? info.type + ":" + info.host + ":"
-			// + info.port : "");
-			return true;
-		}
+		return ProxyConnectionManager.getInstance().init(auths);
 	}
 
 	private List<String> fetchSharedAppIDs()
@@ -177,6 +140,7 @@ public class GAE implements Plugin
 				{
 					GAEServerAuth auth = new GAEServerAuth();
 					auth.appid = appid;
+					auth.backendEnable =  GAEClientConfiguration.getInstance().getMasterNode().backendEnable;
 					auth.init();
 					sharedAuths.add(auth);
 				}
