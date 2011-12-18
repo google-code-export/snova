@@ -176,9 +176,9 @@ public class HTTPProxyConnection extends ProxyConnection
 		}
 		// connectHost = cfg.getMappingHost(connectHost);
 		connectHost = HostsHelper.getMappingHost(connectHost);
-		if (logger.isInfoEnabled())
+		if (logger.isDebugEnabled())
 		{
-			logger.info("Connect remote proxy server " + connectHost + ":"
+			logger.debug("Connect remote proxy server " + connectHost + ":"
 			        + connectPort + " and sslProxyEnable:"
 			        + sslConnectionEnable);
 		}

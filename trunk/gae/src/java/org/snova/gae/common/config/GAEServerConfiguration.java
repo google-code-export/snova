@@ -81,6 +81,7 @@ public class GAEServerConfiguration implements CodecObject
 		compressFilter.add("/x-zip-compressed");
 		compressFilter.add("/x-compress");
 		compressFilter.add("/x-compressed");
+		compressFilter.add("/x-msdos-program");
 	}
 
 	public boolean isContentTypeInCompressFilter(String type)

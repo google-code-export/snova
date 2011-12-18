@@ -23,7 +23,7 @@
 	<!--This option is not active when through a unanonymouse local proxy -->
 	<SimpleURLEnable>true</SimpleURLEnable>
 	<!--Can choose from LZF/Snappy/FastLZ/QuickLZ/None -->
-	<Compressor>Snappy</Compressor>
+	<Compressor>None</Compressor>
 	<!--Can choose from SE1/None -->
 	<Encrypter>SE1</Encrypter>
 	<ConnectionPoolSize>7</ConnectionPoolSize>
@@ -32,8 +32,8 @@
 	<ConcurrentRangeFetchWorker>3</ConcurrentRangeFetchWorker>
 
 	<!-- If you want use hyk-proxy througth a proxy, config this item -->
-	<LocalProxy type="HTTPS" host="" port="8080"/>
-	<GoogleProxyChain enable="true" host="GoogleHttps"/>
+	<LocalProxy type="HTTP" host="GoogleCNIP"/>
+	<GoogleProxyChain enable="false" host="GoogleHttps"/>
 
 	<AppIdBindings>
 		<!--
@@ -45,8 +45,11 @@
 	</AppIdBindings>
 
 	<!-- Sometimes, you already know you can inject a 'Range' header in the 
-		proxy request to avoid a fail-try request. Use ';' as the separator for sites -->
-	<InjectRangeHeaderSites>.youtube.com</InjectRangeHeaderSites>
+		proxy request to avoid a fail-try request. Use ';,|' as the separator for sites -->
+    <InjectRangeHeader>
+        <Site>.youtube.com</Site>
+        <URL>.zip,.exe,.gz,.tar,.bz2,.tgz,.rar</URL>
+    </InjectRangeHeader>
 	
 
 	<UserAgent>

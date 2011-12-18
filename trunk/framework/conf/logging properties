@@ -1,4 +1,4 @@
-.level=ALL 
+.level=INFO 
 java.util.logging.FileHandler.pattern=${SNOVA_HOME}/log/snova.log
 java.util.logging.FileHandler.limit=1024000
 java.util.logging.FileHandler.count=2

@@ -14,7 +14,7 @@ import (
 	"handler"
 )
 
-const Version = "0.10.1"
+const Version = "0.11.1111"
 
 var serverInited bool = false
 
@@ -35,6 +35,9 @@ func initGAEProxyServer(ctx appengine.Context) {
 	if !serverInited {
 		service.LoadServerConfig(ctx)
 		service.CheckDefaultAccount(ctx)
+		if service.ServerConfig.IsMaster == 1{
+		   service.InitMasterService(ctx)
+		}
 		ctx.Infof("InitGAEServer Invoked!")
 		serverInited = true
 	}

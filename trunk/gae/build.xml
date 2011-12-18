@@ -18,7 +18,7 @@
 	<property name="temp" value="${root}/temp" />
 	<property name="shell" value="${root}/shell" />
 	<property name="release" value="release" />
-	<property name="version" value="0.10.1" />
+	<property name="version" value="0.11.1111" />
 	<property name="versionfile" value="org/snova/gae/common/GAEPluginVersion.java" />
 	<property name="release_dir_name" value="gae" />
 	<property name="project_name" value="snova-gae" />
@@ -94,14 +94,15 @@
 				<exclude name="**/jdo*.jar" />
 				<exclude name="**/geronimo*.jar" />
 				<exclude name="**/jsr*.jar" />
+				<exclude name="**/google_sql.jar" />
 				<exclude name="**/log4j.properties" />
 			</fileset>
 		</copy>
-		<!--
+		
 		<copy todir="${releaseserverdir}">
 			<fileset dir="${deploy}" />
 		</copy>
-		-->
+		
 		<copy todir="${goreleasedir}">
 			<fileset dir="${gosrc}" />
 		</copy>

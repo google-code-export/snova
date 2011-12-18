@@ -16,7 +16,11 @@ import org.slf4j.LoggerFactory;
 import org.snova.framework.util.SharedObjectHelper;
 import org.snova.gae.client.config.GAEClientConfiguration;
 import org.snova.gae.client.config.GAEClientConfiguration.GAEServerAuth;
+import org.snova.gae.client.config.GAEClientConfiguration.ProxyInfo;
+import org.snova.gae.client.config.GAEClientConfiguration.ProxyType;
 import org.snova.gae.client.config.GAEClientConfiguration.XmppAccount;
+import org.snova.gae.common.GAEConstants;
+import org.snova.gae.common.event.AuthRequestEvent;
 
 /**
  * @author qiyingwang
@@ -41,6 +45,7 @@ public class ProxyConnectionManager
 		close();
 		List<GAEServerAuth> auths = new ArrayList<GAEClientConfiguration.GAEServerAuth>();
 		auths.addAll(gaeAuths);
+		
 		for (GAEServerAuth auth : GAEClientConfiguration.getInstance()
 		        .getGAEServerAuths())
 		{
@@ -53,16 +58,17 @@ public class ProxyConnectionManager
 		}
 		if (auths.isEmpty())
 		{
-			logger.error("Failed to connect remote GAE server.");
+			logger.error("Failed to connect remote GAE server:" + gaeAuths);
 			return false;
 		}
 		if (logger.isInfoEnabled())
 		{
 			int size = auths.size();
-			logger.info("Success to connect " + size + " GAE server"
-			        + (size > 1 ? "s" : ""));
-			SharedObjectHelper.getTrace().info("Success to connect " + size + " GAE server"
-			        + (size > 1 ? "s" : ""));
+			//logger.info("Success to connect " + size + " GAE server"
+			//        + (size > 1 ? "s" : ""));
+			SharedObjectHelper.getTrace().info(
+			        "Success to connect " + size + " GAE server"
+			                + (size > 1 ? "s" : ""));
 		}
 		seletor = new ListSelector<GAEServerAuth>(auths);
 		return true;
@@ -87,7 +93,7 @@ public class ProxyConnectionManager
 		}
 		else
 		{
-			if (!connection.auth())
+			if (connection.auth() != AuthRequestEvent.AUTH_SUCCESS)
 			{
 				return false;
 			}
@@ -128,9 +134,39 @@ public class ProxyConnectionManager
 			case HTTPS:
 			{
 				connection = new HTTPProxyConnection(auth);
-				if (!addProxyConnection(connlist, connection, storeConnection))
+				while (!addProxyConnection(connlist, connection,
+				        storeConnection))
 				{
-					return null;
+					if (connection.getAuthResultCode() == AuthRequestEvent.AUTH_TRANSPORT_FAILED)
+					{
+						ProxyInfo info = GAEClientConfiguration.getInstance()
+						        .getLocalProxy();
+						if (null == info || info.host == null)
+						{
+							// try GoogleCNIP
+							logger.info("Try GoogleCNIP as local proxy.");
+							info = new ProxyInfo();
+							info.host = GAEConstants.RESERVED_GOOGLECN_IP_MAPPING;
+							info.port = 80;
+							GAEClientConfiguration.getInstance().setLocalProxy(
+							        info);
+						}
+						else if (info.host == GAEConstants.RESERVED_GOOGLECN_IP_MAPPING)
+						{
+							// try GoogleHttps
+							logger.info("Try Googlehttps as local proxy.");
+							info = new ProxyInfo();
+							info.host = GAEConstants.RESERVED_GOOGLEHTTPS_HOST_MAPPING;
+							info.port = 443;
+							info.type = ProxyType.HTTPS;
+							GAEClientConfiguration.getInstance().setLocalProxy(
+							        info);
+						}
+						else
+						{
+							return null;
+						}
+					}
 				}
 				break;
 			}
