@@ -650,6 +650,10 @@ public class ProxySession
 	
 	private void adjustEvent(HTTPRequestEvent event)
 	{
+		if(logger.isDebugEnabled())
+		{
+			logger.debug("Orginal URL is " + event.url);
+		}
 		StringBuffer urlbuffer = new StringBuffer();
 		if (isHttps)
 		{

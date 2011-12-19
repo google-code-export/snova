@@ -27,10 +27,12 @@
 			</fileset>
 		</copy>
 		<delete dir="${snova-dir}" />
-		<copy todir="${binreleasedir}/conf" file="${conf}/snova.xml" overwrite="true"/>
-		<copy todir="${binreleasedir}/plugins/spac/conf" file="${conf}/spac.csl"  overwrite="true"/>
 		<mkdir dir="${binreleasedir}/plugins"/>
 		<unzip dest="${binreleasedir}/plugins" src="../spac/snova-spac-0.11.1218.zip"/>
+		<copy todir="${binreleasedir}/conf" file="${conf}/snova.xml" overwrite="true"/>
+		<copy todir="${binreleasedir}/conf" file="${conf}/hosts.conf" overwrite="true"/>
+		<copy todir="${binreleasedir}/plugins/spac/conf" file="${conf}/spac.csl"  overwrite="true"/>
+		
 		<zip destfile="${releasename}.zip" basedir="${releasedir}"/>
 		<delete dir="${releasedir}" />
 	</target>
