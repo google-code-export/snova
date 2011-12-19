@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.snova.spac.handler.session;
+package org.snova.spac.session;
 
 import org.arch.event.Event;
 import org.arch.event.EventHeader;
@@ -27,7 +27,7 @@ public class NamedEventHandlerSession  extends Session
     }
 
 	@Override
-    public void handleEvent(EventHeader header, Event event)
+    public void onEvent(EventHeader header, Event event)
     {
 		handler.onEvent(header, event);
     }

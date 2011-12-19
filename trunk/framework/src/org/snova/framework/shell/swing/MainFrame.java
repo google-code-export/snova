@@ -140,7 +140,7 @@ public class MainFrame extends javax.swing.JFrame
 			        .getInstance();
 			SimpleSocketAddress localServAddr = conf
 			        .getLocalProxyServerAddress();
-			Proxy proxy = new Proxy(Type.HTTP, new InetSocketAddress(
+			Proxy proxy = new Proxy(java.net.Proxy.Type.HTTP, new InetSocketAddress(
 			        localServAddr.host, localServAddr.port));
 			URLConnection conn;
 			try

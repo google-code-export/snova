@@ -14,7 +14,7 @@ import org.arch.event.EventHeader;
 import org.arch.event.NamedEventHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.snova.spac.handler.session.SessionManager;
+import org.snova.spac.session.SessionManager;
 import org.tykedog.csl.interpreter.CSL;
 
 /**

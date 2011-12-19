@@ -1,8 +1,9 @@
 /**
  * 
  */
-package org.snova.spac.handler.session;
+package org.snova.spac.session;
 
+import java.net.UnknownHostException;
 import java.util.Map;
 
 import org.arch.common.Pair;
@@ -37,6 +38,10 @@ public class SessionManager
 	
 	private Session createSession(String sessionName, int id)
 	{
+		if(logger.isDebugEnabled())
+		{
+			logger.debug("Create session with name:" + sessionName);
+		}
 		Session session = null;
 		NamedEventHandler named = EventDispatcher.getSingletonInstance()
 		        .getNamedEventHandler(sessionName);
@@ -48,11 +53,23 @@ public class SessionManager
 		{
 			if (sessionName.startsWith("socks"))
 			{
-				
+				try
+                {
+	                session = new SocksSession(sessionName);
+                }
+                catch (UnknownHostException e)
+                {
+	                logger.error("Failed to create socks session", e);
+	                return null;
+                }
 			}
 			else if (sessionName.equalsIgnoreCase("DIRECT"))
 			{
-				
+				session = new DirectSession();
+			}
+			else if (sessionName.toLowerCase().startsWith("google"))
+			{
+				session = new GoogleForwardSession(sessionName);
 			}
 			else
 			{
@@ -62,6 +79,7 @@ public class SessionManager
 		}
 		session.setName(sessionName);
 		session.setID(id);
+		sessionTable.put(id, session);
 		return session;
 	}
 	
@@ -98,10 +116,18 @@ public class SessionManager
 					String sessionName = (String) scriptEngine.invoke(
 					        "SelectProxy", new Object[] { protocol, ev.method,
 					                ev.url, ev });
+					if(logger.isInfoEnabled())
+					{
+						logger.info("Handle URL:" + ev.url);
+					}
 					Session session = getSession(attch.second);
 					if (null == session)
 					{
 						session = createSession(sessionName, attch.second);
+						if(null == session)
+						{
+							return;
+						}
 					}
 					else
 					{

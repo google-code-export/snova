@@ -1,0 +1,25 @@
+
+##Reserved proxy implementation
+$GAE="GAE";
+$DIRECT="DIRECT";
+$GOOGLE="Google";
+
+
+def OnInit()
+{
+  ##Do your business
+}
+
+def OnRoutine()
+{
+   #Do your routine business here
+   #eg: $output=system("./mysh.sh");
+   #    log($output);
+   #Tell the script engine to invoke this method 10s later
+   return 10;
+}
+
+def SelectProxy(protocol, method, url, headers)
+{ 
+     return $GOOGLE;
+}
