@@ -19,7 +19,7 @@ import org.snova.gae.common.EncryptType;
  */
 public class GAEServerConfiguration implements CodecObject
 {
-	private int fetchRetryCount = 2;
+	private int fetchRetryCount = 1;
 	private int maxXMPPDataPackageSize = 40960;
 	private int rangeFetchLimit = 256 * 1024;
 

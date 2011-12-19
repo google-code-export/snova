@@ -6,6 +6,7 @@ $SSHD="socks5:127.0.0.1:7070";
 ##Reserved proxy implementation
 $GAE="GAE";
 $DIRECT="DIRECT";
+$GOOGLE="Google";
 $SEATTLE="SeattleGENI";
 $PHP="PHPTunnel";
 
@@ -60,15 +61,4 @@ def SelectProxy(protocol, method, url, headers)
      }
      
      return $SELECTED1;
-}
-
-def reselectProxyWhenFailed(errorRes, proxy)
-{
-   $rescode = getResponseCode($errorRes);
-   $contentLength = int(getHeader($errorRes, "Content-Length"));
-   if $proxy == $GAE && $contentLength == 0
-   {
-       return $SELECTED2;
-   }
-   return null;
 }

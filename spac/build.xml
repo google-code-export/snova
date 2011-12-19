@@ -5,11 +5,11 @@
 		<property name="srcroot" value="${root}/src" />
 		<property name="releasedir" value="${root}/release" />
 		<property name="classes" value="${root}/build" />
-		<property name="jar" value="hyk-proxy-spac.jar" />
+		<property name="jar" value="spac.jar" />
 		<property name="distroot" value="${root}/lib" />
 		<property name="docdir" value="${root}/doc" />
 		<property name="lib" value="${root}/lib" />
-		<property name="etc" value="${root}/etc" />
+		<property name="etc" value="${root}/conf" />
 		<property name="release" value="release" />
 		<property name="version" value="0.11.1218" />
 	    <property name="release_dir_name" value="spac" />
@@ -17,7 +17,6 @@
 
 		<target name="prepare">
 			<mkdir dir="${classes}"/>
-			<copy todir="${lib}" file="${root}/../framework/lib/framework.jar" />
 		</target>
 
 		<target name="compile" depends="prepare">
@@ -27,6 +26,9 @@
 					<fileset dir="${lib}">
 						<include name="*.jar" />
 					</fileset>
+					<pathelement path="${root}/../framework/lib/framework.jar" />
+					<pathelement path="${root}/../framework/lib/netty-3.1.5.GA.jar" />
+					<pathelement path="${root}/../framework/lib/arch.jar" />
 				</classpath>
 			</javac>
 		</target>
@@ -52,7 +54,7 @@
 					<include name="jsocks.jar" />
 				</fileset>
 			</copy>
-			<copy todir="${releaseprojectdir}/etc">
+			<copy todir="${releaseprojectdir}/conf">
 				<fileset dir="${etc}" />
 			</copy>
 			<copy todir="${releaseprojectdir}" file="${root}/plugin.xml" />

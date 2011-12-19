@@ -67,7 +67,8 @@ public class SPAC implements Plugin
 		final CSL tmp = reloadCSL();
 		try
 		{
-			tmp.invoke("onInit", null);
+			tmp.invoke("OnInit", null);
+			handler.setScriptEngine(tmp);
 		}
 		catch (Exception e)
 		{
@@ -86,7 +87,7 @@ public class SPAC implements Plugin
 						Thread.sleep(waittime);
 						CSL csl = reloadCSL();
 						handler.setScriptEngine(csl);
-						Integer nextwait = (Integer) tmp.invoke("onRoutine",
+						Integer nextwait = (Integer) tmp.invoke("OnRoutine",
 						        null);
 						waittime = nextwait.longValue();
 						if (waittime < 0)
