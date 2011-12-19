@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Configure>
-	<LocalServer host="localhost" port="48100" />
+	<LocalServer host="localhost" port="48101" />
 
 	<!--The thread pool size of local server -->
 	<ThreadPoolSize>30</ThreadPoolSize>
