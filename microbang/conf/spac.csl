@@ -13,8 +13,8 @@ def OnInit()
 def OnRoutine()
 {
    #Do your routine business here
-   #eg: $output=system("./mysh.sh");
-   #    log($output);
+   #eg: $output=System("./mysh.sh");
+   #    Log($output);
    #Tell the script engine to invoke this method 10s later
    return 10;
 }

@@ -14,7 +14,13 @@ import org.arch.event.NamedEventHandler;
 import org.arch.event.http.HTTPConnectionEvent;
 import org.arch.event.http.HTTPEventContants;
 import org.arch.event.http.HTTPRequestEvent;
+import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
+import org.jboss.netty.handler.codec.http.HttpResponse;
+import org.jboss.netty.handler.codec.http.HttpResponseStatus;
+import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.jboss.netty.util.internal.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -118,7 +124,14 @@ public class SessionManager
 					                ev.url, ev });
 					if(logger.isInfoEnabled())
 					{
-						logger.info("Handle URL:" + ev.url);
+						logger.info("Handle URL:" + ev.url + " by session:" + sessionName);
+					}
+					if(null == sessionName)
+					{
+						HttpResponse res = new DefaultHttpResponse(
+						        HttpVersion.HTTP_1_1, HttpResponseStatus.SERVICE_UNAVAILABLE);
+						res.setContent(ChannelBuffers.wrappedBuffer("No spac session found for this url.".getBytes()));
+						attch.first.write(res);
 					}
 					Session session = getSession(attch.second);
 					if (null == session)

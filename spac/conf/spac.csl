@@ -23,21 +23,26 @@ def OnInit()
 def OnRoutine()
 {
    #Do your routine business here
-   #eg: $output=system("./mysh.sh");
-   #    log($output);
+   #eg: $output=System("./mysh.sh");
+   #    Log($output);
    #Tell the script engine to invoke this method 10s later
    return 10;
 }
 
 def SelectProxy(protocol, method, url, headers)
 {
+     $host = GetHeader($headers, "Host");
+     if $host ~= ".google"
+     {
+        return $GOOGLE
+     }
      #Set your https proxy here
      if $protocol=="https"
      { 
         return $SELECTED1;
      }
      ##Google's limit for request body size 10m
-     $contentLength = int(getHeader($headers, "Content-Length"));
+     $contentLength = Int(GetHeader($headers, "Content-Length"));
      if $contentLength > 10240000
      {
          return $SELECTED2;

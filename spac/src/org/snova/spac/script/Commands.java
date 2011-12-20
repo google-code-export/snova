@@ -29,7 +29,7 @@ public class Commands
 		@Override
 		public String getName()
 		{
-			return "int";
+			return "Int";
 		}
 
 		@Override
@@ -51,7 +51,7 @@ public class Commands
 		@Override
 		public String getName()
 		{
-			return "getHeader";
+			return "GetHeader";
 		}
 
 		@Override
@@ -69,7 +69,7 @@ public class Commands
 		@Override
 		public String getName()
 		{
-			return "getResponseCode";
+			return "GetResponseCode";
 		}
 
 		@Override
@@ -85,14 +85,13 @@ public class Commands
 		@Override
 		public String getName()
 		{
-			return "system";
+			return "Print";
 		}
 
 		@Override
 		public Object execute(Object[] arg0)
 		{
 			System.out.println(arg0[0]);
-
 			return null;
 		}
 	};
@@ -102,7 +101,7 @@ public class Commands
 		@Override
 		public String getName()
 		{
-			return "system";
+			return "System";
 		}
 
 		@Override
@@ -138,7 +137,7 @@ public class Commands
 		@Override
 		public String getName()
 		{
-			return "log";
+			return "Log";
 		}
 
 		@Override

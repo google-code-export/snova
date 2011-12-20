@@ -1,0 +1,16 @@
+microbang Changelog
+===================
+
+Changes in version 0.12.1219(2011.12.19)
+-------------------------------------------
+Initial version
+
+** Features
+   * Proxy any request to Google Service
+      
+** Task
+   * NA
+
+
+
+
