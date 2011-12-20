@@ -34,7 +34,7 @@ def SelectProxy(protocol, method, url, headers)
      $host = GetHeader($headers, "Host");
      if $host ~= ".google"
      {
-        return $GOOGLE
+        return $GOOGLE;
      }
      #Set your https proxy here
      if $protocol=="https"

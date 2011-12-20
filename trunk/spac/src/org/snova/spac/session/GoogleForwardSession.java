@@ -126,10 +126,19 @@ public class GoogleForwardSession extends Session
 		ChannelFuture future = channel.connect(
 		        new InetSocketAddress(connectHost, connectPort))
 		        .awaitUninterruptibly();
-		if (!future.isSuccess())
+		int retry = 3;
+		while (!future.isSuccess() && null == proxyHost && retry > 0)
 		{
 			logger.error("Failed to connect forward address.",
 			        future.getCause());
+			connectHost = getGoogleHttpsHost();
+			future = channel.connect(
+			        new InetSocketAddress(connectHost, connectPort))
+			        .awaitUninterruptibly();
+			retry--;
+		}
+		if(!future.isSuccess())
+		{
 			return null;
 		}
 		if (null != proxyHost)

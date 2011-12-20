@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 
 import org.arch.classloader.JarClassLoader;
@@ -42,10 +43,24 @@ public class DesktopPluginManager implements PluginManager
 	private Map<String, InstalledPlugin>	plugins	 = new HashMap<String, InstalledPlugin>();
 	// private Map<String, RemoveMarkTask> removingTasks = new HashMap<String,
 	// PluginManager.RemoveMarkTask>();
-	protected Logger	                 logger	     = LoggerFactory
-	                                                         .getLogger(getClass());
+	protected static Logger	                 logger	     = LoggerFactory
+	                                                         .getLogger(DesktopPluginManager.class);
 	protected static Properties	         pluginsStat	= new Properties();
 	private static DesktopPluginManager	 instance	 = new DesktopPluginManager();
+	private static JAXBContext	         descContext;
+	
+	static
+	{
+		try
+        {
+	        descContext	= JAXBContext
+	                .newInstance(PluginDescription.class);
+        }
+        catch (JAXBException e)
+        {
+        	logger.error("Failed to new jaxn context",e);
+        }
+	}
 	
 	static enum ActiveState
 	{
@@ -247,9 +262,8 @@ public class DesktopPluginManager implements PluginManager
 			        homedir);
 			loader = new JarClassLoader(
 			        DesktopPluginManager.class.getClassLoader(), classPath);
-			JAXBContext context = JAXBContext
-			        .newInstance(PluginDescription.class);
-			Unmarshaller unmarshaller = context.createUnmarshaller();
+			
+			Unmarshaller unmarshaller = descContext.createUnmarshaller();
 			URL pluginResource = loader.getResource("/"
 			        + Constants.PLUGIN_DESC_FILE);
 			PluginDescription desc = (PluginDescription) unmarshaller

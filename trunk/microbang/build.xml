@@ -13,7 +13,7 @@
 	<property name="docs" value="${root}/docs" />
 	<property name="shell" value="${root}/shell" />
 	<property name="release" value="release" />
-	<property name="version" value="0.12.1219" />
+	<property name="version" value="0.11.1219" />
 	<property name="project_name" value="MicroBang" />
 	<property name="releasename" value="${project_name}-${version}"/>
 
