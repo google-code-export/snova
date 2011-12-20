@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 
-<project name="snova-apic" default="release">
+<project name="microbang" default="release">
 	<property name="root" value="." />
 
 	<property name="srcroot" value="${root}/src" />
@@ -14,7 +14,7 @@
 	<property name="shell" value="${root}/shell" />
 	<property name="release" value="release" />
 	<property name="version" value="0.12.1219" />
-	<property name="project_name" value="AppcfgProxyInChina" />
+	<property name="project_name" value="MicroBang" />
 	<property name="releasename" value="${project_name}-${version}"/>
 
 	<target name="release">
@@ -24,6 +24,7 @@
 		<copy todir="${binreleasedir}">
 			<fileset dir="${snova-dir}">
 				<exclude name="plugins/gae/**"/>
+				<exclude name="lib/bcprov-jdk16-146.jar"/>
 			</fileset>
 		</copy>
 		<delete dir="${snova-dir}" />
@@ -31,6 +32,8 @@
 		<unzip dest="${binreleasedir}/plugins" src="../spac/snova-spac-0.11.1218.zip"/>
 		<copy todir="${binreleasedir}/conf" file="${conf}/snova.xml" overwrite="true"/>
 		<copy todir="${binreleasedir}/conf" file="${conf}/hosts.conf" overwrite="true"/>
+		<copy todir="${binreleasedir}/" file="${root}/readme.txt" overwrite="true"/>
+		<copy todir="${binreleasedir}/" file="${root}/changelog.txt" overwrite="true"/>
 		<copy todir="${binreleasedir}/plugins/spac/conf" file="${conf}/spac.csl"  overwrite="true"/>
 		
 		<zip destfile="${releasename}.zip" basedir="${releasedir}"/>

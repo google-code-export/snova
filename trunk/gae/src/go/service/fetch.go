@@ -61,7 +61,7 @@ func Fetch(context appengine.Context, ev *event.HTTPRequestEvent) event.Event {
 		fillErrorResponse(errorResponse, "Invalid fetch url:"+ev.Url)
 		return errorResponse
 	}
-	t := &urlfetch.Transport{context, 0, true}
+	t := &urlfetch.Transport{context, 10.0, true}
 	retryCount := ServerConfig.RetryFetchCount
 	for retryCount > 0 {
 		resp, err := t.RoundTrip(req)
