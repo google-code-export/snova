@@ -240,8 +240,16 @@ public class GoogleForwardSession extends Session
 					//remoteChannel.getPipeline().remove("sslHandler");
 					return;
 				}
-				removeCodecHandler(localChannel, null);
+				
 				Channel ch = getRemoteGoogleChannel(true);
+				if(null == ch)
+				{
+					HttpResponse res = new DefaultHttpResponse(
+					        HttpVersion.HTTP_1_1, HttpResponseStatus.SERVICE_UNAVAILABLE);
+					localChannel.write(res);
+					return;
+				}
+				removeCodecHandler(localChannel, null);
 				ChannelBuffer msg = buildRequestChannelBuffer((HTTPRequestEvent) event);
 				ch.write(msg);
 				break;
