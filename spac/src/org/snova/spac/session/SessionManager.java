@@ -124,7 +124,7 @@ public class SessionManager
 					                ev.url, ev });
 					if(logger.isInfoEnabled())
 					{
-						logger.info("Handle URL:" + ev.url + " by session:" + sessionName);
+						logger.info("Handle URL:" +ev.method +" "+ ev.url + " by session:" + sessionName);
 					}
 					if(null == sessionName)
 					{
