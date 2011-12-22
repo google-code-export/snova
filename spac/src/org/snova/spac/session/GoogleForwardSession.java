@@ -249,7 +249,7 @@ public class GoogleForwardSession extends Session
 					localChannel.write(res);
 					return;
 				}
-				removeCodecHandler(localChannel, null);
+				//removeCodecHandler(localChannel, null);
 				ChannelBuffer msg = buildRequestChannelBuffer((HTTPRequestEvent) event);
 				ch.write(msg);
 				break;

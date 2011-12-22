@@ -35,14 +35,14 @@ public class SPAC implements Plugin
 	
 	private CSL reloadCSL() throws IOException, RecognitionException
 	{
-		String file = getClass().getResource("/spac.csl").getFile();
+		String file = getClass().getResource("/spac.td").getFile();
 		File f = new File(file);
 		long tmp = f.lastModified();
 		if(tmp != tstamp)
 		{
 			tstamp = tmp;
 		}
-		InputStream is = getClass().getResourceAsStream("/spac.csl");
+		InputStream is = getClass().getResourceAsStream("/spac.td");
 		CSL csl = CSL.Builder
 		        .build(is);
 		csl.setCalculator(new CSLApiImpl());
@@ -72,7 +72,7 @@ public class SPAC implements Plugin
 		}
 		catch (Exception e)
 		{
-			// TODO: handle exception
+			logger.error("Failed to invoke OnInit function", e);
 		}
 		new Thread(new Runnable()
 		{
