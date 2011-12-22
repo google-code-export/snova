@@ -40,6 +40,7 @@ import org.jboss.netty.handler.codec.http.HttpResponseDecoder;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.jboss.netty.handler.ssl.SslHandler;
+import org.snova.framework.config.DesktopFrameworkConfiguration;
 import org.snova.framework.util.HostsHelper;
 
 /**
@@ -248,6 +249,11 @@ public class GoogleForwardSession extends Session
 					        HttpVersion.HTTP_1_1, HttpResponseStatus.SERVICE_UNAVAILABLE);
 					localChannel.write(res);
 					return;
+				}
+				if(DesktopFrameworkConfiguration.getInstance().getProxyEventHandler().equalsIgnoreCase("Google"))
+				{
+					//remove codec handlers for performance
+					removeCodecHandler(localChannel, null);
 				}
 				//removeCodecHandler(localChannel, null);
 				ChannelBuffer msg = buildRequestChannelBuffer((HTTPRequestEvent) event);

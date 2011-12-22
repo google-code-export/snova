@@ -7,7 +7,7 @@ $SSHD="socks5:127.0.0.1:7070";
 $GAE="GAE";
 $DIRECT="DIRECT";
 $SEATTLE="SeattleGENI";
-$GOOGLE="Google[TencentProxy:8080]";
+$GOOGLE="Google";
 $PHP="PHPTunnel";
 
 #defined selected proxy
@@ -39,6 +39,28 @@ def SelectProxy(protocol, method, url, headers)
      { 
         return $GOOGLE;
      }
-       
+     
+     $contentLength = int(getHeader($headers, "Content-Length"));
+     if $contentLength > 10240000
+     {
+         return $SSHD;
+     }
+     
+     ##Only "GET/POST/PUT/DELETE/HEAD" supported in GAE
+     if $method != "GET" && $method != "POST" 
+        && $method != "PUT" && $method != "DELETE"
+        && $method != "HEAD"
+     {
+        return $SSHD;
+     }
+     
+     ##Request with body not allowed in GAE if it's not POST/PUT
+     if $contentLength > 0
+     {
+        if $method != "POST" && $method != "PUT" 
+        {
+           return $SSHD;
+        }
+     }  
      return $GAE;
 }
