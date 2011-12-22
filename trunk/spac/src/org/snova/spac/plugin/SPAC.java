@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.snova.framework.plugin.Plugin;
 import org.snova.framework.plugin.PluginContext;
 import org.snova.spac.handler.SpacProxyEventHandler;
-import org.snova.spac.script.CSLApiImpl;
+import org.snova.spac.script.TykedogApiImpl;
 import org.snova.spac.script.Commands;
 import org.tykedog.csl.interpreter.CSL;
 
@@ -45,8 +45,8 @@ public class SPAC implements Plugin
 		InputStream is = getClass().getResourceAsStream("/spac.td");
 		CSL csl = CSL.Builder
 		        .build(is);
-		csl.setCalculator(new CSLApiImpl());
-		csl.setComparator(new CSLApiImpl());
+		csl.setCalculator(new TykedogApiImpl());
+		csl.setComparator(new TykedogApiImpl());
 		csl.addFunction(Commands.INT);
 		csl.addFunction(Commands.GETHEADER);
 		csl.addFunction(Commands.PRINT);
@@ -80,21 +80,25 @@ public class SPAC implements Plugin
 			public void run()
 			{
 				long waittime = 10 * 1000;
+				long routine_period = waittime;
 				while (true)
 				{
 					try
 					{
-						Thread.sleep(waittime);
+						Thread.sleep(routine_period > 0 ?routine_period:waittime);
 						CSL csl = reloadCSL();
 						handler.setScriptEngine(csl);
-						Integer nextwait = (Integer) tmp.invoke("OnRoutine",
-						        null);
-						waittime = nextwait.longValue();
-						if (waittime < 0)
+						if(routine_period > 0)
 						{
-							return;
+							Integer nextwait = (Integer) tmp.invoke("OnRoutine",
+							        null);
+							routine_period = nextwait.longValue();
 						}
-						waittime *= 1000;
+						if (routine_period > 0)
+						{
+							routine_period *= 1000;
+						}
+						
 					}
 					catch (Exception e)
 					{

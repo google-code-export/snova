@@ -14,7 +14,7 @@ import org.tykedog.csl.api.ApiAdapter;
 /**
  *
  */
-public class CSLApiImpl extends ApiAdapter
+public class TykedogApiImpl extends ApiAdapter
 {
 	@Override
 	public boolean logicAnd(Object opra, Object oprb)
