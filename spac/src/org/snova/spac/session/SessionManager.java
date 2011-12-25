@@ -14,6 +14,7 @@ import org.arch.event.NamedEventHandler;
 import org.arch.event.http.HTTPConnectionEvent;
 import org.arch.event.http.HTTPEventContants;
 import org.arch.event.http.HTTPRequestEvent;
+import org.arch.util.NetworkHelper;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
@@ -119,9 +120,26 @@ public class SessionManager
 					{
 						protocol = "https";
 					}
-					String sessionName = (String) scriptEngine.invoke(
-					        "SelectProxy", new Object[] { protocol, ev.method,
-					                ev.url, ev });
+					String sessionName = null;
+					String host = ev.getHeader("Host");
+					if(null != host)
+					{
+						if(host.indexOf(":") != -1)
+						{
+							host = host.substring(0, host.indexOf(":"));
+						}
+						if(NetworkHelper.isPrivateIP(host))
+						{
+							sessionName = "Direct";
+						}
+					}
+					if(null == sessionName)
+					{
+						sessionName = (String) scriptEngine.invoke(
+						        "SelectProxy", new Object[] { protocol, ev.method,
+						                ev.url, ev });
+					}
+					
 					if(logger.isInfoEnabled())
 					{
 						logger.info("Handle URL:" +ev.method +" "+ ev.url + " by session:" + sessionName);

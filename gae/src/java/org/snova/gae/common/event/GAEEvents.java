@@ -3,9 +3,11 @@
  */
 package org.snova.gae.common.event;
 
+import org.arch.event.Event;
 import org.arch.event.EventDispatcher;
 import org.arch.event.EventHandler;
 import org.arch.event.EventSegment;
+import org.arch.event.NamedEventHandler;
 import org.arch.event.http.HTTPErrorEvent;
 import org.arch.event.http.HTTPRequestEvent;
 import org.arch.event.http.HTTPResponseEvent;
@@ -16,37 +18,39 @@ import org.arch.event.http.HTTPResponseEvent;
  */
 public class GAEEvents
 {
+	private static void registerEventHandler(Class<? extends Event> clazz,
+	        EventHandler handler)
+	{
+		try
+		{
+			EventDispatcher.getSingletonInstance().register(clazz, handler);
+		}
+		catch (Exception e)
+		{
+			// TODO Auto-generated catch block
+			
+		}
+	}
+	
 	public static void init(EventHandler handler, boolean isServer)
 	{
 		try
 		{
-			EventDispatcher.getSingletonInstance().register(
-			        HTTPResponseEvent.class, handler);
-			EventDispatcher.getSingletonInstance().register(
-			        HTTPErrorEvent.class, handler);
-			EventDispatcher.getSingletonInstance().register(
-			        AuthResponseEvent.class, handler);
-			EventDispatcher.getSingletonInstance().register(
-			        AdminResponseEvent.class, handler);
-			EventDispatcher.getSingletonInstance().register(
-			        ListGroupResponseEvent.class, handler);
-
-			EventDispatcher.getSingletonInstance().register(
-			        ListUserResponseEvent.class, handler);
-
-			EventDispatcher.getSingletonInstance().register(EventSegment.class,
-			        handler);
-
-			EventDispatcher.getSingletonInstance().register(
-			        CompressEvent.class, handler);
-			EventDispatcher.getSingletonInstance().register(EncryptEvent.class,
-			        handler);
-			EventDispatcher.getSingletonInstance().register(
-			        ServerConfigEvent.class, handler);
-			EventDispatcher.getSingletonInstance().register(
-			        RequestSharedAppIDResultEvent.class, handler);
-			EventDispatcher.getSingletonInstance().register(
-			        RequestSharedAppIDEvent.class, handler);
+			registerEventHandler(HTTPResponseEvent.class, handler);
+			registerEventHandler(HTTPErrorEvent.class, handler);
+			registerEventHandler(AuthResponseEvent.class, handler);
+			registerEventHandler(AdminResponseEvent.class, handler);
+			registerEventHandler(ListGroupResponseEvent.class, handler);
+			
+			registerEventHandler(ListUserResponseEvent.class, handler);
+			
+			registerEventHandler(EventSegment.class, handler);
+			
+			registerEventHandler(CompressEvent.class, handler);
+			registerEventHandler(EncryptEvent.class, handler);
+			registerEventHandler(ServerConfigEvent.class, handler);
+			registerEventHandler(RequestSharedAppIDResultEvent.class, handler);
+			registerEventHandler(RequestSharedAppIDEvent.class, handler);
 			if (isServer)
 			{
 				EventDispatcher.getSingletonInstance().register(
@@ -59,7 +63,7 @@ public class GAEEvents
 				        GroupOperationEvent.class, handler);
 				EventDispatcher.getSingletonInstance().register(
 				        ListGroupRequestEvent.class, handler);
-
+				
 				EventDispatcher.getSingletonInstance().register(
 				        ListUserRequestEvent.class, handler);
 				EventDispatcher.getSingletonInstance().register(
@@ -68,12 +72,21 @@ public class GAEEvents
 				EventDispatcher.getSingletonInstance().register(
 				        RequestSharedAppIDEvent.class, handler);
 			}
-
+			else
+			{
+				if (null != handler && handler instanceof NamedEventHandler)
+				{
+					EventDispatcher.getSingletonInstance()
+					        .registerNamedEventHandler(
+					                (NamedEventHandler) handler);
+				}
+			}
+			
 		}
 		catch (Exception e)
 		{
 			//
 		}
-
+		
 	}
 }

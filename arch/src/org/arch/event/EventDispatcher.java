@@ -34,7 +34,7 @@ public class EventDispatcher
 		return globalDispatcherInstance;
 	}
 
-	public static EventDispatcher getInstance()
+	public static EventDispatcher getNewInstance()
 	{
 		return new EventDispatcher();
 	}
