@@ -616,8 +616,14 @@ public class ProxySession
 		final SSLContext sslContext;
 		try
 		{
+			long start = System.currentTimeMillis();
 			sslContext = SslCertificateHelper.getFakeSSLContext(httpshost,
 			        httpsport);
+			long end = System.currentTimeMillis();
+			if(logger.isDebugEnabled())
+			{
+				logger.debug("Cost " + (end - start)+ "ms to create SSL context for host:" + httpshost);
+			}
 		}
 		catch (Exception e)
 		{

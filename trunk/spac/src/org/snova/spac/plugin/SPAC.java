@@ -6,6 +6,7 @@ package org.snova.spac.plugin;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URLDecoder;
 
 import org.antlr.runtime.RecognitionException;
 import org.arch.event.EventDispatcher;
@@ -36,6 +37,7 @@ public class SPAC implements Plugin
 	private CSL reloadCSL() throws IOException, RecognitionException
 	{
 		String file = getClass().getResource("/spac.td").getFile();
+		file = URLDecoder.decode(file, "UTF-8");
 		File f = new File(file);
 		long tmp = f.lastModified();
 		if(tmp != tstamp)

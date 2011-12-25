@@ -1,6 +1,19 @@
 snova Changelog
 ===================
 
+Changes in version 0.11.1225(2011.12.25)
+-------------------------------------------
+Initial version
+
+** Features
+   * 
+   
+** Improvement
+   * Store created faked SSL cert file
+      
+** Task
+   * NA
+
 Changes in version 0.11.1111(2011.11.11)
 -------------------------------------------
 Initial version

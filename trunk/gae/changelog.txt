@@ -1,5 +1,20 @@
 snova-gae Changelog
 ===================
+Changes in version 0.11.1225(2011.12.25)
+-------------------------------------------
+Initial version
+
+** Features
+   * 
+   
+** Improvement
+   * Change fetch deadline to 10s(Go)
+   * Change default retry count to 1(Java)
+      
+** Task
+   * NA
+
+
 Changes in version 0.11.1111 (2011.11.11)
 -------------------------------------------
 Initial version
