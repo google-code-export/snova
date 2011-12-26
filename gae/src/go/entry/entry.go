@@ -225,5 +225,7 @@ func HTTPEventDispatch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx.Errorf("Failed to parse HTTP event:" + cause)
+	fmt.Fprintf(w, "Failed to parse HTTP event:" + cause)
+	//w.Write(buf.Bytes())
 }
 

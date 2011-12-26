@@ -509,6 +509,7 @@ func (ev *CompressEvent) Decode(buffer *bytes.Buffer) bool {
 			success, ev.Ev, _ = ParseEvent(bytes.NewBuffer(newbuf))
 			return success
 		}
+		default: return false
 	}
 	return true
 }
