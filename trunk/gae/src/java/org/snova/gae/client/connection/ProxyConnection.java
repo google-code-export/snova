@@ -11,11 +11,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.arch.buffer.Buffer;
 import org.arch.common.Pair;
 import org.arch.event.Event;
+import org.arch.event.EventConstants;
 import org.arch.event.EventHandler;
 import org.arch.event.EventHeader;
 import org.arch.event.EventSegment;
 import org.arch.event.http.HTTPEventContants;
 import org.arch.event.http.HTTPRequestEvent;
+import org.arch.event.misc.CompressEvent;
+import org.arch.event.misc.CompressorType;
+import org.arch.event.misc.EncryptEvent;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.slf4j.Logger;
@@ -25,14 +29,11 @@ import org.snova.gae.client.config.GAEClientConfiguration.GAEServerAuth;
 import org.snova.gae.client.handler.ProxySession;
 import org.snova.gae.client.handler.ProxySessionManager;
 import org.snova.gae.client.handler.ProxySessionStatus;
-import org.snova.gae.common.CompressorType;
 import org.snova.gae.common.EventHeaderTags;
 import org.snova.gae.common.GAEConstants;
 import org.snova.gae.common.GAEEventHelper;
 import org.snova.gae.common.event.AuthRequestEvent;
 import org.snova.gae.common.event.AuthResponseEvent;
-import org.snova.gae.common.event.CompressEvent;
-import org.snova.gae.common.event.EncryptEvent;
 
 /**
  * @author qiyingwang
@@ -271,12 +272,12 @@ public abstract class ProxyConnection
 				setAuthToken((AuthResponseEvent) ev);
 				return;
 			}
-			case GAEConstants.COMPRESS_EVENT_TYPE:
+			case EventConstants.COMPRESS_EVENT_TYPE:
 			{
 				handleRecvEvent(((CompressEvent) ev).ev);
 				return;
 			}
-			case GAEConstants.ENCRYPT_EVENT_TYPE:
+			case EventConstants.ENCRYPT_EVENT_TYPE:
 			{
 				handleRecvEvent(((EncryptEvent) ev).ev);
 				return;

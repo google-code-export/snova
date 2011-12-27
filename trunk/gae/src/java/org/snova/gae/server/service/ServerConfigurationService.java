@@ -12,10 +12,9 @@ package org.snova.gae.server.service;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.arch.buffer.Buffer;
 import org.arch.event.Event;
-import org.snova.gae.common.CompressorType;
-import org.snova.gae.common.EncryptType;
+import org.arch.event.misc.CompressorType;
+import org.arch.event.misc.EncryptType;
 import org.snova.gae.common.EventHeaderTags;
 import org.snova.gae.common.config.GAEServerConfiguration;
 import org.snova.gae.common.event.AdminResponseEvent;
@@ -28,9 +27,6 @@ import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.EntityNotFoundException;
 import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
-import com.google.appengine.api.memcache.AsyncMemcacheService;
-import com.google.appengine.api.memcache.MemcacheService;
-import com.google.appengine.api.memcache.MemcacheServiceFactory;
 
 /**
  *

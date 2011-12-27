@@ -10,21 +10,17 @@
  */
 package org.snova.gae.client.shell.swing;
 
-import java.io.File;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Future;
+
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableModel;
 
-import org.arch.util.FileHelper;
+import org.arch.event.misc.CompressorType;
+import org.arch.event.misc.EncryptType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.framework.shell.swing.ImageUtil;
@@ -39,8 +35,6 @@ import org.snova.gae.client.config.GAEClientConfiguration.ProxyType;
 import org.snova.gae.client.config.GAEClientConfiguration.XmppAccount;
 import org.snova.gae.client.connection.ProxyConnection;
 import org.snova.gae.client.connection.ProxyConnectionManager;
-import org.snova.gae.common.CompressorType;
-import org.snova.gae.common.EncryptType;
 
 /**
  * 

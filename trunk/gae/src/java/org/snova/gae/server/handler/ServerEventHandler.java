@@ -5,6 +5,7 @@ package org.snova.gae.server.handler;
 
 import org.arch.buffer.Buffer;
 import org.arch.event.Event;
+import org.arch.event.EventConstants;
 import org.arch.event.EventDispatcher;
 import org.arch.event.EventHandler;
 import org.arch.event.EventHeader;
@@ -13,16 +14,16 @@ import org.arch.event.TypeVersion;
 import org.arch.event.http.HTTPEventContants;
 import org.arch.event.http.HTTPRequestEvent;
 import org.arch.event.http.HTTPResponseEvent;
+import org.arch.event.misc.CompressEvent;
+import org.arch.event.misc.CompressorType;
+import org.arch.event.misc.EncryptEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.gae.common.CacheService;
-import org.snova.gae.common.CompressorType;
 import org.snova.gae.common.EventHeaderTags;
 import org.snova.gae.common.GAEConstants;
 import org.snova.gae.common.GAEEventHelper;
 import org.snova.gae.common.config.GAEServerConfiguration;
-import org.snova.gae.common.event.CompressEvent;
-import org.snova.gae.common.event.EncryptEvent;
 import org.snova.gae.common.event.ServerConfigEvent;
 import org.snova.gae.common.event.ShareAppIDEvent;
 import org.snova.gae.server.service.EventSendService;
@@ -119,13 +120,13 @@ public class ServerEventHandler implements EventHandler
 				}
 				break;
 			}
-			case GAEConstants.COMPRESS_EVENT_TYPE:
+			case EventConstants.COMPRESS_EVENT_TYPE:
 			{
 				((CompressEvent) event).ev.setAttachment(event.getAttachment());
 				response = handleRecvEvent(tags, ((CompressEvent) event).ev);
 				break;
 			}
-			case GAEConstants.ENCRYPT_EVENT_TYPE:
+			case EventConstants.ENCRYPT_EVENT_TYPE:
 			{
 				((EncryptEvent) event).ev.setAttachment(event.getAttachment());
 				response = handleRecvEvent(tags, ((EncryptEvent) event).ev);
