@@ -79,7 +79,10 @@ public class ProxySessionManager
 		}
 		else
 		{
-			logger.error("Can not find session with session ID:" + handleID);
+			if(logger.isDebugEnabled())
+			{
+				logger.error("Can not find session with session ID:" + handleID);
+			}
 		}
 		return session;
 	}

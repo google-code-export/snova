@@ -7,7 +7,7 @@
  * @author yinqiwen [ 2011-12-3 | ÏÂÎç02:09:00 ]
  *
  */
-package org.snova.gae.common.event;
+package org.arch.event.misc;
 
 import java.io.IOException;
 
@@ -21,28 +21,25 @@ import org.arch.compress.lzf.LZFDecoder;
 import org.arch.compress.lzf.LZFEncoder;
 import org.arch.compress.quicklz.QuickLZ;
 import org.arch.event.Event;
+import org.arch.event.EventConstants;
 import org.arch.event.EventDispatcher;
 import org.arch.event.EventType;
 import org.arch.event.EventVersion;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.snova.gae.common.CompressorType;
-import org.snova.gae.common.GAEConstants;
 
 /**
  *
  */
-@EventType(GAEConstants.COMPRESS_EVENT_TYPE)
-@EventVersion(1)
-public class CompressEvent extends Event
+@EventType(EventConstants.COMPRESS_EVENT_TYPE)
+@EventVersion(2)
+public class CompressEventV2 extends Event
 {
-	protected static Logger logger = LoggerFactory
-	        .getLogger(CompressEvent.class);
-	public CompressEvent()
+	//protected static Logger logger = LoggerFactory
+	//        .getLogger(CompressEvent.class);
+	public CompressEventV2()
 	{
 		
 	}
-	public CompressEvent(CompressorType type, Event ev)
+	public CompressEventV2(CompressorType type, Event ev)
     {
 	    this.type = type;
 	    this.ev = ev;
@@ -58,8 +55,10 @@ public class CompressEvent extends Event
 		{
 			int t = BufferHelper.readVarInt(buffer);
 			type = CompressorType.fromInt(t);
+			int size = BufferHelper.readVarInt(buffer);
 			Buffer content = buffer;
 			byte[] raw = buffer.getRawBuffer();
+			
 			switch (type)
 			{
 				case QUICKLZ:
@@ -67,13 +66,13 @@ public class CompressEvent extends Event
 					try
 					{
 						byte[] newbuf = QuickLZ.decompress(raw,
-						        buffer.getReadIndex(), buffer.readableBytes());
+						        buffer.getReadIndex(), size);
 						content = Buffer.wrapReadableContent(newbuf, 0,
 						        newbuf.length);
 					}
 					catch (Exception e)
 					{
-						logger.error("Failed to uncompress by QuickLZ.", e);
+						//logger.error("Failed to uncompress by QuickLZ.", e);
 						return false;
 					}
 					break;
@@ -86,14 +85,14 @@ public class CompressEvent extends Event
 						JFastLZ fastlz = new JFastLZ();
 						byte[] newbuf = new byte[len];
 						int decompressed = fastlz.fastlzDecompress(raw,
-						        buffer.getReadIndex(), buffer.readableBytes(),
+						        buffer.getReadIndex(), size,
 						        newbuf, 0, len);
 						content = Buffer.wrapReadableContent(newbuf, 0,
 						        decompressed);
 					}
 					catch (Exception e)
 					{
-						logger.error("Failed to uncompress by SNAPPY.", e);
+						//logger.error("Failed to uncompress by SNAPPY.", e);
 						return false;
 					}
 					break;
@@ -104,13 +103,13 @@ public class CompressEvent extends Event
 					{
 						SnappyBuffer newbuf = SnappyDecompressor.decompress(
 						        raw, buffer.getReadIndex(),
-						        buffer.readableBytes());
+						        size);
 						content = Buffer.wrapReadableContent(newbuf.getData(),
 						        0, newbuf.getLength());
 					}
 					catch (Exception e)
 					{
-						logger.error("Failed to uncompress by SNAPPY.", e);
+						//logger.error("Failed to uncompress by SNAPPY.", e);
 						return false;
 					}
 
@@ -121,12 +120,12 @@ public class CompressEvent extends Event
 					try
 					{
 						byte[] newbuf = LZFDecoder.decode(raw,
-						        buffer.getReadIndex(), buffer.readableBytes());
+						        buffer.getReadIndex(), size);
 						content = Buffer.wrapReadableContent(newbuf);
 					}
 					catch (Exception e)
 					{
-						logger.error("Failed to uncompress by " + type, e);
+						//logger.error("Failed to uncompress by " + type, e);
 						return false;
 					}
 					break;
@@ -136,12 +135,13 @@ public class CompressEvent extends Event
 					break;
 				}
 			}
+			buffer.advanceReadIndex(size);
 			ev= EventDispatcher.getSingletonInstance().parse(content);
 			return true;
 		}
 		catch (Exception e)
 		{
-			logger.error("Failed to decode compress event", e);
+			//logger.error("Failed to decode compress event", e);
 			return false;
 		}
 	}
@@ -157,6 +157,7 @@ public class CompressEvent extends Event
 		{
 			case NONE:
 			{
+				BufferHelper.writeVarInt(outbuf, content.readableBytes());
 				outbuf.write(raw,content.getReadIndex(), content.readableBytes());
 				break;
 			}
@@ -166,11 +167,12 @@ public class CompressEvent extends Event
 				{
 					byte[] newbuf = QuickLZ.compress(raw,
 					        content.getReadIndex(), content.readableBytes(), 1);
+					BufferHelper.writeVarInt(outbuf, newbuf.length);
 					outbuf.write(newbuf);
 				}
 				catch (Exception e)
 				{
-					logger.error("Failed to compress by QuickLZ.", e);
+					//logger.error("Failed to compress by QuickLZ.", e);
 					return false;
 				}
 
@@ -186,11 +188,12 @@ public class CompressEvent extends Event
 					afterCompress = fastlz.fastlzCompress(raw,
 					        content.getReadIndex(), content.readableBytes(),
 					        newbuf, 0, newbuf.length);
+					BufferHelper.writeVarInt(outbuf, afterCompress);
 					outbuf.write(newbuf, 0, afterCompress);
 				}
 				catch (IOException e)
 				{
-					logger.error("Failed to compress by FastLZ.", e);
+					//logger.error("Failed to compress by FastLZ.", e);
 					return false;
 				}
 				break;
@@ -201,11 +204,12 @@ public class CompressEvent extends Event
 				{
 					SnappyBuffer newbuf = SnappyCompressor.compress(raw,
 					        content.getReadIndex(), content.readableBytes());
+					BufferHelper.writeVarInt(outbuf, newbuf.getLength());
 					outbuf.write(newbuf.getData(), 0, newbuf.getLength());
 				}
 				catch (Exception e)
 				{
-					logger.error("Failed to compress by Snappy.", e);
+					//logger.error("Failed to compress by Snappy.", e);
 					return false;
 				}
 
@@ -217,18 +221,19 @@ public class CompressEvent extends Event
 				{
 					byte[] newbuf = LZFEncoder.encode(raw,
 					        content.readableBytes());
+					BufferHelper.writeVarInt(outbuf, newbuf.length);
 					outbuf.write(newbuf);
 				}
 				catch (Exception e)
 				{
-					logger.error("Failed to compress by LZF.", e);
+					//logger.error("Failed to compress by LZF.", e);
 					return false;
 				}
 				break;
 			}
 			default:
 			{
-				logger.error("Unsupported compress type.", type);
+				//logger.error("Unsupported compress type.", type);
 				return false;
 			}
 		}

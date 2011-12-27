@@ -25,8 +25,7 @@ public interface GAEConstants
 	public static final int RESPONSE_TOO_LARGE = -3;
 	public static final int RESPONSE_TIMEOUT = -4;
 	
-	public static final int COMPRESS_EVENT_TYPE = 1500;
-	public static final int ENCRYPT_EVENT_TYPE = 1501;
+
 	
 	public static final int AUTH_REQUEST_EVENT_TYPE = 2000;
 	public static final int AUTH_RESPONSE_EVENT_TYPE = 2001;

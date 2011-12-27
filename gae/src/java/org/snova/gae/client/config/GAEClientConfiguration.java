@@ -29,14 +29,14 @@ import javax.xml.bind.annotation.XmlElements;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
+import org.arch.event.misc.CompressorType;
+import org.arch.event.misc.EncryptType;
 import org.jivesoftware.smack.ConnectionConfiguration;
 import org.jivesoftware.smack.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.framework.config.SimpleSocketAddress;
 import org.snova.framework.util.SharedObjectHelper;
-import org.snova.gae.common.CompressorType;
-import org.snova.gae.common.EncryptType;
 import org.snova.gae.common.GAEConstants;
 
 /**

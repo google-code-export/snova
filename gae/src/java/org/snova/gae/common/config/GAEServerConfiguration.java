@@ -10,8 +10,8 @@ import java.util.Set;
 import org.arch.buffer.Buffer;
 import org.arch.buffer.BufferHelper;
 import org.arch.buffer.CodecObject;
-import org.snova.gae.common.CompressorType;
-import org.snova.gae.common.EncryptType;
+import org.arch.event.misc.CompressorType;
+import org.arch.event.misc.EncryptType;
 
 /**
  * @author qiyingwang

@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.snova.gae.common;
+package org.arch.event.misc;
 
 /**
  * @author qiyingwang

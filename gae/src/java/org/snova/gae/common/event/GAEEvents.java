@@ -11,6 +11,8 @@ import org.arch.event.NamedEventHandler;
 import org.arch.event.http.HTTPErrorEvent;
 import org.arch.event.http.HTTPRequestEvent;
 import org.arch.event.http.HTTPResponseEvent;
+import org.arch.event.misc.CompressEvent;
+import org.arch.event.misc.EncryptEvent;
 
 /**
  * @author qiyingwang

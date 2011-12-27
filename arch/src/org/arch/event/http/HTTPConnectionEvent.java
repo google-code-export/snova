@@ -23,6 +23,7 @@ public  class HTTPConnectionEvent extends Event
 	public static final int CLOSED = 2;
 	
 	public int status;
+	public HTTPConnectionEvent(){}
 	public HTTPConnectionEvent(int status)
     {
 	    this.status = status;
@@ -30,13 +31,6 @@ public  class HTTPConnectionEvent extends Event
 
 	@Override
     protected boolean onDecode(Buffer buffer)
-    {
-		BufferHelper.writeVarInt(buffer, status);
-	    return true;
-    }
-
-	@Override
-    protected boolean onEncode(Buffer buffer)
     {
 		try
         {
@@ -46,6 +40,14 @@ public  class HTTPConnectionEvent extends Event
         {
 	        return false;
         }
+	    return true;
+		
+    }
+
+	@Override
+    protected boolean onEncode(Buffer buffer)
+    {
+		BufferHelper.writeVarInt(buffer, status);
 	    return true;
     }
 	
