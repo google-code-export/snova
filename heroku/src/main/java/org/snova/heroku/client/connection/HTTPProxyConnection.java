@@ -4,10 +4,12 @@
 package org.snova.heroku.client.connection;
 
 import java.net.InetSocketAddress;
+import java.util.List;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.arch.buffer.Buffer;
+import org.arch.event.Event;
 import org.arch.misc.crypto.base64.Base64;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
@@ -35,6 +37,7 @@ import org.jboss.netty.handler.codec.http.HttpRequestEncoder;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseDecoder;
 import org.jboss.netty.handler.codec.http.HttpVersion;
+import org.jboss.netty.handler.execution.ExecutionHandler;
 import org.jboss.netty.handler.execution.OrderedMemoryAwareThreadPoolExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -95,6 +98,8 @@ public class HTTPProxyConnection extends ProxyConnection
 	private ChannelFuture connectProxyServer(String address)
 	{
 		ChannelPipeline pipeline = Channels.pipeline();
+		//pipeline.addLast("executor", new ExecutionHandler(
+		//        SharedObjectHelper.getGlobalThreadPool()));
 		pipeline.addLast("decoder", new HttpResponseDecoder());
 		// pipeline.addLast("aggregator", new
 		// HttpChunkAggregator(maxMessageSize));
@@ -116,7 +121,7 @@ public class HTTPProxyConnection extends ProxyConnection
 		}
 		SocketChannel channel = factory.newChannel(pipeline);
 		String connectHost = remoteAddress;
-		int connectPort = 80;
+		int connectPort = 8080;
 		HerokuClientConfiguration cfg = HerokuClientConfiguration.getInstance();
 		if (null != cfg.getLocalProxy())
 		{
@@ -185,7 +190,30 @@ public class HTTPProxyConnection extends ProxyConnection
 			logger.debug("Send event via HTTP connection.");
 		}
 	}
-	
+//	protected void doSend(List<Event> events)
+//	{
+//		waitingResponse.set(true);
+//		clientChannel = null;
+//		ChannelFuture future = connectProxyServer(remoteAddress);
+//		future.addListener(new ChannelFutureListener()
+//		{
+//			@Override
+//			public void operationComplete(ChannelFuture future) throws Exception
+//			{
+//				future = future.awaitUninterruptibly();
+//				if(future.isSuccess())
+//				{	
+//					sendContent(future.getChannel(), content);
+//				}
+//				else
+//				{
+//					logger.error("Failed to connect remote heroku server, try again");
+//					waitingResponse.set(false);
+//					doSend(content);
+//				}
+//			}
+//		});
+//	}
 	protected boolean doSend(final Buffer content)
 	{
 		waitingResponse.set(true);
@@ -229,15 +257,18 @@ public class HTTPProxyConnection extends ProxyConnection
 		private void fillResponseBuffer(ChannelBuffer buffer)
 		{
 			int contentlen = buffer.readableBytes();
-			resBuffer.ensureWritableBytes(contentlen);
-			buffer.readBytes(resBuffer.getRawBuffer(),
-			        resBuffer.getWriteIndex(), contentlen);
-			resBuffer.advanceWriteIndex(contentlen);
-			if (responseContentLength <= resBuffer.readableBytes())
+			if(contentlen > 0)
 			{
-				waitingResponse.set(false);
-				doRecv(resBuffer);
-				clearBuffer();
+				resBuffer.ensureWritableBytes(contentlen);
+				buffer.readBytes(resBuffer.getRawBuffer(),
+				        resBuffer.getWriteIndex(), contentlen);
+				resBuffer.advanceWriteIndex(contentlen);
+				if (responseContentLength <= resBuffer.readableBytes())
+				{
+					waitingResponse.set(false);
+					doRecv(resBuffer);
+					clearBuffer();
+				}
 			}
 		}
 		
@@ -315,13 +346,13 @@ public class HTTPProxyConnection extends ProxyConnection
 			else
 			{
 				HttpChunk chunk = (HttpChunk) e.getMessage();
+				fillResponseBuffer(chunk.getContent());
 				if (chunk.isLast())
 				{
 					readingChunks = false;
 					waitingResponse.set(false);
 					//clientChannel.close();
 				}
-				fillResponseBuffer(chunk.getContent());
 			}
 		}
 	}

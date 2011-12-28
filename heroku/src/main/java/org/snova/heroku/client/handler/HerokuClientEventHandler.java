@@ -64,7 +64,6 @@ public class HerokuClientEventHandler implements NamedEventHandler
 				break;
 			}
 		}
-		
 	}
 	
 	@Override

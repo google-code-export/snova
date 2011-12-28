@@ -62,6 +62,8 @@ public class HerokuEvents
 				        HTTPChunkEvent.class, handler);
 				EventDispatcher.getSingletonInstance().register(
 				        HTTPConnectionEvent.class, handler);
+				EventDispatcher.getSingletonInstance().register(
+						SocketConnectRequestEvent.class, handler);
 			}
 			else
 			{

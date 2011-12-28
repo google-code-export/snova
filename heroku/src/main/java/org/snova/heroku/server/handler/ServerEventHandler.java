@@ -4,11 +4,9 @@
 package org.snova.heroku.server.handler;
 
 import java.util.LinkedList;
-import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
-import org.arch.buffer.Buffer;
 import org.arch.event.Event;
 import org.arch.event.EventConstants;
 import org.arch.event.EventHandler;
@@ -26,7 +24,6 @@ import org.arch.event.misc.EncryptType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.heroku.common.HerokuConstants;
-import org.snova.heroku.common.event.EventRestNotify;
 
 /**
  * @author qiyingwang
@@ -42,7 +39,8 @@ public class ServerEventHandler implements EventHandler
 	protected LinkedList<Event>	       responseQueue	= new LinkedList<Event>();
 	protected DirectFetchHandler	   fetchHandler	 = new DirectFetchHandler(
 	                                                         this);
-	
+	//protected NettyFetchHandler	   fetchHandler	 = new NettyFetchHandler(
+    //        this);
 	public ScheduledExecutorService getThreadPool()
 	{
 		return pool;
@@ -57,10 +55,10 @@ public class ServerEventHandler implements EventHandler
 			        + event.getClass().getName());
 		}
 		long ts = fetchHandler.touch();
-		if(ts - fetchHandler.getPingTime() > fetchHandler.getSelectWaitTime() * 5)
-		{
-			logger.error("IO thread may be blocked!");
-		}
+		//if(ts - fetchHandler.getPingTime() > fetchHandler.getSelectWaitTime() * 5)
+		//{
+		//	logger.error("IO thread may be blocked!");
+		//}
 		int type = tv.type;
 		switch (type)
 		{
@@ -111,6 +109,11 @@ public class ServerEventHandler implements EventHandler
 			{
 				break;
 			}
+			case HerokuConstants.EVENT_SOCKET_CONNECT_REQ_TYPE:
+			{
+				break;
+			}
+			
 			default:
 			{
 				logger.error("Unsupported event type:" + type);
@@ -128,9 +131,11 @@ public class ServerEventHandler implements EventHandler
 			enc.setHash(ev.getHash());
 			ev = enc;
 		}
+		
 		synchronized (responseQueue)
 		{
 			responseQueue.add(ev);
+			System.out.println("Offer one event while current queue size:" + responseQueue.size());
 			return responseQueue.size();
 		}
 	}
@@ -161,7 +166,7 @@ public class ServerEventHandler implements EventHandler
 	public void onEvent(final EventHeader header, final Event event)
 	{
 		Object[] attach = (Object[]) event.getAttachment();
-		final EventSendService sendService = (EventSendService) attach[0];
+		//final EventSendService sendService = (EventSendService) attach[0];
 		pool.submit(new Runnable()
 		{
 			@Override
