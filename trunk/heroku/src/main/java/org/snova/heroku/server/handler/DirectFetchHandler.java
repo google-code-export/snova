@@ -6,10 +6,13 @@ package org.snova.heroku.server.handler;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -23,6 +26,7 @@ import org.arch.event.http.HTTPResponseEvent;
 import org.arch.util.NetworkHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.snova.heroku.common.event.SocketConnectRequestEvent;
 
 /**
  * @author wqy
@@ -30,20 +34,37 @@ import org.slf4j.LoggerFactory;
  */
 public class DirectFetchHandler implements Runnable
 {
-	protected Logger	               logger	     = LoggerFactory
-	                                                         .getLogger(getClass());
-	private ServerEventHandler	       handler;
-	private Selector	               selector;
-	private Map<Integer, SelectionKey>	keyTable	 = new ConcurrentHashMap<Integer, SelectionKey>();
-	
-	private long	                   lastTouchTime	= -1;
+	protected Logger logger = LoggerFactory.getLogger(getClass());
+	private ServerEventHandler handler;
+	private Selector selector;
+	private Map<Integer, SelectionKey> keyTable = new ConcurrentHashMap<Integer, SelectionKey>();
+
+	private long lastTouchTime = -1;
 	private long lastPingTime = System.currentTimeMillis();
 	private long selectWaitTime = 2000;
+
+	private List<RegisterTask> registQueue = new LinkedList<DirectFetchHandler.RegisterTask>();
+	private List<SelectionKey> closeQueue = new LinkedList<SelectionKey>();
 	
+	class RegisterTask
+	{
+		public SocketChannel channel;
+		public int ops;
+		public Object[] attach;
+
+		public void run() throws ClosedChannelException
+		{
+			SelectionKey key = channel.register(selector, ops);
+			key.attach(attach);
+			HTTPRequestEvent event = (HTTPRequestEvent) attach[0];
+			keyTable.put(event.getHash(), key);
+		}
+	}
+
 	public long getSelectWaitTime()
-    {
-    	return selectWaitTime;
-    }
+	{
+		return selectWaitTime;
+	}
 
 	public DirectFetchHandler(ServerEventHandler serverEventHandler)
 	{
@@ -59,12 +80,12 @@ public class DirectFetchHandler implements Runnable
 		}
 		new Thread(this).start();
 	}
-	
+
 	public long getPingTime()
 	{
 		return lastPingTime;
 	}
-	
+
 	private void closeAllClient()
 	{
 		for (SelectionKey key : keyTable.values())
@@ -78,56 +99,44 @@ public class DirectFetchHandler implements Runnable
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			;
 		}
 		keyTable.clear();
 		handler.clearEventQueue();
 	}
-	
-	public SelectionKey clientConnect(String host, int port, Object[] attach)
+
+	public void clientConnect(String host, int port, Object[] attach)
 	        throws IOException
 	{
+		//if(logger.isDebugEnabled())
+		System.out.println("Connect remote " + host + ":" + port);
 		SocketChannel client = SocketChannel.open();
 		client.configureBlocking(false);
-		SelectionKey key = null;
-		synchronized (this)
+		HTTPRequestEvent ev = (HTTPRequestEvent) attach[0];
+		if (!ev.method.equalsIgnoreCase("Connect"))
 		{
-			selector.wakeup();
-			key = client.register(selector, SelectionKey.OP_CONNECT);
-			key.attach(attach);
-			HTTPRequestEvent ev = (HTTPRequestEvent) attach[0];
-			if (!ev.method.equalsIgnoreCase("Connect"))
-			{
-				attach[1] = buildSentBuffer(ev);
-			}
-			keyTable.put(ev.getHash(), key);
-			// System.out.println("#####connect " + host + ":" + port);
-			if (client.connect(new InetSocketAddress(host, port)))
-			{
-				if (client.isConnectionPending())
-				{
-					try
-					{
-						client.finishConnect();
-					}
-					catch (Exception e)
-					{
-						// e.printStackTrace();
-						logger.error("Failed to connect remote."
-						        + client.socket().getRemoteSocketAddress());
-						closeConnection(key, client);
-						return null;
-					}
-				}
-				key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
-				clientConnected(key);
-				System.out.println("#####" + host + ":" + port + " connected.");
-			}
-			
+			attach[1] = buildSentBuffer(ev);
 		}
-		return key;
+		RegisterTask task = new RegisterTask();
+		task.channel = 	client;
+		task.attach = attach;
+		if (client.connect(new InetSocketAddress(host, port)))
+		{
+			task.ops = SelectionKey.OP_READ | SelectionKey.OP_WRITE;
+			//key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+			clientConnected(ev);
+			System.out.println("#####" + host + ":" + port + " connected.");
+		}
+		else
+		{
+			task.ops = SelectionKey.OP_CONNECT;
+		}
+		synchronized (registQueue)
+        {
+			registQueue.add(task);
+			selector.wakeup();
+        }
 	}
-	
+
 	public void fetch(HTTPChunkEvent event)
 	{
 		SelectionKey key = keyTable.get(event.getHash());
@@ -147,7 +156,7 @@ public class DirectFetchHandler implements Runnable
 			        + event.getHash());
 		}
 	}
-	
+
 	public void fetch(HTTPRequestEvent event)
 	{
 		String host = event.getHeader("Host");
@@ -180,25 +189,23 @@ public class DirectFetchHandler implements Runnable
 			}
 			else
 			{
-				closeConnection(key, channel);
+				closeConnection(key);
 			}
 		}
 		try
 		{
 			// System.out.println("Try to connect " + host+":" + port);
 			clientConnect(host, port, new Object[] { event, null });
-			
+
 		}
 		catch (IOException e)
 		{
 			e.printStackTrace();
 		}
 	}
-	
-	private void clientConnected(SelectionKey key)
+
+	private void clientConnected(HTTPRequestEvent event)
 	{
-		Object[] attch = (Object[]) key.attachment();
-		HTTPRequestEvent event = (HTTPRequestEvent) attch[0];
 		if (event.method.equalsIgnoreCase("Connect"))
 		{
 			HTTPResponseEvent res = new HTTPResponseEvent();
@@ -207,7 +214,7 @@ public class DirectFetchHandler implements Runnable
 			handler.offer(res, false);
 		}
 	}
-	
+
 	private ByteBuffer buildSentBuffer(HTTPRequestEvent ev)
 	{
 		StringBuilder buffer = new StringBuilder();
@@ -219,7 +226,7 @@ public class DirectFetchHandler implements Runnable
 			        .append(header.getValue()).append("\r\n");
 		}
 		buffer.append("\r\n");
-		
+
 		Buffer msg = new Buffer(buffer.length() + ev.content.readableBytes());
 		msg.write(buffer.toString().getBytes());
 		if (ev.content.readable())
@@ -229,7 +236,43 @@ public class DirectFetchHandler implements Runnable
 		}
 		return ByteBuffer.wrap(msg.getRawBuffer(), 0, msg.readableBytes());
 	}
+
+	public void handleRegisteQueue()
+	{
+		synchronized (registQueue)
+        {
+			for(RegisterTask task:registQueue)
+			{
+				try
+	            {
+		            task.run();
+	            }
+	            catch (Exception e)
+	            {
+		            e.printStackTrace();
+	            }
+			}
+			registQueue.clear();
+        }
+		
+	}
 	
+	public void handleCloseQueue()
+	{
+		for(SelectionKey key:closeQueue)
+		{
+			try
+            {
+	            closeConnection(key);
+            }
+            catch (Exception e)
+            {
+	            e.printStackTrace();
+            }
+		}
+		closeQueue.clear();
+	}
+
 	public void handleConnectionEvent(HTTPConnectionEvent ev)
 	{
 		if (ev.status == HTTPConnectionEvent.CLOSED)
@@ -237,52 +280,44 @@ public class DirectFetchHandler implements Runnable
 			SelectionKey key = keyTable.remove(ev.getHash());
 			if (null != key)
 			{
-				try
-				{
-					key.channel().close();
-				}
-				catch (IOException e)
-				{
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+				closeQueue.add(key);
+				selector.wakeup();
 			}
 		}
-		
+
 	}
-	
+
 	public long touch()
 	{
 		long now = System.currentTimeMillis();
 		lastTouchTime = now;
 		return now;
 	}
-	
-	
-	
-	private void closeConnection(SelectionKey key, SocketChannel client)
+
+	private void closeConnection(SelectionKey key)
 	{
 		try
 		{
 			Object[] attch = (Object[]) key.attachment();
 			HTTPRequestEvent attach = (HTTPRequestEvent) attch[0];
+			System.out.println("Close " + attach.getHeader("Host"));
 			keyTable.remove(attach.getHash());
 			HTTPConnectionEvent ev = new HTTPConnectionEvent(
 			        HTTPConnectionEvent.CLOSED);
 			ev.setHash(attach.getHash());
 			handler.offer(ev, false);
-			client.close();
+			key.channel().close();
 		}
 		catch (Exception e)
 		{
 			e.printStackTrace();
 		}
 	}
-	
+
 	@Override
 	public void run()
 	{
-		ByteBuffer buffer = ByteBuffer.allocateDirect(8192);
+		ByteBuffer buffer = ByteBuffer.allocateDirect(512 * 1024);
 		while (true)
 		{
 			try
@@ -295,7 +330,8 @@ public class DirectFetchHandler implements Runnable
 					while (it.hasNext())
 					{
 						SelectionKey key = (SelectionKey) it.next();
-						// it.remove();
+						Object[] attch = (Object[]) key.attachment();
+						HTTPRequestEvent attachEvent = (HTTPRequestEvent) attch[0];
 						if (key.isReadable())
 						{
 							int bytes = 0;
@@ -308,33 +344,36 @@ public class DirectFetchHandler implements Runnable
 							}
 							catch (Exception e)
 							{
-								closeConnection(key, client);
+								closeConnection(key);
 								logger.error("Failed to read client", e);
 								continue;
 							}
-							
+
 							if (bytes > 0)
 							{
 								buffer.flip();
 								HTTPChunkEvent chunk = new HTTPChunkEvent();
-								Object[] attch = (Object[]) key.attachment();
-								HTTPRequestEvent attach = (HTTPRequestEvent) attch[0];
-								chunk.setHash(attach.getHash());
+								
+								chunk.setHash(attachEvent.getHash());
 								chunk.content = new byte[bytes];
 								buffer.get(chunk.content);
-								//key.interestOps(SelectionKey.OP_READ
-								//        | SelectionKey.OP_WRITE);
+								// key.interestOps(SelectionKey.OP_READ
+								// | SelectionKey.OP_WRITE);
 								handler.offer(chunk, true);
-								//while (handler.readyEventNum() > 100)
-								//{
-								//	Thread.sleep(10);
-								//}
+								// while (handler.readyEventNum() > 100)
+								// {
+								// Thread.sleep(10);
+								// }
 							}
 							else
 							{
-								// client.register(sel, ops, att);
-								closeConnection(key, client);
-								continue;
+								if(bytes < 0)
+								{
+									// client.register(sel, ops, att);
+									closeConnection(key);
+									continue;
+								}
+								
 							}
 						}
 						if (key.isConnectable())
@@ -350,15 +389,13 @@ public class DirectFetchHandler implements Runnable
 								catch (Exception e)
 								{
 									// e.printStackTrace();
-									logger.error("Failed to connect remote."
-									        + client.socket()
-									                .getRemoteSocketAddress());
-									closeConnection(key, client);
+									logger.error("Failed to connect remote.", e);
+									closeConnection(key);
 									continue;
-								}	
+								}
 							}
-							clientConnected(key);
-							System.out.println("Remote connected!");
+							clientConnected(attachEvent);
+							// System.out.println("Remote connected!");
 							key.interestOps(SelectionKey.OP_READ
 							        | SelectionKey.OP_WRITE);
 						}
@@ -366,9 +403,8 @@ public class DirectFetchHandler implements Runnable
 						{
 							SocketChannel client = (SocketChannel) key
 							        .channel();
-							Object[] attch = (Object[]) key.attachment();
 							ByteBuffer src = (ByteBuffer) attch[1];
-							
+
 							try
 							{
 								if (null != src && src.hasRemaining())
@@ -393,24 +429,31 @@ public class DirectFetchHandler implements Runnable
 							catch (Exception e)
 							{
 								logger.error("Failed to write client", e);
-								closeConnection(key, client);
+								closeConnection(key);
 								continue;
-							}	
+							}
 						}
 					}
 					keys.clear();
 				}
+				handleRegisteQueue();
+				handleCloseQueue();
 				synchronized (this)
 				{
 					long now = System.currentTimeMillis();
 					lastPingTime = now;
-					if (now - lastTouchTime > 10000)
+					if (!handler.getEventQueue().isEmpty() && now - lastTouchTime > 10000)
 					{
 						logger.error("Too long time since last request handled.");
 						closeAllClient();
 						touch();
 					}
-					while(handler.readyEventNum() > 100)
+					//System.out.println("keyTable size=" + keyTable.size());
+					for(Integer sessionId:keyTable.keySet())
+					{
+						System.out.println("Rest session:" + sessionId);
+					}
+					while (handler.readyEventNum() > 100)
 					{
 						Thread.sleep(100);
 					}
@@ -420,7 +463,7 @@ public class DirectFetchHandler implements Runnable
 			{
 				logger.error("failed to get ", e);
 			}
-			
+
 		}
 	}
 }

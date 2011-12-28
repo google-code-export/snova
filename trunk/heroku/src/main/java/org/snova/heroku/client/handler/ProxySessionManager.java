@@ -37,7 +37,8 @@ public class ProxySessionManager implements Runnable
 	private ProxySessionManager()
 	{
 		SharedObjectHelper.getGlobalTimer().scheduleAtFixedRate(this, 1000,
-		        5000, TimeUnit.MILLISECONDS);
+		        500, TimeUnit.MILLISECONDS);
+		//new Thread(this).start();
 	}
 	
 	public static ProxySessionManager getInstance()
@@ -45,7 +46,7 @@ public class ProxySessionManager implements Runnable
 		return instance;
 	}
 	
-	public void removeSession(ProxySession session)
+	public synchronized void removeSession(ProxySession session)
 	{
 		sessionTable.remove(session.getSessionID());
 		if (logger.isDebugEnabled())
@@ -54,15 +55,12 @@ public class ProxySessionManager implements Runnable
 		}
 	}
 	
-	public ProxySession getProxySession(Integer sessionID)
+	public synchronized ProxySession getProxySession(Integer sessionID)
 	{
-		synchronized (sessionTable)
-		{
-			return sessionTable.get(sessionID);
-		}
+		return sessionTable.get(sessionID);
 	}
 	
-	private ProxySession createSession(Integer id, Channel ch)
+	private synchronized ProxySession createSession(Integer id, Channel ch)
 	{
 		ProxySession session = getProxySession(id);
 		if (null == session)
@@ -140,19 +138,30 @@ public class ProxySessionManager implements Runnable
 			{
 				logger.debug("Current session table has " + sessionTable.size());
 			}
-			List<HerokuServerAuth> auths = HerokuClientConfiguration
-			        .getInstance().getHerokuServerAuths();
-			for (HerokuServerAuth auth : auths)
-			{
-				ProxyConnection conn = ProxyConnectionManager.getInstance()
-				        .getClientConnectionByAuth(auth);
-				conn.send(new EventRestRequest());
-			}
-			
-			for (ProxySession session:sessionTable.values())
+			try
             {
-				session.routine();
+				List<HerokuServerAuth> auths = HerokuClientConfiguration
+				        .getInstance().getHerokuServerAuths();
+				for (HerokuServerAuth auth : auths)
+				{
+					ProxyConnection conn = ProxyConnectionManager.getInstance()
+					        .getClientConnectionByAuth(auth);
+					conn.send(new EventRestRequest());
+				}
+				
+				synchronized (this)
+                {
+					for (ProxySession session:sessionTable.values())
+		            {
+						session.routine();
+		            }
+                }
             }
+            catch (Throwable e)
+            {
+	           logger.error("Failed routine.", e);
+            }
+			
 		}
 	}
 }

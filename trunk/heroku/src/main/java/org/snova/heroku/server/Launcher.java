@@ -32,7 +32,8 @@ public class Launcher
 	public static void main(String[] args) throws Exception{
 		ServerEventHandler handler = new ServerEventHandler();
 		HerokuEvents.init(handler, true);
-        Server server = new Server(Integer.valueOf(System.getenv("PORT")));
+		String portstr = System.getenv("PORT");
+        Server server = new Server(Integer.valueOf(null == portstr?"8080":portstr));
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
         context.setContextPath("/");
         server.setHandler(context);
