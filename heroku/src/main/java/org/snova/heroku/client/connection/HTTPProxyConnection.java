@@ -82,6 +82,10 @@ public class HTTPProxyConnection extends ProxyConnection
 	
 	public boolean isReady()
 	{
+		if(null == clientChannel || !clientChannel.isConnected())
+		{
+			waitingResponse.set(false);
+		}
 		return !waitingResponse.get();
 	}
 	
@@ -89,9 +93,10 @@ public class HTTPProxyConnection extends ProxyConnection
 	{
 		if (clientChannel != null && clientChannel.isOpen())
 		{
-			clientChannel.close();
+			//clientChannel.close();
 		}
 		clientChannel = null;
+		waitingResponse.set(false);
 	}
 
 	
@@ -246,6 +251,7 @@ public class HTTPProxyConnection extends ProxyConnection
 	class HttpResponseHandler extends SimpleChannelUpstreamHandler
 	{
 		private boolean	readingChunks		  = false;
+		private boolean finished = false;
 		private int		responseContentLength	= 0;
 		private Buffer	resBuffer		      = new Buffer(0);
 		
@@ -268,6 +274,7 @@ public class HTTPProxyConnection extends ProxyConnection
 					waitingResponse.set(false);
 					doRecv(resBuffer);
 					clearBuffer();
+					finished = true;
 				}
 			}
 		}
@@ -292,6 +299,10 @@ public class HTTPProxyConnection extends ProxyConnection
 			if (logger.isDebugEnabled())
 			{
 				logger.debug("Connection closed.");
+			}
+			if(!finished)
+			{
+				logger.error("Not finished since no enought data read.");
 			}
 			// updateSSLProxyConnectionStatus(DISCONNECTED);
 			waitingResponse.set(false);

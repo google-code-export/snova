@@ -127,7 +127,7 @@ public abstract class ProxyConnection
 				if(logger.isDebugEnabled())
 				{
 					logger.debug("Connection:" + this.hashCode()
-					        + " send encode event for session[" + event.getHash() + "]");
+					        + " send encode event for session[" + ev.getHash() + "]");
 				}
 			}
 			queuedEvents.clear();
@@ -136,11 +136,12 @@ public abstract class ProxyConnection
 		return doSend(msgbuffer);
 	}
 
-	private synchronized void handleRecvEvent(Event ev)
+	private  void handleRecvEvent(Event ev)
 	{
 		if (null == ev)
 		{
-			close();
+			logger.error("NULL event to handle!");
+			//close();
 			return;
 		}
 
@@ -229,7 +230,7 @@ public abstract class ProxyConnection
 		}
 	}
 
-	protected void doRecv(Buffer content)
+	protected synchronized void doRecv(Buffer content)
 	{
 		Event ev = null;
 		try

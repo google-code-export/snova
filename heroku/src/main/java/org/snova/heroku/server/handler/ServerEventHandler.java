@@ -135,7 +135,7 @@ public class ServerEventHandler implements EventHandler
 		synchronized (responseQueue)
 		{
 			responseQueue.add(ev);
-			System.out.println("Offer one event while current queue size:" + responseQueue.size());
+			//System.out.println("Offer one event while current queue size:" + responseQueue.size());
 			return responseQueue.size();
 		}
 	}

@@ -44,7 +44,8 @@ public class HTTPEventDispatcherServlet extends HttpServlet
 		resp.setContentLength(buf.readableBytes());
 		resp.getOutputStream().write(buf.getRawBuffer(), buf.getReadIndex(),
 		        buf.readableBytes());
-		// resp.getOutputStream().flush();
+		resp.getOutputStream().flush();
+		resp.getOutputStream().close();
 	}
 
 	@Override
