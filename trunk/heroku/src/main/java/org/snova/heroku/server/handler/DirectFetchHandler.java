@@ -26,7 +26,6 @@ import org.arch.event.http.HTTPResponseEvent;
 import org.arch.util.NetworkHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.snova.heroku.common.event.SocketConnectRequestEvent;
 
 /**
  * @author wqy
@@ -41,7 +40,7 @@ public class DirectFetchHandler implements Runnable
 
 	private long lastTouchTime = -1;
 	private long lastPingTime = System.currentTimeMillis();
-	private long selectWaitTime = 2000;
+	private long selectWaitTime = 200000;
 
 	private List<RegisterTask> registQueue = new LinkedList<DirectFetchHandler.RegisterTask>();
 	private List<SelectionKey> closeQueue = new LinkedList<SelectionKey>();
@@ -108,10 +107,11 @@ public class DirectFetchHandler implements Runnable
 	        throws IOException
 	{
 		//if(logger.isDebugEnabled())
-		System.out.println("Connect remote " + host + ":" + port);
+		
 		SocketChannel client = SocketChannel.open();
 		client.configureBlocking(false);
 		HTTPRequestEvent ev = (HTTPRequestEvent) attach[0];
+		System.out.println("Connect remote " + host + ":" + port + " for session:" + ev.getHash());
 		if (!ev.method.equalsIgnoreCase("Connect"))
 		{
 			attach[1] = buildSentBuffer(ev);
@@ -195,7 +195,7 @@ public class DirectFetchHandler implements Runnable
 		try
 		{
 			// System.out.println("Try to connect " + host+":" + port);
-			clientConnect(host, port, new Object[] { event, null });
+			clientConnect(host, port, new Object[] { event, null , Boolean.FALSE});
 
 		}
 		catch (IOException e)
@@ -259,18 +259,22 @@ public class DirectFetchHandler implements Runnable
 	
 	public void handleCloseQueue()
 	{
-		for(SelectionKey key:closeQueue)
+		synchronized (closeQueue)
 		{
-			try
-            {
-	            closeConnection(key);
-            }
-            catch (Exception e)
-            {
-	            e.printStackTrace();
-            }
+			for(SelectionKey key:closeQueue)
+			{
+				try
+	            {
+		            closeConnection(key);
+	            }
+	            catch (Exception e)
+	            {
+		            e.printStackTrace();
+	            }
+			}
+			closeQueue.clear();
 		}
-		closeQueue.clear();
+		
 	}
 
 	public void handleConnectionEvent(HTTPConnectionEvent ev)
@@ -280,7 +284,11 @@ public class DirectFetchHandler implements Runnable
 			SelectionKey key = keyTable.remove(ev.getHash());
 			if (null != key)
 			{
-				closeQueue.add(key);
+				synchronized (closeQueue)
+                {
+					closeQueue.add(key);
+                }
+				
 				selector.wakeup();
 			}
 		}
@@ -300,12 +308,12 @@ public class DirectFetchHandler implements Runnable
 		{
 			Object[] attch = (Object[]) key.attachment();
 			HTTPRequestEvent attach = (HTTPRequestEvent) attch[0];
-			System.out.println("Close " + attach.getHeader("Host"));
+			System.out.println("Close " + attach.getHeader("Host") + " for session:" + attach.getHash() + ", while received data?" + attch[2]);
 			keyTable.remove(attach.getHash());
 			HTTPConnectionEvent ev = new HTTPConnectionEvent(
 			        HTTPConnectionEvent.CLOSED);
 			ev.setHash(attach.getHash());
-			handler.offer(ev, false);
+			handler.offer(ev, true);
 			key.channel().close();
 		}
 		catch (Exception e)
@@ -317,7 +325,7 @@ public class DirectFetchHandler implements Runnable
 	@Override
 	public void run()
 	{
-		ByteBuffer buffer = ByteBuffer.allocateDirect(512 * 1024);
+		ByteBuffer buffer = ByteBuffer.allocate(1024* 1024);
 		while (true)
 		{
 			try
@@ -325,7 +333,7 @@ public class DirectFetchHandler implements Runnable
 				int ret = selector.select(selectWaitTime);
 				if (ret > 0)
 				{
-					Set keys = selector.selectedKeys(); // 取得代表端通道的键集合
+					Set keys = selector.selectedKeys();
 					Iterator it = keys.iterator();
 					while (it.hasNext())
 					{
@@ -360,6 +368,7 @@ public class DirectFetchHandler implements Runnable
 								// key.interestOps(SelectionKey.OP_READ
 								// | SelectionKey.OP_WRITE);
 								handler.offer(chunk, true);
+								attch[2] = Boolean.TRUE;
 								// while (handler.readyEventNum() > 100)
 								// {
 								// Thread.sleep(10);
@@ -384,7 +393,11 @@ public class DirectFetchHandler implements Runnable
 							{
 								try
 								{
-									client.finishConnect();
+									if(!client.finishConnect())
+									{
+										closeConnection(key);
+										continue;
+									}
 								}
 								catch (Exception e)
 								{
@@ -448,11 +461,16 @@ public class DirectFetchHandler implements Runnable
 						closeAllClient();
 						touch();
 					}
-					//System.out.println("keyTable size=" + keyTable.size());
-					for(Integer sessionId:keyTable.keySet())
+					if(now - lastTouchTime > 5000)
 					{
-						System.out.println("Rest session:" + sessionId);
-					}
+						System.out.println("============================");
+						for(Integer sessionId:keyTable.keySet())
+						{
+							Object[] attach = (Object[]) keyTable.get(sessionId).attachment();
+							HTTPRequestEvent ev = (HTTPRequestEvent) attach[0];
+							System.out.println("Rest session:" + sessionId + " with :" + ev.method + " " + ev.getHeader("Host") + ", received data?" + attach[2]);
+						}
+					}	
 					while (handler.readyEventNum() > 100)
 					{
 						Thread.sleep(100);

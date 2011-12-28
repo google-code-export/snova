@@ -84,6 +84,7 @@ public class ProxySessionManager implements Runnable
 		        .getAttachment();
 		// Channel localChannel = attach.first;
 		Integer handleID = attach.second;
+		//handleID = attach.first.getId();
 		ProxySession session = getProxySession(handleID);
 		if (null != session)
 		{
@@ -106,11 +107,13 @@ public class ProxySessionManager implements Runnable
 		        .getAttachment();
 		Channel localChannel = attach.first;
 		Integer handleID = attach.second;
+		//handleID = attach.first.getId();
 		ProxySession session = getProxySession(handleID);
 		if (null == session)
 		{
 			session = createSession(handleID, localChannel);
 		}
+		event.setHash(handleID);
 		session.handle(event);
 		return session;
 	}
@@ -121,6 +124,7 @@ public class ProxySessionManager implements Runnable
 		        .getAttachment();
 		// Channel localChannel = attach.first;
 		Integer handleID = attach.second;
+		//handleID = attach.first.getId();
 		ProxySession session = getProxySession(handleID);
 		if (null != session)
 		{

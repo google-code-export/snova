@@ -62,7 +62,7 @@ public class ProxyConnectionManager
 			//logger.info("Success to connect " + size + " GAE server"
 			//        + (size > 1 ? "s" : ""));
 			SharedObjectHelper.getTrace().info(
-			        "Success to connect " + size + " GAE server"
+			        "Success to connect " + size + " Heroku server"
 			                + (size > 1 ? "s" : ""));
 		}
 		seletor = new ListSelector<HerokuServerAuth>(auths);

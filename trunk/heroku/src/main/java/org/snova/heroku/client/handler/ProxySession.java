@@ -48,83 +48,7 @@ public class ProxySession
 	private boolean isRequestSent;
 	private ProxySessionStatus status = ProxySessionStatus.INITED;
 
-//	private ChannelFuture writeFuture;
-//	private ChannelFutureListener writeFutureListener;
-//	private List<ChannelBuffer> queuedChunk;
-//	private static ChunkIOTask ioTask = null;
-//
-//	static synchronized ChunkIOTask getChunkIOTask()
-//	{
-//		if (null == ioTask)
-//		{
-//			ioTask = new ChunkIOTask();
-//			new Thread(ioTask).start();
-//		}
-//		return ioTask;
-//	}
-//
-//	static class ChunkIOTask implements Runnable
-//	{
-//		List<Pair<Channel, ChannelBuffer>> writeQueue = new LinkedList<Pair<Channel, ChannelBuffer>>();
-//
-//		void offer(Pair<Channel, ChannelBuffer> v)
-//		{
-//			synchronized (this)
-//			{
-//				writeQueue.add(v);
-//				this.notify();
-//			}
-//		}
-//
-//		@Override
-//		public void run()
-//		{
-//			while (true)
-//			{
-//				List<Pair<Channel, ChannelBuffer>> readyList = new LinkedList<Pair<Channel, ChannelBuffer>>();
-//				try
-//				{
-//					synchronized (this)
-//					{
-//						if (writeQueue.isEmpty())
-//						{
-//							this.wait(1000);
-//						}
-//						if (writeQueue.isEmpty())
-//						{
-//							continue;
-//						}
-//						readyList.clear();
-//						for (Pair<Channel, ChannelBuffer> v : writeQueue)
-//						{
-//							readyList.add(v);
-//						}
-//						writeQueue.clear();
-//					}
-//					for (Pair<Channel, ChannelBuffer> v : readyList)
-//					{
-//						v.first.write(v.second).awaitUninterruptibly();
-//					}
-//				}
-//				catch (Exception e)
-//				{
-//					logger.error("Failed to write channel in IP task thread.",
-//					        e);
-//				}
-//			}
-//
-//		}
-//
-//	}
-//
-//	private List<ChannelBuffer> getQueuedChunks()
-//	{
-//		if (null == queuedChunk)
-//		{
-//			queuedChunk = new LinkedList<ChannelBuffer>();
-//		}
-//		return queuedChunk;
-//	}
+	private ChannelFuture writeFuture;
 
 	public ProxySession(Integer id, Channel localChannel)
 	{
@@ -263,7 +187,24 @@ public class ProxySession
 			HTTPConnectionEvent conn = (HTTPConnectionEvent) res;
 			if (conn.status == HTTPConnectionEvent.CLOSED)
 			{
-				close();
+				status = ProxySessionStatus.PROCEEDING;
+				if(null != writeFuture && !writeFuture.isDone())
+				{
+					writeFuture.addListener(new ChannelFutureListener()
+					{		
+						@Override
+						public void operationComplete(ChannelFuture future) throws Exception
+						{
+							close();
+							
+						}
+					});
+				}
+				else
+				{
+					close();
+				}
+				
 			}
 		}
 		else if (res instanceof HTTPChunkEvent)
@@ -274,7 +215,7 @@ public class ProxySession
 			{
 				ChannelBuffer content = ChannelBuffers
 				        .wrappedBuffer(chunk.content);
-				localHTTPChannel.write(content);
+				writeFuture = localHTTPChannel.write(content);
 			}
 			else
 			{
@@ -345,6 +286,10 @@ public class ProxySession
 			if(isRequestSent)
 			{
 				status = ProxySessionStatus.PROCEEDING;
+				if(logger.isDebugEnabled())
+				{
+					logger.debug("Session[" + getSessionID() + "] reuse connected channel!");
+				}
 			}
 			else
 			{
