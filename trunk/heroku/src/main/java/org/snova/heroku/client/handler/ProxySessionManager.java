@@ -17,9 +17,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.framework.util.SharedObjectHelper;
 import org.snova.heroku.client.config.HerokuClientConfiguration;
+import org.snova.heroku.client.config.HerokuClientConfiguration.ConnectionMode;
 import org.snova.heroku.client.config.HerokuClientConfiguration.HerokuServerAuth;
 import org.snova.heroku.client.connection.ProxyConnection;
 import org.snova.heroku.client.connection.ProxyConnectionManager;
+import org.snova.heroku.common.event.EventRestRequest;
 
 /**
  * @author qiyingwang
@@ -35,8 +37,12 @@ public class ProxySessionManager implements Runnable
 	
 	private ProxySessionManager()
 	{
-		SharedObjectHelper.getGlobalTimer().scheduleAtFixedRate(this, 1000,
-		        500, TimeUnit.MILLISECONDS);
+		if(HerokuClientConfiguration.getInstance().getConnectionModeType().equals(ConnectionMode.HTTP))
+		{
+			SharedObjectHelper.getGlobalTimer().scheduleAtFixedRate(this, 1000,
+			        500, TimeUnit.MILLISECONDS);
+		}
+
 		//new Thread(this).start();
 	}
 	
@@ -149,7 +155,7 @@ public class ProxySessionManager implements Runnable
 				{
 					ProxyConnection conn = ProxyConnectionManager.getInstance()
 					        .getClientConnectionByAuth(auth);
-					//conn.send(new EventRestRequest());
+					conn.send(new EventRestRequest());
 				}
 				
 				synchronized (this)

@@ -32,7 +32,7 @@ public class HerokuRawSocketEvent
 	public boolean decode(Buffer buf)
 	{
 		int current = buf.getReadIndex();
-		if(buf.readableBytes() <=4)
+		if(buf.readableBytes() <=6)
 		{
 			return false;
 		}
