@@ -27,9 +27,9 @@ import org.arch.event.http.HTTPResponseEvent;
 import org.arch.util.NetworkHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.snova.heroku.common.codec.HerokuRawSocketEventFrameDecoder;
 import org.snova.heroku.common.event.EventRestNotify;
 import org.snova.heroku.common.event.HerokuRawSocketEvent;
-import org.snova.heroku.server.codec.HerokuRawSocketEventFrameDecoder;
 
 /**
  * @author wqy
@@ -377,19 +377,24 @@ public class DirectFetchHandlerV2 implements Runnable
 			}
 			while (true);
 			if(haveData)
-			{
+			{	
 				
 				LocalChannelAttachment attach = (LocalChannelAttachment) localChannelKey.attachment();
+				HerokuRawSocketEvent raw = new HerokuRawSocketEvent(attach.domain, buf);
+				Buffer content = new Buffer(buf.readableBytes() + 100);
+				raw.encode(content);
 				if(!attach.writeBuffer.readable())
 				{
-					attach.writeBuffer = buf;
+					attach.writeBuffer = content;
 				}
 				else
 				{
 					attach.writeBuffer.discardReadedBytes();
-					attach.writeBuffer.write(buf, buf.readableBytes());
+					attach.writeBuffer.write(content, content.readableBytes());
 				}
-				
+				//SocketChannel sc = (SocketChannel) localChannelKey.channel();
+				//ByteBuffer 
+				//sc.write(src)
 				localChannelKey.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
 				//localConnectedChannel.write(ByteBuffer.wrap(buf.getRawBuffer(), offset, length))
 			}
@@ -635,7 +640,7 @@ public class DirectFetchHandlerV2 implements Runnable
 								{
 									int expected = src.remaining();
 									int len = client.write(src);
-									System.out.println("Write back " + len);
+									//System.out.println("Write back " + len + ";" + expected);
 									if (len <  expected)
 									{
 										if(!isRemoteChannel)
@@ -698,9 +703,16 @@ public class DirectFetchHandlerV2 implements Runnable
 							        + attach.receivedData);
 						}
 					}
-					while (handler.readyEventNum() > 100)
+					if(null != localChannelKey)
 					{
-						Thread.sleep(100);
+						
+					}
+					else
+					{
+						while (handler.readyEventNum() > 100)
+						{
+							//Thread.sleep(100);
+						}
 					}
 				}
 			}

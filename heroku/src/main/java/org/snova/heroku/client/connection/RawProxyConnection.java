@@ -6,8 +6,10 @@ package org.snova.heroku.client.connection;
 import static org.jboss.netty.channel.Channels.pipeline;
 import static org.jboss.netty.channel.Channels.write;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
@@ -45,10 +47,10 @@ import org.snova.heroku.common.event.HerokuRawSocketEvent;
  */
 public class RawProxyConnection extends ProxyConnection implements Runnable
 {
-	private static Channel server;
-
-	private static Map<String, Pair<Channel, RawProxyConnection>> connectedChannelTable = new HashMap<String, Pair<Channel, RawProxyConnection>>();
-
+	private static Channel	                                      server;
+	
+	private static Map<String, Pair<Channel, RawProxyConnection>>	connectedChannelTable	= new HashMap<String, Pair<Channel, RawProxyConnection>>();
+	
 	private static void initServer()
 	{
 		if (null == server)
@@ -59,7 +61,8 @@ public class RawProxyConnection extends ProxyConnection implements Runnable
 			NioServerSocketChannelFactory serverSocketFactory = new NioServerSocketChannelFactory(
 			        bossExecutor, workerExecutor);
 			ChannelPipeline pipeline = pipeline();
-			//pipeline.addLast("executor", new ExecutionHandler(workerExecutor));
+			// pipeline.addLast("executor", new
+			// ExecutionHandler(workerExecutor));
 			pipeline.addLast("decoder", new HerokuRawEventDecoder());
 			pipeline.addLast("encoder", new HerokuRawEventEncoder());
 			pipeline.addLast("handler", new HerokuRawEventHandler());
@@ -71,8 +74,8 @@ public class RawProxyConnection extends ProxyConnection implements Runnable
 				{
 					// Create a default pipeline implementation.
 					ChannelPipeline pipeline = pipeline();
-					//pipeline.addLast("executor", new ExecutionHandler(
-					//        workerExecutor));
+					pipeline.addLast("executor", new ExecutionHandler(
+					        workerExecutor));
 					pipeline.addLast("decoder", new HerokuRawEventDecoder());
 					pipeline.addLast("encoder", new HerokuRawEventEncoder());
 					pipeline.addLast("handler", new HerokuRawEventHandler());
@@ -83,10 +86,10 @@ public class RawProxyConnection extends ProxyConnection implements Runnable
 			        .getRSocketServerAddress();
 			addr.host = "0.0.0.0";
 			server.bind(new InetSocketAddress(addr.host, addr.port));
-
+			
 		}
 	}
-
+	
 	private static synchronized Channel getConnectedChannel(String domain)
 	{
 		Pair<Channel, RawProxyConnection> pair = connectedChannelTable
@@ -104,7 +107,7 @@ public class RawProxyConnection extends ProxyConnection implements Runnable
 		}
 		return null;
 	}
-
+	
 	private static synchronized RawProxyConnection getConnectedRawProxyConnection(
 	        String domain)
 	{
@@ -116,7 +119,7 @@ public class RawProxyConnection extends ProxyConnection implements Runnable
 		}
 		return null;
 	}
-
+	
 	private static synchronized void saveConnectedChannel(String domain,
 	        Channel ch)
 	{
@@ -129,7 +132,7 @@ public class RawProxyConnection extends ProxyConnection implements Runnable
 		}
 		pair.first = ch;
 	}
-
+	
 	private static synchronized void saveRawProxyConnection(String domain,
 	        RawProxyConnection ch)
 	{
@@ -142,7 +145,7 @@ public class RawProxyConnection extends ProxyConnection implements Runnable
 		}
 		pair.second = ch;
 	}
-
+	
 	public RawProxyConnection(HerokuServerAuth auth)
 	{
 		super(auth);
@@ -151,7 +154,7 @@ public class RawProxyConnection extends ProxyConnection implements Runnable
 		        TimeUnit.SECONDS);
 		saveRawProxyConnection(auth.domain, this);
 	}
-
+	
 	@Override
 	protected boolean doSend(Buffer msgbuffer)
 	{
@@ -165,20 +168,20 @@ public class RawProxyConnection extends ProxyConnection implements Runnable
 		ch.write(ev);
 		return true;
 	}
-
+	
 	@Override
 	protected int getMaxDataPackageSize()
 	{
 		return 0;
 	}
-
+	
 	@Override
 	public boolean isReady()
 	{
 		Channel ch = getConnectedChannel(auth.domain);
 		return ch != null && ch.isConnected();
 	}
-
+	
 	@ChannelPipelineCoverage("one")
 	static class HerokuRawEventEncoder extends SimpleChannelDownstreamHandler
 	{
@@ -202,7 +205,7 @@ public class RawProxyConnection extends ProxyConnection implements Runnable
 			}
 		}
 	}
-
+	
 	@ChannelPipelineCoverage("one")
 	static class HerokuRawEventDecoder extends FrameDecoder
 	{
@@ -212,29 +215,26 @@ public class RawProxyConnection extends ProxyConnection implements Runnable
 			buf.readBytes(temp);
 			Buffer buffer = Buffer.wrapReadableContent(temp);
 			return BufferHelper.readFixInt32(buffer, true);
-
+			
 		}
-
+		
 		private HerokuRawSocketEvent decodeHerokuRawSocketEvent(
 		        ChannelBuffer buf)
 		{
-			logger.error("Enter with rest:" + buf.readableBytes() + " at thread:" + Thread.currentThread().getName());
 			HerokuRawSocketEvent ev = new HerokuRawSocketEvent(null, null);
-			//int currentRead = buf.readerIndex();
-			//int currentWrite = buf.writerIndex();
+			// int currentRead = buf.readerIndex();
+			// int currentWrite = buf.writerIndex();
 			buf.markReaderIndex();
 			if (buf.readableBytes() <= 4)
 			{
-				logger.error("Exit with rest:" + buf.readableBytes()+ " at thread:" + Thread.currentThread().getName());
 				return null;
 			}
-
+			
 			int size = getInt(buf);
 			
 			if (buf.readableBytes() < size)
 			{
 				buf.resetReaderIndex();
-				logger.error("Exit with rest:" + buf.readableBytes()+ " at thread:" + Thread.currentThread().getName());
 				return null;
 			}
 			byte[] dst = new byte[size];
@@ -243,31 +243,34 @@ public class RawProxyConnection extends ProxyConnection implements Runnable
 			if (buf.readableBytes() <= 4)
 			{
 				buf.resetReaderIndex();
-				logger.error("Exit with rest:" + buf.readableBytes()+ " at thread:" + Thread.currentThread().getName());
 				return null;
 			}
 			size = getInt(buf);
 			if (buf.readableBytes() < size)
 			{
 				buf.resetReaderIndex();
-				logger.error("Exit with rest:" + buf.readableBytes()+ " at thread:" + Thread.currentThread().getName());
 				return null;
 			}
 			byte[] b = new byte[size];
 			buf.readBytes(b);
 			ev.content = Buffer.wrapReadableContent(b);
-			logger.error("Exit with rest:" + buf.readableBytes()+ " at thread:" + Thread.currentThread().getName());
 			return ev;
 		}
-
+		
 		@Override
 		protected Object decode(ChannelHandlerContext ctx, Channel channel,
 		        ChannelBuffer buffer) throws Exception
 		{
-			return decodeHerokuRawSocketEvent(buffer);
+			if(logger.isDebugEnabled())
+			{
+				logger.debug("Enter decode with buffer size:" + buffer.readableBytes());
+			}
+			HerokuRawSocketEvent ev = decodeHerokuRawSocketEvent(buffer);
+			
+			return ev;
 		}
 	}
-
+	
 	@ChannelPipelineCoverage("one")
 	static class HerokuRawEventHandler extends SimpleChannelUpstreamHandler
 	{
@@ -288,14 +291,15 @@ public class RawProxyConnection extends ProxyConnection implements Runnable
 			ctx.getChannel().close();
 			logger.error("Caught exception:", e.getCause());
 		}
-
+		
 		@Override
 		public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
 		        throws Exception
 		{
-			if(logger.isDebugEnabled())
+			if (logger.isDebugEnabled())
 			{
-				logger.debug("Received mesage:" + e.getMessage().getClass().getName());
+				logger.debug("Received mesage:"
+				        + e.getMessage().getClass().getName());
 			}
 			if (e.getMessage() instanceof HerokuRawSocketEvent)
 			{
@@ -321,7 +325,7 @@ public class RawProxyConnection extends ProxyConnection implements Runnable
 			}
 		}
 	}
-
+	
 	private void ping()
 	{
 		try
@@ -339,7 +343,7 @@ public class RawProxyConnection extends ProxyConnection implements Runnable
 			        + "User-Agent: Mozilla/5.0 (Windows NT 5.1) AppleWebKit/535.1 (KHTML, like Gecko) Chrome/13.0.782.220 Safari/535.1\r\n"
 			        + "X-HerokuAuth: " + auth.domain + "-" + ip + "-"
 			        + addr.port + "\r\n" + "Content-Length: 0\r\n\r\n";
-
+			
 			Socket s = new Socket(auth.domain, 8080);
 			s.getOutputStream().write(hb.getBytes());
 			byte[] b = new byte[256];
@@ -351,7 +355,7 @@ public class RawProxyConnection extends ProxyConnection implements Runnable
 			logger.error("Failed", e);
 		}
 	}
-
+	
 	@Override
 	public void run()
 	{

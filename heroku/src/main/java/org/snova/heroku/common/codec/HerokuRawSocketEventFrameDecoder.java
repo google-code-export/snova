@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.snova.heroku.server.codec;
+package org.snova.heroku.common.codec;
 
 import org.arch.buffer.Buffer;
 import org.snova.heroku.common.event.HerokuRawSocketEvent;
