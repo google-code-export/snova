@@ -36,7 +36,7 @@ import org.snova.heroku.common.event.EventRestRequest;
  */
 public abstract class ProxyConnection
 {
-	protected Logger logger = LoggerFactory.getLogger(getClass());
+	protected static Logger logger = LoggerFactory.getLogger(ProxyConnection.class);
 	protected static HerokuClientConfiguration cfg = HerokuClientConfiguration
 	        .getInstance();
 	// private LinkedList<Event> queuedEvents = new LinkedList<Event>();
@@ -94,10 +94,6 @@ public abstract class ProxyConnection
 		{
 			event.setHash(attach.second);
 		}
-
-		// CompressorType compressType = cfg.getCompressorType();
-		// CompressEvent comress = new CompressEvent(compressType, event);
-		// comress.setHash(attach.second);
 		EncryptEventV2 enc = new EncryptEventV2(cfg.getEncrypterType(), event);
 		enc.setHash(event.getHash());
 		synchronized (queuedEvents)

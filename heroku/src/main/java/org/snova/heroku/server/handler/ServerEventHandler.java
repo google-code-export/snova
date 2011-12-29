@@ -37,8 +37,13 @@ public class ServerEventHandler implements EventHandler
 	protected ScheduledExecutorService	pool	     = new ScheduledThreadPoolExecutor(
 	                                                         50);
 	protected LinkedList<Event>	       responseQueue	= new LinkedList<Event>();
-	protected DirectFetchHandler	   fetchHandler	 = new DirectFetchHandler(
+	protected DirectFetchHandlerV2	   fetchHandler	 = new DirectFetchHandlerV2(
 	                                                         this);
+	public DirectFetchHandlerV2 getFetchHandler()
+    {
+    	return fetchHandler;
+    }
+
 	//protected NettyFetchHandler	   fetchHandler	 = new NettyFetchHandler(
     //        this);
 	public ScheduledExecutorService getThreadPool()
@@ -48,6 +53,7 @@ public class ServerEventHandler implements EventHandler
 	
 	private void handleRecvEvent(Event event)
 	{
+		System.out.println("Handle event:" + event.getClass().getName());
 		TypeVersion tv = Event.getTypeVersion(event.getClass());
 		if (null == tv)
 		{

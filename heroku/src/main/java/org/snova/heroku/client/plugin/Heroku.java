@@ -22,10 +22,7 @@ public class Heroku implements Plugin
 	@Override
 	public void onActive(PluginContext context) throws Exception
 	{
-		// ClientProxyEventHandler handler = new ClientProxyEventHandler();
-		// GAEEvents.init(handler, false);
 		HerokuEvents.init(new HerokuClientEventHandler(), false);
-		//logger.info("##################" + new HerokuClientEventHandler().getName());
 	}
 	
 	@Override

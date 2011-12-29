@@ -4,10 +4,10 @@
     <!-- Can config more than 1 hyk-proxy-server -->
     <!-- <WorkerNode appid="" user="" passwd=""  backendEnable="false"/> -->
     
-	<!-- HTTP-->
+	<!-- HTTP/RSOCKET-->
 	<ConnectionMode>HTTP</ConnectionMode>
 
-
+    <RSocketServer port="48101" />
 	<!-- Warning:Don't modify the configurations below if you don't know the 
 		meaning of them -->
 	<!-- Advanced Options -->

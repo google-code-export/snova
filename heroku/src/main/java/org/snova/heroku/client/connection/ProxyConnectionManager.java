@@ -112,13 +112,17 @@ public class ProxyConnectionManager
 		switch (HerokuClientConfiguration.getInstance().getConnectionModeType())
 		{
 			case HTTP:
-			case HTTPS:
 			{
 				connection = new HTTPProxyConnection(auth);
 				addProxyConnection(connlist, connection);
 				break;
 			}
-			
+			case RSOCKET:
+			{
+				connection = new RawProxyConnection(auth);
+				addProxyConnection(connlist, connection);
+				break;
+			}	
 			default:
 			{
 				break;

@@ -20,7 +20,6 @@ import org.snova.heroku.client.config.HerokuClientConfiguration;
 import org.snova.heroku.client.config.HerokuClientConfiguration.HerokuServerAuth;
 import org.snova.heroku.client.connection.ProxyConnection;
 import org.snova.heroku.client.connection.ProxyConnectionManager;
-import org.snova.heroku.common.event.EventRestRequest;
 
 /**
  * @author qiyingwang
@@ -150,7 +149,7 @@ public class ProxySessionManager implements Runnable
 				{
 					ProxyConnection conn = ProxyConnectionManager.getInstance()
 					        .getClientConnectionByAuth(auth);
-					conn.send(new EventRestRequest());
+					//conn.send(new EventRestRequest());
 				}
 				
 				synchronized (this)
