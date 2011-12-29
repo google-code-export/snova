@@ -29,6 +29,7 @@ import org.arch.event.misc.CompressorType;
 import org.arch.event.misc.EncryptType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.snova.framework.config.SimpleSocketAddress;
 
 /**
  *
@@ -61,7 +62,7 @@ public class HerokuClientConfiguration
 	
 	public static enum ConnectionMode
 	{
-		HTTP, HTTPS, XMPP;
+		HTTP, RSOCKET;
 	}
 	
 	public static class HerokuServerAuth
@@ -166,6 +167,15 @@ public class HerokuClientConfiguration
 	public ConnectionMode getConnectionModeType()
 	{
 		return ConnectionMode.valueOf(connectionMode.toUpperCase());
+	}
+	
+	@XmlElement(name = "RSocketServer")
+	private SimpleSocketAddress localProxyServerAddress = new SimpleSocketAddress(
+	        "0.0.0.0", 48100);
+	
+	public SimpleSocketAddress getRSocketServerAddress()
+	{
+		return localProxyServerAddress;
 	}
 	
 	private int	sessionTimeout;
