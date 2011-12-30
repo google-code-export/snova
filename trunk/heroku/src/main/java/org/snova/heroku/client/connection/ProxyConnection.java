@@ -14,7 +14,6 @@ import org.arch.event.EventHandler;
 import org.arch.event.EventHeader;
 import org.arch.event.TypeVersion;
 import org.arch.event.http.HTTPEventContants;
-import org.arch.event.http.HTTPRequestEvent;
 import org.arch.event.misc.CompressEvent;
 import org.arch.event.misc.CompressEventV2;
 import org.arch.event.misc.EncryptEvent;
@@ -36,7 +35,8 @@ import org.snova.heroku.common.event.EventRestRequest;
  */
 public abstract class ProxyConnection
 {
-	protected static Logger logger = LoggerFactory.getLogger(ProxyConnection.class);
+	protected static Logger logger = LoggerFactory
+	        .getLogger(ProxyConnection.class);
 	protected static HerokuClientConfiguration cfg = HerokuClientConfiguration
 	        .getInstance();
 	// private LinkedList<Event> queuedEvents = new LinkedList<Event>();
@@ -82,62 +82,73 @@ public abstract class ProxyConnection
 
 	public boolean send(Event event)
 	{
+		if (null != event)
+		{
+			Pair<Channel, Integer> attach = (Pair<Channel, Integer>) event
+			        .getAttachment();
 
-		Pair<Channel, Integer> attach = (Pair<Channel, Integer>) event
-		        .getAttachment();
+			if (null == attach)
+			{
+				attach = new Pair<Channel, Integer>(null, -1);
+			}
+			if (event.getHash() <= 0)
+			{
+				event.setHash(attach.second);
+			}
+			EncryptEventV2 enc = new EncryptEventV2(cfg.getEncrypterType(),
+			        event);
+			enc.setHash(event.getHash());
+			synchronized (queuedEvents)
+			{
+				queuedEvents.add(enc);
+			}
+			if (logger.isDebugEnabled())
+			{
+				logger.debug("Connection:" + this.hashCode()
+				        + " queued with queue size:" + queuedEvents.size()
+				        + ", session[" + event.getHash() + "] HTTP request");
 
-		if (null == attach)
-		{
-			attach = new Pair<Channel, Integer>(null, -1);
+			}
 		}
-		if (event.getHash() <= 0)
-		{
-			event.setHash(attach.second);
-		}
-		EncryptEventV2 enc = new EncryptEventV2(cfg.getEncrypterType(), event);
-		enc.setHash(event.getHash());
-		synchronized (queuedEvents)
-		{
-			queuedEvents.add(enc);
-		}
-		if (logger.isDebugEnabled())
-		{
-			logger.debug("Connection:" + this.hashCode()
-			        + " queued with queue size:" + queuedEvents.size()
-			        + ", session[" + event.getHash() + "] HTTP request");
-			
-		}
+
 		long now = System.currentTimeMillis();
 		if (!isReady())
 		{
 			return true;
 		}
+		if(queuedEvents.isEmpty())
+		{
+			return true;
+		}
 		setAvailable(false);
-		
+
 		Buffer msgbuffer = new Buffer(1024);
 		synchronized (queuedEvents)
 		{
 			for (Event ev : queuedEvents)
 			{
 				ev.encode(msgbuffer);
-				if(logger.isDebugEnabled())
+				if (logger.isDebugEnabled())
 				{
 					logger.debug("Connection:" + this.hashCode()
-					        + " send encode event for session[" + ev.getHash() + "]");
+					        + " send encode event for session[" + ev.getHash()
+					        + "]");
 				}
 			}
 			queuedEvents.clear();
 		}
+
 		lastsendtime = now;
-		return doSend(msgbuffer);
+		boolean ret = doSend(msgbuffer);
+		return ret;
 	}
 
-	private  void handleRecvEvent(Event ev)
+	private void handleRecvEvent(Event ev)
 	{
 		if (null == ev)
 		{
 			logger.error("NULL event to handle!");
-			//close();
+			// close();
 			return;
 		}
 
@@ -221,7 +232,9 @@ public abstract class ProxyConnection
 			else
 			{
 				logger.error("Failed o find session or handle to handle received session["
-				        + ev.getHash() + "] response event:" + ev.getClass().getName());
+				        + ev.getHash()
+				        + "] response event:"
+				        + ev.getClass().getName());
 			}
 		}
 	}

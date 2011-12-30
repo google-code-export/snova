@@ -11,8 +11,8 @@
 	<!-- Warning:Don't modify the configurations below if you don't know the 
 		meaning of them -->
 	<!-- Advanced Options -->
-	<!-- local server would wait so many secs for every http request -->
-	<SessionTimeOut>60</SessionTimeOut>
+	<!-- Send heart beat request every so many millis secs -->
+	<HeartBeatPeriod>500</HeartBeatPeriod>
 	<!--Avoid some edge case for full url path -->
 	<!--This option is not active when through a unanonymouse local proxy -->
 	<SimpleURLEnable>true</SimpleURLEnable>
@@ -20,7 +20,7 @@
 	<Compressor>None</Compressor>
 	<!--Can choose from SE1/None -->
 	<Encrypter>SE1</Encrypter>
-	<ConnectionPoolSize>1</ConnectionPoolSize>
+	<ConnectionPoolSize>3</ConnectionPoolSize>
 	<FetchLimitSize>512000</FetchLimitSize>
 	<!-- for big file(>=1m) & video -->
 	<ConcurrentRangeFetchWorker>3</ConcurrentRangeFetchWorker>

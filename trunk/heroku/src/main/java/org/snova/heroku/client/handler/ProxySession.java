@@ -158,7 +158,6 @@ public class ProxySession
 									        localHTTPChannel.getPipeline()
 									                .remove("encoder");
 								        }
-
 							        }
 						        });
 					}

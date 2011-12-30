@@ -48,12 +48,7 @@ import org.snova.heroku.client.config.HerokuClientConfiguration.ProxyInfo;
  * 
  */
 public class HTTPProxyConnection extends ProxyConnection
-{
-	// private static final int INITED = 0;
-	// private static final int WAITING_CONNECT_RESPONSE = 1;
-	// private static final int CONNECT_RESPONSED = 2;
-	// private static final int DISCONNECTED = 3;
-	
+{	
 	protected Logger	                      logger	      = LoggerFactory
 	                                                                  .getLogger(getClass());
 	private static ClientSocketChannelFactory	factory;
@@ -61,14 +56,12 @@ public class HTTPProxyConnection extends ProxyConnection
 	private AtomicBoolean	                  waitingResponse	= new AtomicBoolean(
 	                                                                  false);
 	private SocketChannel	                  clientChannel	  = null;
-	
-	private String	                          remoteAddress;
+
+	private int connectFailedCount;
 	
 	public HTTPProxyConnection(HerokuServerAuth auth)
 	{
 		super(auth);
-		remoteAddress = auth.domain;
-		
 	}
 	
 	protected void setAvailable(boolean flag)
@@ -89,14 +82,14 @@ public class HTTPProxyConnection extends ProxyConnection
 	{
 		if (clientChannel != null && clientChannel.isOpen())
 		{
-			//clientChannel.close();
+			clientChannel.close();
 		}
 		clientChannel = null;
 		waitingResponse.set(false);
 	}
 
 	
-	private ChannelFuture connectProxyServer(String address)
+	private ChannelFuture connectProxyServer()
 	{
 		ChannelPipeline pipeline = Channels.pipeline();
 		//pipeline.addLast("executor", new ExecutionHandler(
@@ -121,8 +114,8 @@ public class HTTPProxyConnection extends ProxyConnection
 			
 		}
 		SocketChannel channel = factory.newChannel(pipeline);
-		String connectHost = remoteAddress;
-		int connectPort = 8080;
+		String connectHost = auth.domain;
+		int connectPort = auth.port;
 		HerokuClientConfiguration cfg = HerokuClientConfiguration.getInstance();
 		if (null != cfg.getLocalProxy())
 		{
@@ -154,11 +147,11 @@ public class HTTPProxyConnection extends ProxyConnection
 	
 	protected void sendContent(Channel ch, Buffer content)
 	{
-		String url = "http://" + remoteAddress + "/invoke";
+		String url = "http://" + auth.domain + "/invoke";
 		HttpRequest request = new DefaultHttpRequest(HttpVersion.HTTP_1_0,
 		        HttpMethod.POST, url);
-		request.setHeader("Host", remoteAddress);
-		request.setHeader(HttpHeaders.Names.CONNECTION, "close");
+		request.setHeader("Host", auth.domain);
+		request.setHeader(HttpHeaders.Names.CONNECTION, "keep-alive");
 		if (null != cfg.getLocalProxy())
 		{
 			ProxyInfo info = cfg.getLocalProxy();
@@ -218,28 +211,44 @@ public class HTTPProxyConnection extends ProxyConnection
 	protected boolean doSend(final Buffer content)
 	{
 		waitingResponse.set(true);
-		clientChannel = null;
-		ChannelFuture future = connectProxyServer(remoteAddress);
-		future.addListener(new ChannelFutureListener()
+		if(null == clientChannel || !clientChannel.isConnected())
 		{
-			
-			@Override
-			public void operationComplete(ChannelFuture future) throws Exception
+			clientChannel = null;
+			ChannelFuture future = connectProxyServer();
+			future.addListener(new ChannelFutureListener()
 			{
-				future = future.awaitUninterruptibly();
-				if(future.isSuccess())
-				{	
-					sendContent(future.getChannel(), content);
-				}
-				else
-				{
-					logger.error("Failed to connect remote heroku server, try again");
-					waitingResponse.set(false);
-					doSend(content);
-				}
 				
+				@Override
+				public void operationComplete(ChannelFuture future) throws Exception
+				{
+					future = future.awaitUninterruptibly();
+					if(future.isSuccess())
+					{	
+						sendContent(future.getChannel(), content);
+						connectFailedCount = 0;
+					}
+					else
+					{
+						connectFailedCount++;
+						if(connectFailedCount < 3)
+						{
+							logger.error("Failed to connect remote heroku server, try again");
+							//waitingResponse.set(false);
+							doSend(content);
+						}
+					}
+					
+				}
+			});
+		}
+		else
+		{
+			if(logger.isDebugEnabled())
+			{
+				logger.debug("Reuse connected HTTP client channel.");
 			}
-		});
+			sendContent(clientChannel, content);
+		}
 		return true;
 	}
 	

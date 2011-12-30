@@ -5,6 +5,7 @@ package org.snova.heroku.server.handler;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -44,11 +45,12 @@ public class DirectFetchHandlerV2 implements Runnable
 
 	private long lastTouchTime = -1;
 	private long lastPingTime = System.currentTimeMillis();
-	private long selectWaitTime = 200000;
+	private long selectWaitTime = 2000;
 
 	private List<ConnectTask> registQueue = new LinkedList<DirectFetchHandlerV2.ConnectTask>();
 	private List<SelectionKey> closeQueue = new LinkedList<SelectionKey>();
 	private SelectionKey localChannelKey = null;
+	private Socket localConnectedConnection; 
 	private HerokuRawSocketEventFrameDecoder decoder = null;
 
 	class RemoteChannelAttachment
@@ -77,6 +79,7 @@ public class DirectFetchHandlerV2 implements Runnable
 		{
 			SocketChannel channel = SocketChannel.open();
 			channel.configureBlocking(false);
+			channel.socket().setReceiveBufferSize(512*1024);
 			SelectionKey key = null;
 			boolean connected = false;
 			if(channel.connect(remote))
@@ -202,7 +205,7 @@ public class DirectFetchHandlerV2 implements Runnable
 
 	public void fetch(HTTPRequestEvent event)
 	{
-		System.out.println("#####Handle HTTPRequestEvent");
+		//System.out.println("#####Handle HTTPRequestEvent");
 		String host = event.getHeader("Host");
 		int port = event.url.startsWith("https") ? 443 : 80;
 		if (host.indexOf(":") != -1)
@@ -252,7 +255,7 @@ public class DirectFetchHandlerV2 implements Runnable
 
 	private void clientConnected(HTTPRequestEvent event)
 	{
-		System.out.println("######Remote connected!");
+		//System.out.println("######Remote connected!");
 		if (event.method.equalsIgnoreCase("Connect"))
 		{
 			HTTPResponseEvent res = new HTTPResponseEvent();
@@ -355,6 +358,11 @@ public class DirectFetchHandlerV2 implements Runnable
 			Buffer buf = new Buffer(4096);
 			List<Event> sentEvent = new LinkedList<Event>();
 			LinkedList<Event> responseQueue = handler.getEventQueue();
+			if(!responseQueue.isEmpty())
+			{
+				System.out.println("###Write queue size:" + responseQueue.size());
+			}
+			
 			boolean haveData = false;
 			do
 			{
@@ -372,13 +380,13 @@ public class DirectFetchHandlerV2 implements Runnable
 					ev = responseQueue.removeFirst();
 				}
 				ev.encode(buf);
+				System.out.println("###Write back event:" + ev.getHash());
 				sentEvent.add(ev);
 				haveData = true;
 			}
 			while (true);
 			if(haveData)
 			{	
-				
 				LocalChannelAttachment attach = (LocalChannelAttachment) localChannelKey.attachment();
 				HerokuRawSocketEvent raw = new HerokuRawSocketEvent(attach.domain, buf);
 				Buffer content = new Buffer(buf.readableBytes() + 100);
@@ -482,6 +490,56 @@ public class DirectFetchHandlerV2 implements Runnable
 			e.printStackTrace();
 		}
 	}
+	
+//	class LocalClientConnctionTask implements Runnable
+//	{
+//		@Override
+//        public void run()
+//        {
+//			byte[] buffer = new byte[8192];
+//			HerokuRawSocketEventFrameDecoder xdecoder = new HerokuRawSocketEventFrameDecoder();
+//	        while(true)
+//	        {
+//	        	try
+//                {
+//	                int len = localConnectedConnection.getInputStream().read(buffer);
+//	                if(len < 0)
+//	                {
+//	                	break;
+//	                }
+//	                if(len > 0)
+//	                {
+//	                	Buffer content = Buffer.wrapReadableContent(buffer, 0, len);
+//	                	int evcount = 0;
+//						while(content.readable())
+//						{
+//							HerokuRawSocketEvent ev = xdecoder.decode(content);
+//							if(null == ev)
+//							{
+//								System.out.println("####Rest" + decoder.cumulationSize());
+//								break;
+//							}
+//							System.out.println("####Handle HerokuRawSocketEvent");
+//							while(ev.content.readable())
+//							{
+//								Event tmpev = EventDispatcher.getSingletonInstance().parse(ev.content);
+//								//System.out.println("####Handle event:" + tmpev.getClass().getName());
+//								EventDispatcher.getSingletonInstance().dispatch(tmpev);
+//								evcount++;
+//							}
+//						}
+//						System.out.println("####Handle read data:" + len + " for "+ evcount + " events");
+//	                }
+//                }
+//                catch (Exception e)
+//                {
+//	                // TODO Auto-generated catch block
+//	                e.printStackTrace();
+//	                break;
+//                }
+//	        }
+//        }
+//	}
 
 	@Override
 	public void run()
@@ -498,6 +556,7 @@ public class DirectFetchHandlerV2 implements Runnable
 					Iterator it = keys.iterator();
 					while (it.hasNext())
 					{
+						buffer.clear();
 						SelectionKey key = (SelectionKey) it.next();
 						Object attch = key.attachment();
 						boolean isRemoteChannel = attch instanceof RemoteChannelAttachment;
@@ -506,7 +565,6 @@ public class DirectFetchHandlerV2 implements Runnable
 							int bytes = 0;
 							SocketChannel client = (SocketChannel) key
 							        .channel();
-							buffer.clear();
 							try
 							{
 								bytes = client.read(buffer);
@@ -517,7 +575,7 @@ public class DirectFetchHandlerV2 implements Runnable
 								logger.error("Failed to read client", e);
 								continue;
 							}
-
+                            
 							if (bytes > 0)
 							{
 								buffer.flip();
@@ -533,26 +591,31 @@ public class DirectFetchHandlerV2 implements Runnable
 								}
 								else
 								{
+									System.out.println("###Local conn received " + bytes + " data");
 									int size = buffer.remaining();
 									Buffer tmp = new Buffer(size);
 									buffer.get(tmp.getRawBuffer(), 0, size);
 									tmp.advanceWriteIndex(size);
-									System.out.println("####Handle read data:" + size);
+									
+									int evcount = 0;
 									while(tmp.readable())
 									{
 										HerokuRawSocketEvent ev = decoder.decode(tmp);
 										if(null == ev)
 										{
+											System.out.println("####Rest" + decoder.cumulationSize());
 											break;
 										}
 										System.out.println("####Handle HerokuRawSocketEvent");
 										while(ev.content.readable())
 										{
 											Event tmpev = EventDispatcher.getSingletonInstance().parse(ev.content);
-											System.out.println("####Handle event:" + tmpev.getClass().getName());
+											//System.out.println("####Handle event:" + tmpev.getClass().getName());
 											EventDispatcher.getSingletonInstance().dispatch(tmpev);
+											evcount++;
 										}
 									}
+									System.out.println("####Handle read data:" + size + " for "+ evcount + " events");
 								}
 							}
 							else
@@ -564,6 +627,7 @@ public class DirectFetchHandlerV2 implements Runnable
 									continue;
 								}
 							}
+							key.interestOps(SelectionKey.OP_READ);
 						}
 						if (key.isConnectable())
 						{
@@ -643,6 +707,7 @@ public class DirectFetchHandlerV2 implements Runnable
 									//System.out.println("Write back " + len + ";" + expected);
 									if (len <  expected)
 									{
+										//System.out.println("@@@@Write not finished" );
 										if(!isRemoteChannel)
 										{
 											LocalChannelAttachment ac = (LocalChannelAttachment) attch;
@@ -673,14 +738,15 @@ public class DirectFetchHandlerV2 implements Runnable
 					}
 					keys.clear();
 				}
-				
+				handleConnectQueue();
 				handleCloseQueue();
 				handleWriteQueue();
-				handleConnectQueue();
+				
 				
 				synchronized (this)
 				{
 					long now = System.currentTimeMillis();
+					//System.out.println("##########Cost " + (now - lastPingTime) + "ms since last event fire.");
 					lastPingTime = now;
 					if (!handler.getEventQueue().isEmpty()
 					        && now - lastTouchTime > 10000)
@@ -689,7 +755,7 @@ public class DirectFetchHandlerV2 implements Runnable
 						closeAllClient();
 						touch();
 					}
-					if (now - lastTouchTime > 5000)
+					if (now - lastTouchTime > 5000 && !keyTable.isEmpty())
 					{
 						System.out.println("============================");
 						for (Integer sessionId : keyTable.keySet())
@@ -703,6 +769,7 @@ public class DirectFetchHandlerV2 implements Runnable
 							        + attach.receivedData);
 						}
 					}
+					//System.out.println("============================");
 					if(null != localChannelKey)
 					{
 						
