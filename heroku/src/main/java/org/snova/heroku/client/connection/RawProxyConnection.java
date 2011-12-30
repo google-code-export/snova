@@ -20,9 +20,13 @@ import java.util.concurrent.TimeUnit;
 import org.arch.buffer.Buffer;
 import org.arch.buffer.BufferHelper;
 import org.arch.common.Pair;
+import org.arch.event.Event;
+import org.arch.event.EventDispatcher;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineCoverage;
@@ -39,6 +43,8 @@ import org.snova.framework.config.SimpleSocketAddress;
 import org.snova.framework.util.SharedObjectHelper;
 import org.snova.heroku.client.config.HerokuClientConfiguration;
 import org.snova.heroku.client.config.HerokuClientConfiguration.HerokuServerAuth;
+import org.snova.heroku.client.handler.ProxySessionManager;
+import org.snova.heroku.common.codec.HerokuRawSocketEventFrameDecoder;
 import org.snova.heroku.common.event.HerokuRawSocketEvent;
 
 /**
@@ -47,10 +53,36 @@ import org.snova.heroku.common.event.HerokuRawSocketEvent;
  */
 public class RawProxyConnection extends ProxyConnection implements Runnable
 {
-	private static Channel	                                      server;
-	
-	private static Map<String, Pair<Channel, RawProxyConnection>>	connectedChannelTable	= new HashMap<String, Pair<Channel, RawProxyConnection>>();
-	
+	private static Channel server;
+	private static ServerSocket serverSocket;
+
+	private static Map<String, Pair<Channel, RawProxyConnection>> connectedChannelTable = new HashMap<String, Pair<Channel, RawProxyConnection>>();
+	private static Map<String, Pair<Socket, RawProxyConnection>> connectedSocketTable = new HashMap<String, Pair<Socket, RawProxyConnection>>();
+
+	private ChannelFuture writeFuture;
+	// private static boolean initServer2()
+	// {
+	// if(null == serverSocket)
+	// {
+	// try
+	// {
+	// serverSocket = new ServerSocket();
+	// SimpleSocketAddress addr = HerokuClientConfiguration.getInstance()
+	// .getRSocketServerAddress();
+	// addr.host = "0.0.0.0";
+	// serverSocket.bind(new InetSocketAddress(addr.host, addr.port));
+	// new Thread(new ServerSocketTask(serverSocket)).start();
+	// return true;
+	// }
+	// catch (Exception e)
+	// {
+	// logger.error("Failed to init RSocket Server.", e);
+	// return false;
+	// }
+	// }
+	// return true;
+	// }
+
 	private static void initServer()
 	{
 		if (null == server)
@@ -61,8 +93,7 @@ public class RawProxyConnection extends ProxyConnection implements Runnable
 			NioServerSocketChannelFactory serverSocketFactory = new NioServerSocketChannelFactory(
 			        bossExecutor, workerExecutor);
 			ChannelPipeline pipeline = pipeline();
-			// pipeline.addLast("executor", new
-			// ExecutionHandler(workerExecutor));
+			pipeline.addLast("executor", new ExecutionHandler(workerExecutor));
 			pipeline.addLast("decoder", new HerokuRawEventDecoder());
 			pipeline.addLast("encoder", new HerokuRawEventEncoder());
 			pipeline.addLast("handler", new HerokuRawEventHandler());
@@ -86,10 +117,10 @@ public class RawProxyConnection extends ProxyConnection implements Runnable
 			        .getRSocketServerAddress();
 			addr.host = "0.0.0.0";
 			server.bind(new InetSocketAddress(addr.host, addr.port));
-			
+
 		}
 	}
-	
+
 	private static synchronized Channel getConnectedChannel(String domain)
 	{
 		Pair<Channel, RawProxyConnection> pair = connectedChannelTable
@@ -107,7 +138,7 @@ public class RawProxyConnection extends ProxyConnection implements Runnable
 		}
 		return null;
 	}
-	
+
 	private static synchronized RawProxyConnection getConnectedRawProxyConnection(
 	        String domain)
 	{
@@ -119,7 +150,7 @@ public class RawProxyConnection extends ProxyConnection implements Runnable
 		}
 		return null;
 	}
-	
+
 	private static synchronized void saveConnectedChannel(String domain,
 	        Channel ch)
 	{
@@ -132,7 +163,7 @@ public class RawProxyConnection extends ProxyConnection implements Runnable
 		}
 		pair.first = ch;
 	}
-	
+
 	private static synchronized void saveRawProxyConnection(String domain,
 	        RawProxyConnection ch)
 	{
@@ -145,7 +176,64 @@ public class RawProxyConnection extends ProxyConnection implements Runnable
 		}
 		pair.second = ch;
 	}
-	
+
+	// private static synchronized Socket getConnectedSocket(String domain)
+	// {
+	// Pair<Socket, RawProxyConnection> pair = connectedSocketTable
+	// .get(domain);
+	// if (null != pair)
+	// {
+	// if (pair.first != null)
+	// {
+	// if (!pair.first.isConnected())
+	// {
+	// pair.first = null;
+	// }
+	// }
+	// return pair.first;
+	// }
+	// return null;
+	// }
+	//
+	// private static synchronized RawProxyConnection
+	// getConnectedRawProxyConnection(
+	// String domain)
+	// {
+	// Pair<Socket, RawProxyConnection> pair = connectedSocketTable
+	// .get(domain);
+	// if (null != pair)
+	// {
+	// return pair.second;
+	// }
+	// return null;
+	// }
+	//
+	// private static synchronized void saveConnectedSocket(String domain,
+	// Socket ch)
+	// {
+	// Pair<Socket, RawProxyConnection> pair = connectedSocketTable
+	// .get(domain);
+	// if (null == pair)
+	// {
+	// pair = new Pair<Socket, RawProxyConnection>(ch, null);
+	// connectedSocketTable.put(domain, pair);
+	// }
+	// pair.first = ch;
+	// }
+	//
+	// private static synchronized void saveRawProxyConnection(String domain,
+	// RawProxyConnection ch)
+	// {
+	// Pair<Socket, RawProxyConnection> pair = connectedSocketTable
+	// .get(domain);
+	// if (null == pair)
+	// {
+	// pair = new Pair<Socket, RawProxyConnection>(null, ch);
+	// connectedSocketTable.put(domain, pair);
+	// }
+	// pair.second = ch;
+	// }
+
 	public RawProxyConnection(HerokuServerAuth auth)
 	{
 		super(auth);
@@ -154,7 +242,7 @@ public class RawProxyConnection extends ProxyConnection implements Runnable
 		        TimeUnit.SECONDS);
 		saveRawProxyConnection(auth.domain, this);
 	}
-	
+
 	@Override
 	protected boolean doSend(Buffer msgbuffer)
 	{
@@ -165,23 +253,44 @@ public class RawProxyConnection extends ProxyConnection implements Runnable
 		{
 			return false;
 		}
-		ch.write(ev);
+		writeFuture = ch.write(ev);
+		// Socket client = getConnectedSocket(auth.domain);
+		// if (client == null)
+		// {
+		// return false;
+		// }
+		// Buffer content = new Buffer(msgbuffer.readableBytes() + 100);
+		// ev.encode(content);
+		// try
+		// {
+		// client.getOutputStream().write(content.getRawBuffer(), 0,
+		// content.readableBytes());
+		// }
+		// catch (IOException e)
+		// {
+		// logger.error("Failed to send content.", e);
+		// return false;
+		// }
 		return true;
 	}
-	
+
 	@Override
 	protected int getMaxDataPackageSize()
 	{
 		return 0;
 	}
-	
+
 	@Override
 	public boolean isReady()
 	{
 		Channel ch = getConnectedChannel(auth.domain);
-		return ch != null && ch.isConnected();
+		if(null != writeFuture)
+		{
+			return writeFuture.isDone();
+		}
+		return ch != null;
 	}
-	
+
 	@ChannelPipelineCoverage("one")
 	static class HerokuRawEventEncoder extends SimpleChannelDownstreamHandler
 	{
@@ -205,7 +314,7 @@ public class RawProxyConnection extends ProxyConnection implements Runnable
 			}
 		}
 	}
-	
+
 	@ChannelPipelineCoverage("one")
 	static class HerokuRawEventDecoder extends FrameDecoder
 	{
@@ -215,9 +324,9 @@ public class RawProxyConnection extends ProxyConnection implements Runnable
 			buf.readBytes(temp);
 			Buffer buffer = Buffer.wrapReadableContent(temp);
 			return BufferHelper.readFixInt32(buffer, true);
-			
+
 		}
-		
+
 		private HerokuRawSocketEvent decodeHerokuRawSocketEvent(
 		        ChannelBuffer buf)
 		{
@@ -229,9 +338,9 @@ public class RawProxyConnection extends ProxyConnection implements Runnable
 			{
 				return null;
 			}
-			
-			int size = getInt(buf);
-			
+
+			// int size = getInt(buf);
+			int size = buf.readInt();
 			if (buf.readableBytes() < size)
 			{
 				buf.resetReaderIndex();
@@ -245,7 +354,8 @@ public class RawProxyConnection extends ProxyConnection implements Runnable
 				buf.resetReaderIndex();
 				return null;
 			}
-			size = getInt(buf);
+			// size = getInt(buf);
+			size = buf.readInt();
 			if (buf.readableBytes() < size)
 			{
 				buf.resetReaderIndex();
@@ -256,24 +366,32 @@ public class RawProxyConnection extends ProxyConnection implements Runnable
 			ev.content = Buffer.wrapReadableContent(b);
 			return ev;
 		}
-		
+
 		@Override
 		protected Object decode(ChannelHandlerContext ctx, Channel channel,
 		        ChannelBuffer buffer) throws Exception
 		{
-			if(logger.isDebugEnabled())
+			if (logger.isDebugEnabled())
 			{
-				logger.debug("Enter decode with buffer size:" + buffer.readableBytes());
+				logger.debug("Enter decode with buffer size:"
+				        + buffer.readableBytes());
 			}
 			HerokuRawSocketEvent ev = decodeHerokuRawSocketEvent(buffer);
-			
 			return ev;
 		}
 	}
-	
+
 	@ChannelPipelineCoverage("one")
 	static class HerokuRawEventHandler extends SimpleChannelUpstreamHandler
 	{
+
+		@Override
+		public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e)
+		        throws Exception
+		{
+			// super.channelClosed(ctx, e);
+		}
+
 		@Override
 		public void channelConnected(ChannelHandlerContext ctx,
 		        ChannelStateEvent e) throws Exception
@@ -283,7 +401,7 @@ public class RawProxyConnection extends ProxyConnection implements Runnable
 				logger.debug("Rsocket connected");
 			}
 		}
-		
+
 		@Override
 		public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
 		        throws Exception
@@ -291,7 +409,7 @@ public class RawProxyConnection extends ProxyConnection implements Runnable
 			ctx.getChannel().close();
 			logger.error("Caught exception:", e.getCause());
 		}
-		
+
 		@Override
 		public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
 		        throws Exception
@@ -325,7 +443,7 @@ public class RawProxyConnection extends ProxyConnection implements Runnable
 			}
 		}
 	}
-	
+
 	private void ping()
 	{
 		try
@@ -343,22 +461,107 @@ public class RawProxyConnection extends ProxyConnection implements Runnable
 			        + "User-Agent: Mozilla/5.0 (Windows NT 5.1) AppleWebKit/535.1 (KHTML, like Gecko) Chrome/13.0.782.220 Safari/535.1\r\n"
 			        + "X-HerokuAuth: " + auth.domain + "-" + ip + "-"
 			        + addr.port + "\r\n" + "Content-Length: 0\r\n\r\n";
-			
+
 			Socket s = new Socket(auth.domain, 8080);
 			s.getOutputStream().write(hb.getBytes());
 			byte[] b = new byte[256];
 			s.getInputStream().read(b);
 			s.close();
+
+			ProxySessionManager.getInstance().run();
+			send(null);
 		}
 		catch (Exception e)
 		{
 			logger.error("Failed", e);
 		}
 	}
-	
+
 	@Override
 	public void run()
 	{
 		ping();
 	}
+
+	// static class ClientSocketTask implements Runnable
+	// {
+	// Socket client;
+	//
+	// public ClientSocketTask(Socket client)
+	// {
+	// this.client = client;
+	// }
+	//
+	// @Override
+	// public void run()
+	// {
+	// HerokuRawSocketEventFrameDecoder decoder = new
+	// HerokuRawSocketEventFrameDecoder();
+	// byte[] readBuffer = new byte[8192];
+	// while (true)
+	// {
+	// try
+	// {
+	// int len = client.getInputStream().read(readBuffer);
+	// logger.info("Receve data:" + len);
+	// if(len > 0)
+	// {
+	// Buffer content = Buffer.wrapReadableContent(readBuffer, 0, len);
+	// while(content.readable())
+	// {
+	// HerokuRawSocketEvent ev = decoder.decode(content);
+	//
+	// if(null == ev)
+	// {
+	// logger.info("Rest buf size:" + decoder.cumulationSize());
+	// break;
+	// }
+	// saveConnectedSocket(ev.domain, client);
+	// final RawProxyConnection conn =
+	// getConnectedRawProxyConnection(ev.domain);
+	// conn.doRecv(ev.content);
+	// }
+	// }
+	// }
+	// catch (Exception e)
+	// {
+	// logger.error("Failed to handle client socket.", e);
+	// break;
+	// }
+	// }
+	//
+	// }
+	//
+	// }
+	//
+	// static class ServerSocketTask implements Runnable
+	// {
+	// private ServerSocket serverSocket;
+	//
+	// public ServerSocketTask(ServerSocket serverSocket)
+	// {
+	// this.serverSocket = serverSocket;
+	// }
+	//
+	// @Override
+	// public void run()
+	// {
+	// while (true)
+	// {
+	// try
+	// {
+	// Socket client = serverSocket.accept();
+	// SharedObjectHelper.getGlobalThreadPool().submit(
+	// new ClientSocketTask(client));
+	// }
+	// catch (IOException e)
+	// {
+	// logger.error("Failed to handle server socket.", e);
+	// }
+	//
+	// }
+	//
+	// }
+	//
+	// }
 }

@@ -62,13 +62,16 @@ public class HerokuClientConfiguration
 	
 	public static enum ConnectionMode
 	{
-		HTTP, RSOCKET;
+		HTTP, RSOCKET, AUTO;
 	}
 	
 	public static class HerokuServerAuth
 	{
 		@XmlAttribute
 		public String	domain;
+		
+		@XmlAttribute
+		public int	port = 80;
 		@XmlAttribute
 		public String	user;
 		@XmlAttribute
@@ -178,17 +181,17 @@ public class HerokuClientConfiguration
 		return localProxyServerAddress;
 	}
 	
-	private int	sessionTimeout;
+	private int	heartBeatPeriod;
 	
-	@XmlElement(name = "SessionTimeOut")
-	public void setSessionTimeOut(int sessionTimeout)
+	@XmlElement(name = "HeartBeatPeriod")
+	public void setheartBeatPeriod(int heartBeatPeriod)
 	{
-		this.sessionTimeout = sessionTimeout;
+		this.heartBeatPeriod = heartBeatPeriod;
 	}
 	
-	public int getSessionTimeOut()
+	public int getHeartBeatPeriod()
 	{
-		return sessionTimeout;
+		return heartBeatPeriod;
 	}
 	
 	private String	compressor;

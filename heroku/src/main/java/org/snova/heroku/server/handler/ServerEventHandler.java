@@ -53,7 +53,7 @@ public class ServerEventHandler implements EventHandler
 	
 	private void handleRecvEvent(Event event)
 	{
-		System.out.println("Handle event:" + event.getClass().getName());
+		//System.out.println("Handle event[" + event.getHash() + "]:" + event.getClass().getName());
 		TypeVersion tv = Event.getTypeVersion(event.getClass());
 		if (null == tv)
 		{
@@ -171,7 +171,7 @@ public class ServerEventHandler implements EventHandler
 	@Override
 	public void onEvent(final EventHeader header, final Event event)
 	{
-		Object[] attach = (Object[]) event.getAttachment();
+		//Object[] attach = (Object[]) event.getAttachment();
 		//final EventSendService sendService = (EventSendService) attach[0];
 		pool.submit(new Runnable()
 		{

@@ -40,7 +40,7 @@ public class ProxySessionManager implements Runnable
 		if(HerokuClientConfiguration.getInstance().getConnectionModeType().equals(ConnectionMode.HTTP))
 		{
 			SharedObjectHelper.getGlobalTimer().scheduleAtFixedRate(this, 1000,
-			        500, TimeUnit.MILLISECONDS);
+					HerokuClientConfiguration.getInstance().getHeartBeatPeriod(), TimeUnit.MILLISECONDS);
 		}
 
 		//new Thread(this).start();
@@ -149,15 +149,19 @@ public class ProxySessionManager implements Runnable
 			}
 			try
             {
-				List<HerokuServerAuth> auths = HerokuClientConfiguration
-				        .getInstance().getHerokuServerAuths();
-				for (HerokuServerAuth auth : auths)
+				if(HerokuClientConfiguration.getInstance().getConnectionModeType().equals(ConnectionMode.HTTP))
 				{
-					ProxyConnection conn = ProxyConnectionManager.getInstance()
-					        .getClientConnectionByAuth(auth);
-					conn.send(new EventRestRequest());
+					List<HerokuServerAuth> auths = HerokuClientConfiguration
+					        .getInstance().getHerokuServerAuths();
+					for (HerokuServerAuth auth : auths)
+					{
+						ProxyConnection conn = ProxyConnectionManager.getInstance()
+						        .getClientConnectionByAuth(auth);
+						conn.send(new EventRestRequest());
+					}
+					
 				}
-				
+
 				synchronized (this)
                 {
 					for (ProxySession session:sessionTable.values())

@@ -12,7 +12,7 @@ import org.snova.heroku.common.event.HerokuRawSocketEvent;
  */
 public class HerokuRawSocketEventFrameDecoder
 {
-	private Buffer cumulation;
+	private Buffer cumulation = new Buffer(0);
 
 	private HerokuRawSocketEvent doDecode(Buffer buffer)
 	{
@@ -23,30 +23,37 @@ public class HerokuRawSocketEventFrameDecoder
 		}
 		return null;
 	}
+	
+	public int cumulationSize()
+	{
+		return null == cumulation?0:cumulation.readableBytes();
+	}
 
 	public HerokuRawSocketEvent decode(Buffer buffer)
 	{
+		HerokuRawSocketEvent ev = null;
 		if (null != cumulation && cumulation.readable())
 		{
 			cumulation.discardReadedBytes();
 			cumulation.write(buffer, buffer.readableBytes());
-			return doDecode(buffer);
+			ev= doDecode(cumulation);
 		}
 		else
 		{
-			HerokuRawSocketEvent ev = doDecode(buffer);
-			if (null == ev)
-			{
-				if (buffer.readable())
-				{
-					if (null == cumulation)
-					{
-						cumulation = new Buffer(buffer.readableBytes() + 100);
-					}
-					cumulation.write(buffer, buffer.readableBytes());
-				}			
-			}
-			return ev;
+			ev = doDecode(buffer);
 		}
+		if (null == ev)
+		{
+			if (buffer != cumulation && buffer.readable())
+			{
+				if (null == cumulation)
+				{
+					cumulation = new Buffer(buffer.readableBytes() + 100);
+				}
+				cumulation.discardReadedBytes();
+				cumulation.write(buffer, buffer.readableBytes());
+			}			
+		}
+		return ev;
 	}
 }

@@ -461,7 +461,7 @@ public class DirectFetchHandler implements Runnable
 						closeAllClient();
 						touch();
 					}
-					if(now - lastTouchTime > 5000)
+					if(now - lastTouchTime > 5000 && !keyTable.isEmpty())
 					{
 						System.out.println("============================");
 						for(Integer sessionId:keyTable.keySet())
