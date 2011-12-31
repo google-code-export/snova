@@ -22,6 +22,7 @@ import org.arch.buffer.BufferHelper;
 import org.arch.common.Pair;
 import org.arch.event.Event;
 import org.arch.event.EventDispatcher;
+import org.arch.util.ListSelector;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
@@ -56,7 +57,13 @@ public class RawProxyConnection extends ProxyConnection implements Runnable
 	private static Channel server;
 	private static ServerSocket serverSocket;
 
-	private static Map<String, Pair<Channel, RawProxyConnection>> connectedChannelTable = new HashMap<String, Pair<Channel, RawProxyConnection>>();
+	static class ReverseConnection
+	{
+		RawProxyConnection logicConnection;
+		ListSelector<Channel> rawConnections = new ListSelector<Channel>();
+	}
+	
+	private static Map<String, ReverseConnection> connectedChannelTable = new HashMap<String, ReverseConnection>();
 	private static Map<String, Pair<Socket, RawProxyConnection>> connectedSocketTable = new HashMap<String, Pair<Socket, RawProxyConnection>>();
 
 	private ChannelFuture writeFuture;
@@ -123,18 +130,11 @@ public class RawProxyConnection extends ProxyConnection implements Runnable
 
 	private static synchronized Channel getConnectedChannel(String domain)
 	{
-		Pair<Channel, RawProxyConnection> pair = connectedChannelTable
+		ReverseConnection pair = connectedChannelTable
 		        .get(domain);
 		if (null != pair)
 		{
-			if (pair.first != null)
-			{
-				if (!pair.first.isConnected())
-				{
-					pair.first = null;
-				}
-			}
-			return pair.first;
+			return pair.rawConnections.select();
 		}
 		return null;
 	}
@@ -142,11 +142,11 @@ public class RawProxyConnection extends ProxyConnection implements Runnable
 	private static synchronized RawProxyConnection getConnectedRawProxyConnection(
 	        String domain)
 	{
-		Pair<Channel, RawProxyConnection> pair = connectedChannelTable
+		ReverseConnection pair = connectedChannelTable
 		        .get(domain);
 		if (null != pair)
 		{
-			return pair.second;
+			return pair.logicConnection;
 		}
 		return null;
 	}
@@ -154,27 +154,27 @@ public class RawProxyConnection extends ProxyConnection implements Runnable
 	private static synchronized void saveConnectedChannel(String domain,
 	        Channel ch)
 	{
-		Pair<Channel, RawProxyConnection> pair = connectedChannelTable
+		ReverseConnection pair = connectedChannelTable
 		        .get(domain);
 		if (null == pair)
 		{
-			pair = new Pair<Channel, RawProxyConnection>(ch, null);
+			pair = new ReverseConnection();
 			connectedChannelTable.put(domain, pair);
 		}
-		pair.first = ch;
+		pair.rawConnections.add(ch);
 	}
 
 	private static synchronized void saveRawProxyConnection(String domain,
 	        RawProxyConnection ch)
 	{
-		Pair<Channel, RawProxyConnection> pair = connectedChannelTable
+		ReverseConnection pair = connectedChannelTable
 		        .get(domain);
 		if (null == pair)
 		{
-			pair = new Pair<Channel, RawProxyConnection>(null, ch);
+			pair = new ReverseConnection();
 			connectedChannelTable.put(domain, pair);
 		}
-		pair.second = ch;
+		pair.logicConnection = ch;
 	}
 
 	// private static synchronized Socket getConnectedSocket(String domain)
@@ -284,10 +284,6 @@ public class RawProxyConnection extends ProxyConnection implements Runnable
 	public boolean isReady()
 	{
 		Channel ch = getConnectedChannel(auth.domain);
-		if(null != writeFuture)
-		{
-			return writeFuture.isDone();
-		}
 		return ch != null;
 	}
 
@@ -385,11 +381,16 @@ public class RawProxyConnection extends ProxyConnection implements Runnable
 	static class HerokuRawEventHandler extends SimpleChannelUpstreamHandler
 	{
 
+		private String dm;
 		@Override
 		public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e)
 		        throws Exception
 		{
-			// super.channelClosed(ctx, e);
+			ReverseConnection conn = connectedChannelTable.get(dm);
+			if(null != conn)
+			{
+				conn.rawConnections.remove(ctx.getChannel());
+			}
 		}
 
 		@Override
@@ -423,6 +424,7 @@ public class RawProxyConnection extends ProxyConnection implements Runnable
 			{
 				HerokuRawSocketEvent ev = (HerokuRawSocketEvent) e.getMessage();
 				saveConnectedChannel(ev.domain, ctx.getChannel());
+				dm = ev.domain;
 				if (ev.content.readable())
 				{
 					RawProxyConnection conn = getConnectedRawProxyConnection(ev.domain);
@@ -469,7 +471,7 @@ public class RawProxyConnection extends ProxyConnection implements Runnable
 			s.close();
 
 			ProxySessionManager.getInstance().run();
-			send(null);
+			send((Event)null);
 		}
 		catch (Exception e)
 		{

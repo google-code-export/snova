@@ -18,6 +18,7 @@ public class HTTPRequestEvent extends HTTPMessageEvent
 {
 	public String url;
 	public String method;
+	public String version;
 	
 	public HTTPRequestEvent(){}
 	@Override

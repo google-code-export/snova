@@ -37,9 +37,9 @@ public class ServerEventHandler implements EventHandler
 	protected ScheduledExecutorService	pool	     = new ScheduledThreadPoolExecutor(
 	                                                         50);
 	protected LinkedList<Event>	       responseQueue	= new LinkedList<Event>();
-	protected DirectFetchHandlerV2	   fetchHandler	 = new DirectFetchHandlerV2(
+	protected FetchHandler	   fetchHandler	 = new NettyFetchHandler(
 	                                                         this);
-	public DirectFetchHandlerV2 getFetchHandler()
+	public FetchHandler getFetchHandler()
     {
     	return fetchHandler;
     }
@@ -51,7 +51,7 @@ public class ServerEventHandler implements EventHandler
 		return pool;
 	}
 	
-	private void handleRecvEvent(Event event)
+	private synchronized void handleRecvEvent(Event event)
 	{
 		//System.out.println("Handle event[" + event.getHash() + "]:" + event.getClass().getName());
 		TypeVersion tv = Event.getTypeVersion(event.getClass());
@@ -173,22 +173,14 @@ public class ServerEventHandler implements EventHandler
 	{
 		//Object[] attach = (Object[]) event.getAttachment();
 		//final EventSendService sendService = (EventSendService) attach[0];
-		pool.submit(new Runnable()
-		{
-			@Override
-			public void run()
-			{
-				try
-                {
-					handleRecvEvent(event);
-                }
-                catch (Exception e)
-                {
-	               e.printStackTrace();
-                }
-				
-			}
-		});
+		try
+        {
+			handleRecvEvent(event);
+        }
+        catch (Exception e)
+        {
+           e.printStackTrace();
+        }
 	}
 	
 }

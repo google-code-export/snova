@@ -174,7 +174,6 @@ public class ProxySessionManager implements Runnable
             {
 	           logger.error("Failed routine.", e);
             }
-			
 		}
 	}
 }

@@ -69,31 +69,35 @@ public class HTTPEventDispatcherServlet extends HttpServlet
 						//event.setAttachment(new Object[] { sendService });
 						EventDispatcher.getSingletonInstance().dispatch(event);
 					}
-					int evcount = 0;
+					//int evcount = 0;
 					Buffer buf = new Buffer(4096);
 					List<Event> sentEvent = new LinkedList<Event>();
 					LinkedList<Event> responseQueue = handler.getEventQueue();
-					do
-					{
+					synchronized (responseQueue)
+                    {
+						do
+						{
 
-						if (buf.readableBytes() >= 1024 * 1024)
-						{
-							break;
-						}
-						Event ev = null;
-						synchronized (responseQueue)
-						{
-							if (responseQueue.isEmpty())
+							if (buf.readableBytes() >= 1024 * 1024)
 							{
 								break;
 							}
-							ev = responseQueue.removeFirst();
-							evcount++;
+							Event ev = null;
+							synchronized (responseQueue)
+							{
+								if (responseQueue.isEmpty())
+								{
+									break;
+								}
+								ev = responseQueue.removeFirst();
+								//evcount++;
+							}
+							ev.encode(buf);
+							sentEvent.add(ev);
 						}
-						ev.encode(buf);
-						sentEvent.add(ev);
-					}
-					while (true);
+						while (true);
+                    }
+					
 					EventRestNotify notify = new EventRestNotify();
 					notify.rest = responseQueue.size();
 					notify.encode(buf);

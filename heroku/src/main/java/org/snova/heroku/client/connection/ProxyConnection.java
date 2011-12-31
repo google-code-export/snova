@@ -3,7 +3,9 @@
  */
 package org.snova.heroku.client.connection;
 
+import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.List;
 
 import org.arch.buffer.Buffer;
 import org.arch.common.Pair;
@@ -13,6 +15,7 @@ import org.arch.event.EventDispatcher;
 import org.arch.event.EventHandler;
 import org.arch.event.EventHeader;
 import org.arch.event.TypeVersion;
+import org.arch.event.http.HTTPConnectionEvent;
 import org.arch.event.http.HTTPEventContants;
 import org.arch.event.misc.CompressEvent;
 import org.arch.event.misc.CompressEventV2;
@@ -79,35 +82,27 @@ public abstract class ProxyConnection
 		outSessionHandler = handler;
 		return send(event);
 	}
-
-	public boolean send(Event event)
+	
+	public boolean send(List<Event> events)
 	{
-		if (null != event)
+		if (null != events)
 		{
-			Pair<Channel, Integer> attach = (Pair<Channel, Integer>) event
-			        .getAttachment();
+			for(Event event:events)
+			{
+				EncryptEventV2 enc = new EncryptEventV2(cfg.getEncrypterType(),
+				        event);
+				enc.setHash(event.getHash());
+				synchronized (queuedEvents)
+				{
+					queuedEvents.add(enc);
+				}
+				if (logger.isDebugEnabled())
+				{
+					logger.debug("Connection:" + this.hashCode()
+					        + " queued with queue size:" + queuedEvents.size()
+					        + ", session[" + event.getHash() + "] HTTP request");
 
-			if (null == attach)
-			{
-				attach = new Pair<Channel, Integer>(null, -1);
-			}
-			if (event.getHash() <= 0)
-			{
-				event.setHash(attach.second);
-			}
-			EncryptEventV2 enc = new EncryptEventV2(cfg.getEncrypterType(),
-			        event);
-			enc.setHash(event.getHash());
-			synchronized (queuedEvents)
-			{
-				queuedEvents.add(enc);
-			}
-			if (logger.isDebugEnabled())
-			{
-				logger.debug("Connection:" + this.hashCode()
-				        + " queued with queue size:" + queuedEvents.size()
-				        + ", session[" + event.getHash() + "] HTTP request");
-
+				}
 			}
 		}
 
@@ -141,6 +136,16 @@ public abstract class ProxyConnection
 		lastsendtime = now;
 		boolean ret = doSend(msgbuffer);
 		return ret;
+		
+	}
+
+	public boolean send(Event event)
+	{
+		if(null == event)
+		{
+			return send((List<Event>)null);
+		}
+		return send(Arrays.asList(event));
 	}
 
 	private void handleRecvEvent(Event ev)
@@ -235,6 +240,9 @@ public abstract class ProxyConnection
 				        + ev.getHash()
 				        + "] response event:"
 				        + ev.getClass().getName());
+				HTTPConnectionEvent tmp = new HTTPConnectionEvent(HTTPConnectionEvent.CLOSED);
+				tmp.setHash(ev.getHash());
+				send(tmp);
 			}
 		}
 	}

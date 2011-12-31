@@ -63,6 +63,18 @@ public abstract class HTTPMessageEvent extends Event
 		return null != header?header.getValue():null;
 	}
 	
+	public void removeHeader(String name)
+	{
+		for(KeyValuePair<String, String> header:headers)
+		{
+			if(header.getName().equalsIgnoreCase(name))
+			{
+				headers.remove(header);
+				return;
+			}
+		}
+	}
+	
 	public List<KeyValuePair<String, String>> getHeaders()
 	{
 		return headers;
