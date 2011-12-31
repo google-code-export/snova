@@ -36,7 +36,7 @@ import org.snova.heroku.common.event.HerokuRawSocketEvent;
  * @author wqy
  * 
  */
-public class DirectFetchHandlerV2 implements Runnable
+public class DirectFetchHandlerV2 implements Runnable, FetchHandler
 {
 	protected Logger logger = LoggerFactory.getLogger(getClass());
 	private ServerEventHandler handler;
@@ -50,7 +50,7 @@ public class DirectFetchHandlerV2 implements Runnable
 	private List<ConnectTask> registQueue = new LinkedList<DirectFetchHandlerV2.ConnectTask>();
 	private List<SelectionKey> closeQueue = new LinkedList<SelectionKey>();
 	private SelectionKey localChannelKey = null;
-	private Socket localConnectedConnection; 
+	//private Socket localConnectedConnection; 
 	private HerokuRawSocketEventFrameDecoder decoder = null;
 
 	class RemoteChannelAttachment
@@ -199,7 +199,7 @@ public class DirectFetchHandlerV2 implements Runnable
 		else
 		{
 			logger.error("No connected connection found for chunk:"
-			        + event.getHash());
+			        + event.getHash() + " with content size:" + event.content.length);
 		}
 	}
 
@@ -462,6 +462,7 @@ public class DirectFetchHandlerV2 implements Runnable
 		try
 		{
 			Object attch = key.attachment();
+			key.cancel();
 			key.channel().close();
 			if (attch instanceof RemoteChannelAttachment)
 			{
@@ -547,21 +548,25 @@ public class DirectFetchHandlerV2 implements Runnable
 		ByteBuffer buffer = ByteBuffer.allocate(1024 * 1024);
 		while (true)
 		{
+			SelectionKey key = null;
+			Set keys = null;
 			try
 			{
 				int ret = selector.select(selectWaitTime);
 				if (ret > 0)
 				{
-					Set keys = selector.selectedKeys();
+					keys = selector.selectedKeys();
 					Iterator it = keys.iterator();
 					while (it.hasNext())
 					{
 						buffer.clear();
-						SelectionKey key = (SelectionKey) it.next();
+						key = (SelectionKey) it.next();
+						int ops = key.interestOps();
 						Object attch = key.attachment();
 						boolean isRemoteChannel = attch instanceof RemoteChannelAttachment;
 						if (key.isReadable())
 						{
+							
 							int bytes = 0;
 							SocketChannel client = (SocketChannel) key
 							        .channel();
@@ -575,7 +580,7 @@ public class DirectFetchHandlerV2 implements Runnable
 								logger.error("Failed to read client", e);
 								continue;
 							}
-                            
+							//System.out.println("########Read " + bytes);
 							if (bytes > 0)
 							{
 								buffer.flip();
@@ -622,15 +627,24 @@ public class DirectFetchHandlerV2 implements Runnable
 							{
 								if (bytes < 0)
 								{
-									// client.register(sel, ops, att);
 									closeConnection(key);
 									continue;
+								}
+								else
+								{
+									if(!client.isConnected())
+									{
+										closeConnection(key);
+										continue;
+									}
+									//System.out.println("#########May be closed");
 								}
 							}
 							key.interestOps(SelectionKey.OP_READ);
 						}
 						if (key.isConnectable())
 						{
+							//System.out.println("########Conn");
 							SocketChannel client = (SocketChannel) key
 							        .channel();
 							if (client.isConnectionPending())
@@ -668,6 +682,7 @@ public class DirectFetchHandlerV2 implements Runnable
 						}
 						if (key.isWritable())
 						{	
+							//System.out.println("########Write");
 							SocketChannel client = (SocketChannel) key
 							        .channel();
 							try
@@ -736,13 +751,16 @@ public class DirectFetchHandlerV2 implements Runnable
 							}
 						}
 					}
+					
+				}
+				handleCloseQueue();
+				handleConnectQueue();
+				handleWriteQueue();
+				if(null != keys)
+				{
 					keys.clear();
 				}
-				handleConnectQueue();
-				handleCloseQueue();
-				handleWriteQueue();
-				
-				
+				//System.out.println("@@@@@@@@@@" + ret);
 				synchronized (this)
 				{
 					long now = System.currentTimeMillis();
@@ -786,7 +804,25 @@ public class DirectFetchHandlerV2 implements Runnable
 			catch (Exception e)
 			{
 				logger.error("failed to get ", e);
-				System.exit(1);
+				if(null != key)
+				{
+					try
+                    {
+	                    key.channel().close();
+                    }
+                    catch (IOException e1)
+                    {
+	                    // TODO Auto-generated catch block
+	                    e1.printStackTrace();
+                    }
+				}
+			}
+			finally
+			{
+				if(null != keys)
+				{
+					keys.clear();
+				}
 			}
 
 		}

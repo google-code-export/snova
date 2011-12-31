@@ -3,6 +3,7 @@
  */
 package org.snova.heroku.client.handler;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.arch.common.KeyValuePair;
@@ -20,6 +21,7 @@ import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.handler.codec.http.DefaultHttpChunk;
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
 import org.jboss.netty.handler.codec.http.HttpChunk;
+import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
@@ -44,7 +46,7 @@ public class ProxySession
 
 	private Integer sessionID;
 	private Channel localHTTPChannel;
-	// private HTTPRequestEvent proxyEvent;
+	private HTTPRequestEvent lastProxyEvent;
 	private boolean isRequestSent;
 	private ProxySessionStatus status = ProxySessionStatus.INITED;
 
@@ -79,22 +81,24 @@ public class ProxySession
 	{
 		if (null == ev)
 		{
-			return new Object[]{new DefaultHttpResponse(HttpVersion.HTTP_1_1,
-			        HttpResponseStatus.REQUEST_TIMEOUT)};
+			return new Object[] { new DefaultHttpResponse(HttpVersion.HTTP_1_1,
+			        HttpResponseStatus.REQUEST_TIMEOUT) };
 		}
-		
+
 		int status = ev.statusCode;
 		HttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1,
 		        HttpResponseStatus.valueOf(status));
-		
+		response.addHeader("Proxy-Connection", "Close");
+		response.addHeader("Connection", "Close");
+
 		List<KeyValuePair<String, String>> headers = ev.getHeaders();
 		for (KeyValuePair<String, String> header : headers)
 		{
 			response.addHeader(header.getName(), header.getValue());
 		}
-		//response.setHeader(HttpHeaders.Names.CONTENT_LENGTH, ""
-		//        + ev.content.readableBytes());
-		
+		// response.setHeader(HttpHeaders.Names.CONTENT_LENGTH, ""
+		// + ev.content.readableBytes());
+
 		if (ev.content.readable())
 		{
 			ChannelBuffer bufer = ChannelBuffers.wrappedBuffer(
@@ -102,17 +106,17 @@ public class ProxySession
 			        ev.content.readableBytes());
 			// response.setChunked(false);
 			HttpChunk chunk = new DefaultHttpChunk(bufer);
-			return new Object[]{response, chunk};
-			//response.setContent(bufer);
+			return new Object[] { response, chunk };
+			// response.setContent(bufer);
 		}
-		return  new Object[]{response};
+		return new Object[] { response };
 	}
-	
+
 	public void handleResponse(final Event res)
 	{
 		doHandleResponse(res);
 	}
-	
+
 	public void doHandleResponse(Event res)
 	{
 		if (logger.isDebugEnabled())
@@ -124,9 +128,9 @@ public class ProxySession
 		}
 		if (res instanceof HTTPResponseEvent)
 		{
-			if(logger.isDebugEnabled())
+			if (logger.isDebugEnabled())
 			{
-				logger.debug("Session["  +getSessionID() + "] handle response.");
+				logger.debug("Session[" + getSessionID() + "] handle response.");
 				logger.debug(res.toString());
 			}
 			switch (status)
@@ -138,6 +142,8 @@ public class ProxySession
 					{
 						HttpResponse OK = new DefaultHttpResponse(
 						        HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
+						OK.setHeader("Proxy-Connection", "Keep-Alive");
+						OK.setHeader("Connection", "Keep-Alive");
 						localHTTPChannel.write(OK).addListener(
 						        new ChannelFutureListener()
 						        {
@@ -146,18 +152,12 @@ public class ProxySession
 							                ChannelFuture future)
 							                throws Exception
 							        {
-								        if (null != localHTTPChannel
-								                .getPipeline().get("decoder"))
-								        {
-									        localHTTPChannel.getPipeline()
-									                .remove("decoder");
-								        }
-								        if (null != localHTTPChannel
-								                .getPipeline().get("encoder"))
-								        {
-									        localHTTPChannel.getPipeline()
-									                .remove("encoder");
-								        }
+								        localHTTPChannel.getPipeline().remove(
+								                "decoder");
+								        localHTTPChannel.getPipeline().remove(
+								                "encoder");
+								        localHTTPChannel.getPipeline().remove(
+								                "chunkedWriter");
 							        }
 						        });
 					}
@@ -168,7 +168,7 @@ public class ProxySession
 				{
 					status = ProxySessionStatus.PROCEEDING;
 					Object[] writeObjs = buildHttpResponse((HTTPResponseEvent) res);
-					for(Object obj:writeObjs)
+					for (Object obj : writeObjs)
 					{
 						localHTTPChannel.write(obj);
 					}
@@ -187,15 +187,16 @@ public class ProxySession
 			if (conn.status == HTTPConnectionEvent.CLOSED)
 			{
 				status = ProxySessionStatus.PROCEEDING;
-				if(null != writeFuture && !writeFuture.isDone())
+				if (null != writeFuture && !writeFuture.isDone())
 				{
 					writeFuture.addListener(new ChannelFutureListener()
-					{		
+					{
 						@Override
-						public void operationComplete(ChannelFuture future) throws Exception
+						public void operationComplete(ChannelFuture future)
+						        throws Exception
 						{
 							close();
-							
+
 						}
 					});
 				}
@@ -203,7 +204,7 @@ public class ProxySession
 				{
 					close();
 				}
-				
+
 			}
 		}
 		else if (res instanceof HTTPChunkEvent)
@@ -272,22 +273,45 @@ public class ProxySession
 		if (null == host)
 		{
 			SimpleSocketAddress addr = getRemoteAddress(event);
-			event.setHeader("Host", addr.toString());
+			host = addr.toString();
+			event.setHeader("Host", host);
 		}
+
+		// event.removeHeader("Proxy-Connection");
+		// event.setHeader("Connection", "Close");
+
 		if (event.method.equalsIgnoreCase(HttpMethod.CONNECT.getName()))
 		{
 			handleConnect(event);
+			// lastProxyEvent = event;
 		}
 		else
 		{
-			//event.setHeader("Connection", "close");
+			if (event.url.startsWith("http://" + host.trim())
+			        && event.version.indexOf("1.1") != -1)
+			{
+				event.url = event.url.substring(("http://" + host.trim())
+				        .length());
+			}
+//			String value = event.getHeader("Proxy-Connection");
+//			if (null != value && value.trim().equalsIgnoreCase("Keep-Alive"))
+//			{
+//				event.setHeader("Connection", "Keep-Alive");
+//				// event.setHeader("Connection", "keep-alive");
+//			}
+//			else
+//			{
+//				event.setHeader("Connection", "Close");
+//			}
+//			event.removeHeader("Proxy-Connection");
 			// adjustEvent(event);
-			if(isRequestSent)
+			if (isRequestSent)
 			{
 				status = ProxySessionStatus.PROCEEDING;
-				if(logger.isDebugEnabled())
+				if (logger.isDebugEnabled())
 				{
-					logger.debug("Session[" + getSessionID() + "] reuse connected channel!");
+					logger.debug("Session[" + getSessionID()
+					        + "] reuse connected channel!");
 				}
 			}
 			else
@@ -295,10 +319,25 @@ public class ProxySession
 				status = ProxySessionStatus.WAITING_FIRST_RESPONSE;
 			}
 			isRequestSent = true;
-			getClientConnection(event).send(event);
-			if(logger.isDebugEnabled())
+			if (null != lastProxyEvent
+			        && !lastProxyEvent.getHeader("Host").equalsIgnoreCase(
+			                event.getHeader("Host")))
 			{
-				logger.debug("Session["  +getSessionID() + "] sent request.");
+				HTTPConnectionEvent closeEvent = new HTTPConnectionEvent(
+				        HTTPConnectionEvent.CLOSED);
+				closeEvent.setHash(event.getHash());
+				getClientConnection(event).send(
+				        Arrays.asList(closeEvent, event));
+			}
+			else
+			{
+				getClientConnection(event).send(event);
+			}
+			lastProxyEvent = event;
+
+			if (logger.isDebugEnabled())
+			{
+				logger.debug("Session[" + getSessionID() + "] sent request.");
 				logger.debug(event.toString());
 			}
 		}
@@ -308,7 +347,11 @@ public class ProxySession
 	{
 		if (null != connection)
 		{
-			connection.send(event);
+			// event.setHash(lastProxyEvent.getHash());
+			if (event.content.length > 0)
+			{
+				connection.send(event);
+			}
 		}
 		else
 		{
@@ -318,13 +361,16 @@ public class ProxySession
 
 	public void close()
 	{
-		if(status.equals(ProxySessionStatus.WAITING_FIRST_RESPONSE))
+		if (status.equals(ProxySessionStatus.WAITING_FIRST_RESPONSE))
 		{
-			if(null != localHTTPChannel && localHTTPChannel.isConnected())
+			if (null != localHTTPChannel && localHTTPChannel.isConnected())
 			{
-				HttpResponse res = new DefaultHttpResponse(HttpVersion.HTTP_1_1,
+				HttpResponse res = new DefaultHttpResponse(
+				        HttpVersion.HTTP_1_1,
 				        HttpResponseStatus.REQUEST_TIMEOUT);
-				logger.error("Session[" + getSessionID() + "] send fake 408 to browser since session closed while no response sent.");
+				logger.error("Session["
+				        + getSessionID()
+				        + "] send fake 408 to browser since session closed while no response sent.");
 				localHTTPChannel.write(res);
 			}
 		}

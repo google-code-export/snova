@@ -34,6 +34,7 @@ import org.jboss.netty.handler.codec.http.HttpRequestEncoder;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseDecoder;
 import org.jboss.netty.handler.codec.http.HttpVersion;
+import org.jboss.netty.handler.execution.ExecutionHandler;
 import org.jboss.netty.handler.execution.OrderedMemoryAwareThreadPoolExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,10 +72,10 @@ public class HTTPProxyConnection extends ProxyConnection
 	
 	public boolean isReady()
 	{
-		if(null == clientChannel || !clientChannel.isConnected())
-		{
-			waitingResponse.set(false);
-		}
+//		if(null == clientChannel || !clientChannel.isConnected())
+//		{
+//			waitingResponse.set(false);
+//		}
 		return !waitingResponse.get();
 	}
 	
@@ -92,8 +93,8 @@ public class HTTPProxyConnection extends ProxyConnection
 	private ChannelFuture connectProxyServer()
 	{
 		ChannelPipeline pipeline = Channels.pipeline();
-		//pipeline.addLast("executor", new ExecutionHandler(
-		//        SharedObjectHelper.getGlobalThreadPool()));
+		pipeline.addLast("executor", new ExecutionHandler(
+		        SharedObjectHelper.getGlobalThreadPool()));
 		pipeline.addLast("decoder", new HttpResponseDecoder());
 		// pipeline.addLast("aggregator", new
 		// HttpChunkAggregator(maxMessageSize));

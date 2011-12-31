@@ -23,6 +23,11 @@ public class ListSelector<T>
 	protected ArrayList<T>		list;
 	protected int						cursor;
 
+	public ListSelector()
+	{
+		list = new ArrayList<T>();
+	}
+	
 	public ListSelector(List<T> list)
 	{
 		this(list, true);
@@ -35,6 +40,16 @@ public class ListSelector<T>
 			Collections.shuffle(list);
 		}
 		this.list = new ArrayList<T>(list);
+	}
+	
+	public void add(T obj)
+	{
+		list.add(obj);
+	}
+	
+	public int size()
+	{
+		return list.size();
 	}
 	
 	public synchronized T select()

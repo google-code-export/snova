@@ -78,6 +78,8 @@ public class HttpLocalProxyRequestHandler extends SimpleChannelUpstreamHandler
 		HTTPRequestEvent event = new HTTPRequestEvent();
 		event.method = request.getMethod().getName();
 		event.url = request.getUri();
+		event.version = request.getProtocolVersion().getText();
+		event.setHash(id);
 		ChannelBuffer content = request.getContent();
 		if (null != content)
 		{
@@ -122,6 +124,7 @@ public class HttpLocalProxyRequestHandler extends SimpleChannelUpstreamHandler
 			event.content = new byte[content.readableBytes()];
 			content.readBytes(event.content);
 		}
+		event.setHash(id);
 		dispatchEvent(event);
 	}
 
