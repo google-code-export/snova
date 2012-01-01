@@ -5,7 +5,7 @@
 按照Heroku官方的[http://devcenter.heroku.com/articles/quickstart QuickStart]注册帐号，安装SDK（注册较简单，仅需要email）
 
 = Step 2: 部署Snova Heroku Plugin的服务端 =
-  * 下载snova-heroku-jserver-[version].zip， 在任意目录下解压
+  * 下载`snova-heroku-jserver-[version].zip`， 在任意目录下解压
   * 在命令行下进入解压的目录，依次顺序执行以下的命令,每一行单独执行
     {{{
        heroku login
@@ -32,5 +32,5 @@
 
 = Step 4: 与SPAC集成（可选） =
   * 在SPAC的解释语言中，heroku被定义为$HEROKU="Heroku"
-  * 参考SPAC的wiki修改SelectProxy方法打造自己的proxy环境
+  * 参考SPAC的说明[http://code.google.com/p/snova/wiki/SpecialProxyAutoConfig SpecialProxyAutoConfig]修改`SelectProxy`方法打造自己的proxy环境
   
