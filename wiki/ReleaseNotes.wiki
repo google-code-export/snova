@@ -4,6 +4,12 @@
 _You can download the latest version of the Snova [http://code.google.com/p/snova/downloads/list here]
 
 Snova - Release Notes
+===Version 0.12.0101 - (2011.12.25--2012.01.01)===
+ * 新的plugin: SPAC, 增强的PAC功能.
+ * 新的plugin: Heroku, 类似于GAE，需要部署server到Heroku云平台.
+ * framewok/gae/spac支持配置修改自动加载
+ * 伪造的证书文件持久化到硬盘
+
 ===Version 0.11.1111 - (2011.11.11--2011.12.18)===
  * Go/Java实现的GAE server端.
  * Snappy压缩支持.
