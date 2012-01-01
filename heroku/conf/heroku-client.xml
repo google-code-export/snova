@@ -12,7 +12,9 @@
 		meaning of them -->
 	<!-- Advanced Options -->
 	<!-- Send heart beat request every so many millis secs -->
-	<HeartBeatPeriod>500</HeartBeatPeriod>
+	<HeartBeatPeriod>1000</HeartBeatPeriod>
+    <!-- Max waiting HTTP response time(ms) -->
+    <HTTPRequestTimeout>30000</HTTPRequestTimeout>
 	<!--Avoid some edge case for full url path -->
 	<!--This option is not active when through a unanonymouse local proxy -->
 	<SimpleURLEnable>true</SimpleURLEnable>

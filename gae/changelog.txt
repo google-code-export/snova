@@ -1,11 +1,11 @@
 snova-gae Changelog
 ===================
-Changes in version 0.11.1225(2011.12.25)
+Changes in version 0.11.1225(2012.01.01)
 -------------------------------------------
 Initial version
 
 ** Features
-   * 
+   * Auto refresh changed configuration
    
 ** Improvement
    * Change fetch deadline to 10s(Go)

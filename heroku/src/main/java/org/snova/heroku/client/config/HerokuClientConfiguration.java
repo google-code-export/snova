@@ -194,6 +194,19 @@ public class HerokuClientConfiguration
 		return heartBeatPeriod;
 	}
 	
+   private int	httpRequestTimeout;
+	
+	@XmlElement(name = "HTTPRequestTimeout")
+	public void setHTTPRequestTimeout(int timeout)
+	{
+		this.httpRequestTimeout = timeout;
+	}
+	
+	public int getHTTPRequestTimeout()
+	{
+		return httpRequestTimeout;
+	}
+	
 	private String	compressor;
 	
 	@XmlElement(name = "Compressor")

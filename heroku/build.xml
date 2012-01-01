@@ -13,7 +13,7 @@
 	<property name="conf" value="${root}/conf" />
 	<property name="temp" value="${root}/temp" />
 	<property name="release" value="release" />
-	<property name="version" value="0.11.1225" />
+	<property name="version" value="0.12.0101" />
 	<property name="versionfile" value="org/snova/heroku/common/HerokuPluginVersion.java" />
 	<property name="release_dir_name" value="heroku" />
 	<property name="project_name" value="snova-heroku" />
@@ -63,23 +63,25 @@
 
 	<target name="packageserver">
 		<property name="releaseserverdir" value="${releasedir}/${project_name}-server-${version}" />
+		<copy tofile="repo/snova/framework/1.0/framework-1.0.jar" file="${root}/../framework/lib/framework.jar"/>
+		<copy tofile="repo/snova/arch/1.0/arch-1.0.jar" file="${root}/../framework/lib/arch.jar"/>
 		<copy todir="${releaseserverdir}/">
 			<fileset dir="${root}">
-				<include name ="**/pom.xml"/>
-				<include name ="**/Procfile"/>
-				<include name ="**/.gitignore"/>
-				<include name ="**/changelog.txt"/>
-				<include name ="**/licence.txt"/>
-				<include name ="**/readme.txt"/>
+				<include name="**/pom.xml" />
+				<include name="**/Procfile" />
+				<include name="**/.gitignore" />
+				<include name="**/changelog.txt" />
+				<include name="**/licence.txt" />
+				<include name="**/readme.txt" />
 				<include name="**/repo/**" />
 				<include name="**/target/**" />
 				<include name="**/org/snova/heroku/server/**" />
 				<include name="**/org/snova/heroku/common/**" />
-				<exclude name ="**/bin/**"/>
+				<exclude name="**/bin/**" />
 			</fileset>
 		</copy>
-		
-		<zip destfile="${project_name}-server-${version}.zip" basedir="${releasedir}" includes="${project_name}-server-${version}/**"/>
+
+		<zip destfile="${project_name}-jserver-${version}.zip" basedir="${releasedir}" includes="${project_name}-server-${version}/**" />
 		<delete dir="${releasedir}" />
 	</target>
 

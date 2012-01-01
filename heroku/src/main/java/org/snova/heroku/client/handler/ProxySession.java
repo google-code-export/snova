@@ -4,7 +4,11 @@
 package org.snova.heroku.client.handler;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.arch.common.KeyValuePair;
 import org.arch.event.Event;
@@ -21,7 +25,6 @@ import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.handler.codec.http.DefaultHttpChunk;
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
 import org.jboss.netty.handler.codec.http.HttpChunk;
-import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
@@ -31,6 +34,7 @@ import org.slf4j.LoggerFactory;
 import org.snova.framework.config.SimpleSocketAddress;
 import org.snova.heroku.client.connection.ProxyConnection;
 import org.snova.heroku.client.connection.ProxyConnectionManager;
+import org.snova.heroku.common.event.SequentialChunkEvent;
 
 /**
  * @author qiyingwang
@@ -51,7 +55,59 @@ public class ProxySession
 	private ProxySessionStatus status = ProxySessionStatus.INITED;
 
 	private ChannelFuture writeFuture;
-
+	private LinkedList<ChannelBuffer>	restChunkList = new LinkedList<ChannelBuffer>();
+	private Map<Integer, SequentialChunkEvent>	seqChunkTable = new HashMap<Integer, SequentialChunkEvent>();	
+	private int waitingChunkSequence = 0;
+	private boolean closeAfterFinish = false;
+	private AtomicInteger sequence = new AtomicInteger(0);
+	private ChannelFutureListener finishListener = new ChannelFutureListener()
+	{
+		@Override
+		public void operationComplete(ChannelFuture future) throws Exception
+		{
+			synchronized (restChunkList)
+            {
+				if(!restChunkList.isEmpty())
+				{
+					ChannelBuffer tmp = restChunkList.removeFirst();
+					writeFuture = localHTTPChannel.write(tmp);
+					writeFuture.addListener(finishListener);
+				}
+            }
+			if(restChunkList.isEmpty() && closeAfterFinish)
+			{
+				close();
+			}
+		}
+	};
+	
+	private ChannelFutureListener seqFinishListener = new ChannelFutureListener()
+	{
+		@Override
+		public void operationComplete(ChannelFuture future) throws Exception
+		{
+			synchronized (seqChunkTable)
+            {
+				if(!seqChunkTable.isEmpty())
+				{
+					SequentialChunkEvent chunk = seqChunkTable.remove(waitingChunkSequence);
+					if(null == chunk)
+					{
+						return;
+					}
+					waitingChunkSequence++;
+					ChannelBuffer buf = ChannelBuffers.wrappedBuffer(chunk.content);
+					writeFuture = localHTTPChannel.write(buf);
+					writeFuture.addListener(seqFinishListener);
+				}
+            }
+			if(seqChunkTable.isEmpty() && closeAfterFinish)
+			{
+				close();
+			}
+		}
+	};
+	
 	public ProxySession(Integer id, Channel localChannel)
 	{
 		this.sessionID = id;
@@ -62,7 +118,7 @@ public class ProxySession
 	{
 		return status;
 	}
-
+	
 	public Integer getSessionID()
 	{
 		return sessionID;
@@ -142,8 +198,7 @@ public class ProxySession
 					{
 						HttpResponse OK = new DefaultHttpResponse(
 						        HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
-						OK.setHeader("Proxy-Connection", "Keep-Alive");
-						OK.setHeader("Connection", "Keep-Alive");
+						OK.setHeader("Content-Length", "0");
 						localHTTPChannel.write(OK).addListener(
 						        new ChannelFutureListener()
 						        {
@@ -156,8 +211,6 @@ public class ProxySession
 								                "decoder");
 								        localHTTPChannel.getPipeline().remove(
 								                "encoder");
-								        localHTTPChannel.getPipeline().remove(
-								                "chunkedWriter");
 							        }
 						        });
 					}
@@ -189,16 +242,7 @@ public class ProxySession
 				status = ProxySessionStatus.PROCEEDING;
 				if (null != writeFuture && !writeFuture.isDone())
 				{
-					writeFuture.addListener(new ChannelFutureListener()
-					{
-						@Override
-						public void operationComplete(ChannelFuture future)
-						        throws Exception
-						{
-							close();
-
-						}
-					});
+					closeAfterFinish = true;
 				}
 				else
 				{
@@ -215,7 +259,60 @@ public class ProxySession
 			{
 				ChannelBuffer content = ChannelBuffers
 				        .wrappedBuffer(chunk.content);
-				writeFuture = localHTTPChannel.write(content);
+				synchronized (restChunkList)
+				{
+					if(writeFuture != null && !writeFuture.isDone())
+					{
+						restChunkList.add(content);
+						if(logger.isDebugEnabled())
+						{
+							logger.debug("Add content in ready list:" + restChunkList.size());
+						}
+						//localHTTPChannel.write(content);
+						writeFuture.addListener(finishListener);
+					}
+					else
+					{
+						writeFuture = localHTTPChannel.write(content);
+					}
+				}
+			}
+			else
+			{
+				logger.error("Failed to write back content.");
+			}
+		}
+		else if (res instanceof SequentialChunkEvent)
+		{
+			status = ProxySessionStatus.PROCEEDING;
+			SequentialChunkEvent chunk = (SequentialChunkEvent) res;
+			if (null != localHTTPChannel && localHTTPChannel.isConnected())
+			{
+				synchronized (seqChunkTable)
+				{
+					seqChunkTable.put(chunk.sequence, chunk);
+					if(writeFuture != null && !writeFuture.isDone())
+					{
+						if(logger.isDebugEnabled())
+						{
+							logger.debug("Add content in ready table:" + seqChunkTable.size());
+						}
+						//localHTTPChannel.write(content);
+						writeFuture.addListener(seqFinishListener);
+					}
+					else
+					{
+						try
+                        {
+	                        seqFinishListener.operationComplete(null);
+                        }
+                        catch (Exception e)
+                        {
+	                        //
+                        }
+						//writeFuture = localHTTPChannel.write(content);
+					}
+				}
 			}
 			else
 			{
@@ -269,6 +366,7 @@ public class ProxySession
 
 	public synchronized void handle(HTTPRequestEvent event)
 	{
+		clearStatus();
 		String host = event.getHeader("Host");
 		if (null == host)
 		{
@@ -287,12 +385,12 @@ public class ProxySession
 		}
 		else
 		{
-			if (event.url.startsWith("http://" + host.trim())
-			        && event.version.indexOf("1.1") != -1)
+			if (event.url.startsWith("http://" + host.trim()))
 			{
 				event.url = event.url.substring(("http://" + host.trim())
 				        .length());
 			}
+			//logger.info("#################" + event.url + " " + event.version);
 //			String value = event.getHeader("Proxy-Connection");
 //			if (null != value && value.trim().equalsIgnoreCase("Keep-Alive"))
 //			{
@@ -350,7 +448,11 @@ public class ProxySession
 			// event.setHash(lastProxyEvent.getHash());
 			if (event.content.length > 0)
 			{
-				connection.send(event);
+				SequentialChunkEvent chunk = new SequentialChunkEvent();
+				chunk.setHash(getSessionID());
+				chunk.content = event.content;
+				chunk.sequence = sequence.getAndIncrement();
+				connection.send(chunk);
 			}
 		}
 		else
@@ -358,9 +460,20 @@ public class ProxySession
 			close();
 		}
 	}
+	
+	private void clearStatus()
+	{
+		restChunkList.clear();
+		seqChunkTable.clear();
+		waitingChunkSequence = 0;
+		writeFuture = null;
+		closeAfterFinish = false;
+		sequence.set(0);
+	}
 
 	public void close()
 	{
+		
 		if (status.equals(ProxySessionStatus.WAITING_FIRST_RESPONSE))
 		{
 			if (null != localHTTPChannel && localHTTPChannel.isConnected())
@@ -371,6 +484,16 @@ public class ProxySession
 				logger.error("Session["
 				        + getSessionID()
 				        + "] send fake 408 to browser since session closed while no response sent.");
+				localHTTPChannel.write(res);
+			}
+		}
+		else if (status.equals(ProxySessionStatus.WAITING_CONNECT_RESPONSE))
+		{
+			if (null != localHTTPChannel && localHTTPChannel.isConnected())
+			{
+				HttpResponse res = new DefaultHttpResponse(
+				        HttpVersion.HTTP_1_1,
+				        HttpResponseStatus.SERVICE_UNAVAILABLE);
 				localHTTPChannel.write(res);
 			}
 		}

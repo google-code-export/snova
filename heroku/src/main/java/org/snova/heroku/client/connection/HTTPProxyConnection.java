@@ -59,6 +59,7 @@ public class HTTPProxyConnection extends ProxyConnection
 	private SocketChannel	                  clientChannel	  = null;
 
 	private int connectFailedCount;
+	private long lastWriteTime;
 	
 	public HTTPProxyConnection(HerokuServerAuth auth)
 	{
@@ -72,10 +73,11 @@ public class HTTPProxyConnection extends ProxyConnection
 	
 	public boolean isReady()
 	{
-//		if(null == clientChannel || !clientChannel.isConnected())
-//		{
-//			waitingResponse.set(false);
-//		}
+		long now = System.currentTimeMillis();
+		if(now - lastWriteTime >= HerokuClientConfiguration.getInstance().getHTTPRequestTimeout())
+		{
+			return true;
+		}
 		return !waitingResponse.get();
 	}
 	
@@ -212,13 +214,13 @@ public class HTTPProxyConnection extends ProxyConnection
 	protected boolean doSend(final Buffer content)
 	{
 		waitingResponse.set(true);
+		lastWriteTime = System.currentTimeMillis();
 		if(null == clientChannel || !clientChannel.isConnected())
 		{
 			clientChannel = null;
 			ChannelFuture future = connectProxyServer();
 			future.addListener(new ChannelFutureListener()
 			{
-				
 				@Override
 				public void operationComplete(ChannelFuture future) throws Exception
 				{
@@ -236,6 +238,11 @@ public class HTTPProxyConnection extends ProxyConnection
 							logger.error("Failed to connect remote heroku server, try again");
 							//waitingResponse.set(false);
 							doSend(content);
+						}
+						else
+						{
+							connectFailedCount = 0;
+							waitingResponse.set(false);
 						}
 					}
 					

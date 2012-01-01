@@ -1,7 +1,7 @@
 snova-spac Changelog
 ===================
 
-Changes in version 0.11.1218 (2011.12.18)
+Changes in version 0.12.0101 (2012.01.01)
 -------------------------------------------
 Initial version
 
@@ -10,7 +10,7 @@ Initial version
    * Direct forward 
    * Specified HTTP(s) proxy forward
    * Google sites forward
-   * CSL script engine
+   * TykeDog script engine
    
 ** Task
    * NA
