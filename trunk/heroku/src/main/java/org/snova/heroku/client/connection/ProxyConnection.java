@@ -89,6 +89,10 @@ public abstract class ProxyConnection
 		{
 			for(Event event:events)
 			{
+				if(event instanceof EventRestRequest && !queuedEvents.isEmpty())
+				{
+					continue;
+				}
 				EncryptEventV2 enc = new EncryptEventV2(cfg.getEncrypterType(),
 				        event);
 				enc.setHash(event.getHash());
@@ -107,8 +111,14 @@ public abstract class ProxyConnection
 		}
 
 		long now = System.currentTimeMillis();
-		if (!isReady())
+		if (!isReady() && now - lastsendtime < 30000)
 		{
+			if (logger.isDebugEnabled())
+			{
+				logger.debug("Connection:" + this.hashCode()
+				        + " is not ready.");
+
+			}
 			return true;
 		}
 		if(queuedEvents.isEmpty())
@@ -191,6 +201,7 @@ public abstract class ProxyConnection
 				}
 				return;
 			}
+			case HerokuConstants.EVENT_SEQUNCEIAL_CHUNK_TYPE:
 			case HTTPEventContants.HTTP_CONNECTION_EVENT_TYPE:
 			case HTTPEventContants.HTTP_CHUNK_EVENT_TYPE:
 			case HTTPEventContants.HTTP_RESPONSE_EVENT_TYPE:

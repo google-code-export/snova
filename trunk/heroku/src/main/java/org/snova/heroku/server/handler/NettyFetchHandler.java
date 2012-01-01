@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.arch.buffer.Buffer;
 import org.arch.common.KeyValuePair;
@@ -40,6 +41,7 @@ import org.slf4j.LoggerFactory;
 import org.snova.heroku.common.codec.HerokuRawSocketEventFrameDecoder;
 import org.snova.heroku.common.event.EventRestNotify;
 import org.snova.heroku.common.event.HerokuRawSocketEvent;
+import org.snova.heroku.common.event.SequentialChunkEvent;
 
 /**
  * @author qiyingwang
@@ -47,33 +49,37 @@ import org.snova.heroku.common.event.HerokuRawSocketEvent;
  */
 public class NettyFetchHandler implements FetchHandler, Runnable
 {
-	protected Logger logger = LoggerFactory.getLogger(getClass());
-	private NioClientSocketChannelFactory factory;
-	private ServerEventHandler handler;
-	private long lastTouchTime;
-	private Map<Integer, SocketChannel> connectedChannelTable = new ConcurrentHashMap<Integer, SocketChannel>();
-	//private SocketChannel localSocketChannel = null;
-	private List<SocketChannel> localSocketChannelList = new LinkedList<SocketChannel>();
-	private String domain;
+	protected Logger	                  logger	             = LoggerFactory
+	                                                                     .getLogger(getClass());
+	private NioClientSocketChannelFactory	factory;
+	private ServerEventHandler	          handler;
+	private long	                      lastTouchTime;
+	private Map<Integer, SocketChannel>	  connectedChannelTable	 = new ConcurrentHashMap<Integer, SocketChannel>();
+	// private SocketChannel localSocketChannel = null;
+	private List<SocketChannel>	          localSocketChannelList	= new LinkedList<SocketChannel>();
+	private String	                      domain;
+	
 	public NettyFetchHandler(ServerEventHandler serverEventHandler)
 	{
 		this.handler = serverEventHandler;
 		factory = new NioClientSocketChannelFactory(
 		        Executors.newCachedThreadPool(),
 		        Executors.newCachedThreadPool());
-		handler.getThreadPool().scheduleAtFixedRate(this, 1, 2, TimeUnit.SECONDS);
+		handler.getThreadPool().scheduleAtFixedRate(this, 1, 2,
+		        TimeUnit.SECONDS);
 	}
 	
 	private void handleWriteQueue()
 	{
-		if(localSocketChannelList.size() > 0)
+		if (localSocketChannelList.size() > 0)
 		{
 			Buffer buf = new Buffer(4096);
 			List<Event> sentEvent = new LinkedList<Event>();
 			LinkedList<Event> responseQueue = handler.getEventQueue();
-			if(!responseQueue.isEmpty())
+			if (!responseQueue.isEmpty())
 			{
-				System.out.println("###Write queue size:" + responseQueue.size());
+				System.out.println("###Write queue size:"
+				        + responseQueue.size());
 			}
 			
 			boolean haveData = false;
@@ -96,19 +102,19 @@ public class NettyFetchHandler implements FetchHandler, Runnable
 				System.out.println("###Write back event:" + ev.getHash());
 				sentEvent.add(ev);
 				haveData = true;
-			}
-			while (true);
-			if(haveData)
-			{	
+			} while (true);
+			if (haveData)
+			{
 				HerokuRawSocketEvent raw = new HerokuRawSocketEvent(domain, buf);
 				Buffer content = new Buffer(buf.readableBytes() + 100);
 				raw.encode(content);
-				ChannelBuffer msg = ChannelBuffers.wrappedBuffer(content.getRawBuffer(), 0, content.readableBytes());
+				ChannelBuffer msg = ChannelBuffers.wrappedBuffer(
+				        content.getRawBuffer(), 0, content.readableBytes());
 				localSocketChannelList.get(0).write(msg);
 			}
 		}
 	}
-
+	
 	public long touch()
 	{
 		long now = System.currentTimeMillis();
@@ -118,7 +124,7 @@ public class NettyFetchHandler implements FetchHandler, Runnable
 	
 	public void handleHerokuAuth(String auth)
 	{
-		if(localSocketChannelList.size() > 0)
+		if (localSocketChannelList.size() > 0)
 		{
 			return;
 		}
@@ -126,22 +132,24 @@ public class NettyFetchHandler implements FetchHandler, Runnable
 		this.domain = ss[0];
 		String host = ss[1];
 		int port = Integer.parseInt(ss[2]);
-		for (int i = 0; i <1; i++)
-        {
+		for (int i = 0; i < 1; i++)
+		{
 			ChannelPipeline pipeline = Channels.pipeline();
 			pipeline.addLast("handler", new LocalSocketResponseHandler());
-			final SocketChannel tmp =  factory.newChannel(pipeline);
+			final SocketChannel tmp = factory.newChannel(pipeline);
 			localSocketChannelList.add(tmp);
-			tmp.connect(new InetSocketAddress(host, port)).addListener(new ChannelFutureListener()
-			{
-				@Override
-				public void operationComplete(ChannelFuture future) throws Exception
-				{
-					handler.offer(new EventRestNotify(), false);
-					handleWriteQueue();
-				}
-			});
-        }
+			tmp.connect(new InetSocketAddress(host, port)).addListener(
+			        new ChannelFutureListener()
+			        {
+				        @Override
+				        public void operationComplete(ChannelFuture future)
+				                throws Exception
+				        {
+					        handler.offer(new EventRestNotify(), false);
+					        handleWriteQueue();
+				        }
+			        });
+		}
 		
 	}
 	
@@ -158,16 +166,20 @@ public class NettyFetchHandler implements FetchHandler, Runnable
 	private void closeChannel(int hash)
 	{
 		SocketChannel channel = connectedChannelTable.remove(hash);
-		if(null != channel&&channel.isOpen())
+		if (null != channel && channel.isOpen())
 		{
 			channel.close();
 		}
-		HTTPConnectionEvent ev = new HTTPConnectionEvent(
-		        HTTPConnectionEvent.CLOSED);
-		ev.setHash(hash);
-		handler.offer(ev, true);
+		if (null != channel)
+		{
+			HTTPConnectionEvent ev = new HTTPConnectionEvent(
+			        HTTPConnectionEvent.CLOSED);
+			ev.setHash(hash);
+			handler.offer(ev, true);
+		}
+		
 	}
-
+	
 	private ChannelBuffer buildSentBuffer(HTTPRequestEvent ev)
 	{
 		StringBuilder buffer = new StringBuilder();
@@ -179,7 +191,7 @@ public class NettyFetchHandler implements FetchHandler, Runnable
 			        .append(header.getValue()).append("\r\n");
 		}
 		buffer.append("\r\n");
-
+		
 		Buffer msg = new Buffer(buffer.length() + ev.content.readableBytes());
 		msg.write(buffer.toString().getBytes());
 		if (ev.content.readable())
@@ -187,11 +199,11 @@ public class NettyFetchHandler implements FetchHandler, Runnable
 			msg.write(ev.content.getRawBuffer(), ev.content.getReadIndex(),
 			        ev.content.readableBytes());
 		}
-
+		
 		return ChannelBuffers.wrappedBuffer(msg.getRawBuffer(), 0,
 		        msg.readableBytes());
 	}
-
+	
 	public void fetch(HTTPChunkEvent event)
 	{
 		SocketChannel channel = connectedChannelTable.get(event.getHash());
@@ -206,7 +218,7 @@ public class NettyFetchHandler implements FetchHandler, Runnable
 			        + event.content.length);
 		}
 	}
-
+	
 	public void fetch(final HTTPRequestEvent event)
 	{
 		// System.out.println("#####Handle HTTPRequestEvent");
@@ -223,38 +235,42 @@ public class NettyFetchHandler implements FetchHandler, Runnable
 			return;
 		}
 		SocketChannel channel = connectedChannelTable.get(event.getHash());
-		if(channel == null || !channel.isConnected())
+		if (channel == null || !channel.isConnected())
 		{
 			ChannelPipeline pipeline = Channels.pipeline();
-			pipeline.addLast("handler", new SocketResponseHandler(event.getHash()));
-			final SocketChannel tmp =  factory.newChannel(pipeline);
-			tmp.connect(new InetSocketAddress(host, port)).addListener(new ChannelFutureListener()
-			{
-				@Override
-				public void operationComplete(ChannelFuture future) throws Exception
-				{
-					if(event.method.equalsIgnoreCase("Connect"))
-					{
-						HTTPResponseEvent res = new HTTPResponseEvent();
-						res.statusCode = 200;
-						res.setHash(event.getHash());
-						handler.offer(res, false);
-					}
-					else
-					{
-						future.getChannel().write(buildSentBuffer(event));
-					}
-					connectedChannelTable.put(event.getHash(), tmp);
-					
-				}
-			});
+			pipeline.addLast("handler",
+			        new SocketResponseHandler(event.getHash()));
+			final SocketChannel tmp = factory.newChannel(pipeline);
+			tmp.connect(new InetSocketAddress(host, port)).addListener(
+			        new ChannelFutureListener()
+			        {
+				        @Override
+				        public void operationComplete(ChannelFuture future)
+				                throws Exception
+				        {
+					        if (event.method.equalsIgnoreCase("Connect"))
+					        {
+						        HTTPResponseEvent res = new HTTPResponseEvent();
+						        res.statusCode = 200;
+						        res.setHash(event.getHash());
+						        handler.offer(res, false);
+					        }
+					        else
+					        {
+						        future.getChannel().write(
+						                buildSentBuffer(event));
+					        }
+					        connectedChannelTable.put(event.getHash(), tmp);
+					        
+				        }
+			        });
 		}
 		else
 		{
 			channel.write(buildSentBuffer(event));
 		}
 	}
-
+	
 	public void handleConnectionEvent(HTTPConnectionEvent ev)
 	{
 		if (ev.status == HTTPConnectionEvent.CLOSED)
@@ -270,105 +286,124 @@ public class NettyFetchHandler implements FetchHandler, Runnable
 	@ChannelPipelineCoverage("one")
 	class LocalSocketResponseHandler extends SimpleChannelUpstreamHandler
 	{
-		HerokuRawSocketEventFrameDecoder decoder = new HerokuRawSocketEventFrameDecoder();
+		HerokuRawSocketEventFrameDecoder	decoder	= new HerokuRawSocketEventFrameDecoder();
+		
 		public LocalSocketResponseHandler()
-        {
-        }
+		{
+		}
 		
 		@Override
 		public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
 		        throws Exception
 		{
-		    //
+			//
 		}
+		
 		@Override
 		public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e)
 		        throws Exception
 		{
-			localSocketChannelList.remove((SocketChannel)ctx.getChannel());
+			localSocketChannelList.remove((SocketChannel) ctx.getChannel());
 			closeAllClient();
 		}
+		
 		@Override
 		public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
 		        throws Exception
 		{
-		    Object msg = e.getMessage();
-		    if(msg instanceof ChannelBuffer)
-		    {
-		    	ChannelBuffer buf = (ChannelBuffer) msg;
-		    	byte[] tmp = new byte[buf.readableBytes()];
-		    	buf.readBytes(tmp);
+			Object msg = e.getMessage();
+			if (msg instanceof ChannelBuffer)
+			{
+				ChannelBuffer buf = (ChannelBuffer) msg;
+				byte[] tmp = new byte[buf.readableBytes()];
+				buf.readBytes(tmp);
 				Buffer content = Buffer.wrapReadableContent(tmp);
-				while(content.readable())
+				while (content.readable())
 				{
 					HerokuRawSocketEvent ev = decoder.decode(content);
-					if(null == ev)
+					if (null == ev)
 					{
-						System.out.println("####Rest" + decoder.cumulationSize());
+						System.out.println("####Rest"
+						        + decoder.cumulationSize());
 						break;
 					}
 					System.out.println("####Handle HerokuRawSocketEvent");
-					while(ev.content.readable())
+					while (ev.content.readable())
 					{
-						Event tmpev = EventDispatcher.getSingletonInstance().parse(ev.content);
+						Event tmpev = EventDispatcher.getSingletonInstance()
+						        .parse(ev.content);
 						EventDispatcher.getSingletonInstance().dispatch(tmpev);
 					}
 				}
-		    }
+			}
 		}
 	}
 	
 	@ChannelPipelineCoverage("one")
 	class SocketResponseHandler extends SimpleChannelUpstreamHandler
 	{
-		private int hash;
+		private int		      hash;
+		private AtomicInteger	sequence	= new AtomicInteger(0);
 		
 		public SocketResponseHandler(int hash)
-        {
-	        this.hash = hash;
-        }
+		{
+			this.hash = hash;
+		}
 		
 		@Override
 		public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
 		        throws Exception
 		{
-		    //
+			//
 		}
+		
 		@Override
 		public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e)
 		        throws Exception
 		{
 			closeChannel(hash);
 		}
+		
 		@Override
 		public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
 		        throws Exception
 		{
-		    Object msg = e.getMessage();
-		    if(msg instanceof ChannelBuffer)
-		    {
-		    	ChannelBuffer buf = (ChannelBuffer) msg;
-		    	HTTPChunkEvent ev = new HTTPChunkEvent();
-		    	ev.setHash(hash);
-		    	ev.content = new byte[buf.readableBytes()];
-		    	buf.readBytes(ev.content);
-		    	handler.offer(ev, true);
-		    }
-		    handleWriteQueue();
+			Object msg = e.getMessage();
+			if (msg instanceof ChannelBuffer)
+			{
+				ChannelBuffer buf = (ChannelBuffer) msg;
+				SequentialChunkEvent ev = new SequentialChunkEvent();
+				ev.setHash(hash);
+				ev.sequence = sequence.getAndIncrement();
+				ev.content = new byte[buf.readableBytes()];
+				buf.readBytes(ev.content);
+				handler.offer(ev, true);
+			}
+			handleWriteQueue();
 		}
 	}
-
+	
 	@Override
-    public void run()
-    {
+	public void run()
+	{
 		long now = System.currentTimeMillis();
-		if (!handler.getEventQueue().isEmpty()
-		        && now - lastTouchTime > 10000)
+		if (!handler.getEventQueue().isEmpty() && now - lastTouchTime > 10000)
 		{
 			logger.error("Too long time since last request handled.");
 			closeAllClient();
 			touch();
 		}
-	    
-    }
+		
+	}
+	
+	@Override
+	public void verifyAlive(List<Integer> sessionIDs)
+	{
+		
+	}
+	
+	public void fetch(SequentialChunkEvent event)
+	{
+		
+	}
 }

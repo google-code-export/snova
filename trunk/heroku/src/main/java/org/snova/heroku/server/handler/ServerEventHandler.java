@@ -24,6 +24,8 @@ import org.arch.event.misc.EncryptType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.heroku.common.HerokuConstants;
+import org.snova.heroku.common.event.EventRestRequest;
+import org.snova.heroku.common.event.SequentialChunkEvent;
 
 /**
  * @author qiyingwang
@@ -37,7 +39,7 @@ public class ServerEventHandler implements EventHandler
 	protected ScheduledExecutorService	pool	     = new ScheduledThreadPoolExecutor(
 	                                                         50);
 	protected LinkedList<Event>	       responseQueue	= new LinkedList<Event>();
-	protected FetchHandler	   fetchHandler	 = new NettyFetchHandler(
+	protected FetchHandler	   fetchHandler	 = new DirectFetchHandlerV2(
 	                                                         this);
 	public FetchHandler getFetchHandler()
     {
@@ -68,11 +70,16 @@ public class ServerEventHandler implements EventHandler
 		int type = tv.type;
 		switch (type)
 		{
-			case HTTPEventContants.HTTP_CHUNK_EVENT_TYPE:
+			case HerokuConstants.EVENT_SEQUNCEIAL_CHUNK_TYPE:
 			{
-				fetchHandler.fetch((HTTPChunkEvent) event);
+				fetchHandler.fetch((SequentialChunkEvent) event);
 				break;
 			}
+//			case HTTPEventContants.HTTP_CHUNK_EVENT_TYPE:
+//			{
+//				fetchHandler.fetch((HTTPChunkEvent) event);
+//				break;
+//			}
 			case HTTPEventContants.HTTP_CONNECTION_EVENT_TYPE:
 			{
 				fetchHandler.handleConnectionEvent((HTTPConnectionEvent) event);
@@ -113,6 +120,8 @@ public class ServerEventHandler implements EventHandler
 			}
 			case HerokuConstants.EVENT_REST_REQEUST_TYPE:
 			{
+				EventRestRequest req = (EventRestRequest) event;
+				fetchHandler.verifyAlive(req.restSessions);
 				break;
 			}
 			case HerokuConstants.EVENT_SOCKET_CONNECT_REQ_TYPE:

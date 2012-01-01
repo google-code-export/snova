@@ -26,6 +26,7 @@ import org.arch.event.http.HTTPResponseEvent;
 import org.arch.util.NetworkHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.snova.heroku.common.event.SequentialChunkEvent;
 
 /**
  * @author wqy
@@ -34,8 +35,10 @@ import org.slf4j.LoggerFactory;
 public interface FetchHandler
 {
 	public long touch();
-	public void fetch(HTTPChunkEvent event);
+	//public void fetch(HTTPChunkEvent event);
+	public void fetch(SequentialChunkEvent event);
 	public void fetch(HTTPRequestEvent event);
 	public void handleConnectionEvent(HTTPConnectionEvent ev);
 	public void handleHerokuAuth(String auth);
+	public void verifyAlive(List<Integer> sessionIDs);
 }

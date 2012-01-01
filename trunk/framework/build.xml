@@ -14,7 +14,7 @@
 	<property name="docs" value="${root}/docs" />
 	<property name="shell" value="${root}/shell" />
 	<property name="release" value="release" />
-	<property name="version" value="0.11.1111" />
+	<property name="version" value="0.12.0101" />
 	<property name="versionfile" value="org/snova/framework/common/Version.java" />
 	<property name="project_name" value="snova" />
 	<property name="releasename" value="${project_name}-${version}"/>
@@ -83,8 +83,9 @@
 			<fileset dir="${shell}" />
 		</copy>
 		
-		<unzip dest="${binreleasedir}/plugins" src="../gae/snova-gae-0.11.1111.zip"/>
-
+		<unzip dest="${binreleasedir}/plugins" src="../gae/snova-gae-0.12.0101.zip"/>
+		<unzip dest="${binreleasedir}/plugins" src="../spac/snova-spac-0.12.0101.zip"/>
+		<unzip dest="${binreleasedir}/plugins" src="../heroku/snova-heroku-0.12.0101.zip"/>
 		<copy todir="${binreleasedir}" file="${root}/readme.txt" />
 		<copy todir="${binreleasedir}" file="${root}/changelog.txt" />
 		<copy todir="${binreleasedir}" file="${root}/licence.txt" />

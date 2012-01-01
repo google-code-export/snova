@@ -251,11 +251,12 @@ public class Buffer
 			if (readable())
 			{
 				int tmp = readableBytes();
-				byte[] newbuf = new byte[tmp];
-				System.arraycopy(buffer, read_index, newbuf, 0, tmp);
+				System.arraycopy(buffer, read_index, buffer, 0, tmp);
+				//byte[] newbuf = new byte[tmp];
+				//System.arraycopy(buffer, read_index, newbuf, 0, tmp);
 				read_index = 0;
 				write_index = tmp;
-				buffer = newbuf;
+				//buffer = newbuf;
 			}
 			else
 			{

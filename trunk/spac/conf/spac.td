@@ -8,12 +8,10 @@ $GAE="GAE";
 $DIRECT="DIRECT";
 $SEATTLE="SeattleGENI";
 $GOOGLE="Google";
-$PHP="PHPTunnel";
+$HEROKU="Heroku";
 
 #defined selected proxy
-$SELECTED1=$GAE;
-$SELECTED2=$SEATTLE;
-$SELECTED3=$PHP;
+
 
 def OnInit()
 {
@@ -23,8 +21,8 @@ def OnInit()
 def OnRoutine()
 {
    #Do your routine business here
-   #eg: $output=system("./mysh.sh");
-   #    log($output);
+   #eg: $output=System("./mysh.sh");
+   #    Log($output);
    #Tell the script engine to invoke this method 10s later
    return 10;
 }
@@ -43,7 +41,7 @@ def SelectProxy(protocol, method, url, headers)
      $contentLength = int(getHeader($headers, "Content-Length"));
      if $contentLength > 10240000
      {
-         return $SSHD;
+         return $HEROKU;
      }
      
      ##Only "GET/POST/PUT/DELETE/HEAD" supported in GAE
@@ -51,7 +49,7 @@ def SelectProxy(protocol, method, url, headers)
         && $method != "PUT" && $method != "DELETE"
         && $method != "HEAD"
      {
-        return $SSHD;
+        return $HEROKU;
      }
      
      ##Request with body not allowed in GAE if it's not POST/PUT
@@ -59,7 +57,7 @@ def SelectProxy(protocol, method, url, headers)
      {
         if $method != "POST" && $method != "PUT" 
         {
-           return $SSHD;
+           return $HEROKU;
         }
      }  
      return $GAE;

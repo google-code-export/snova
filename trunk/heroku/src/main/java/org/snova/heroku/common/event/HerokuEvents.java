@@ -54,6 +54,7 @@ public class HerokuEvents
 			
 			registerEventHandler(EventRestRequest.class, handler);
 			registerEventHandler(EventRestNotify.class, handler);
+			registerEventHandler(SequentialChunkEvent.class, handler);
 			if (isServer)
 			{
 				EventDispatcher.getSingletonInstance().register(
