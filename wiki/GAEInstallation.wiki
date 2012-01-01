@@ -1,0 +1,69 @@
+#summary GAE Plugin的部署配置说明.
+#labels Featured
+
+= Step 1: 准备JDK/JRE环境 =
+  运行部署snova需要JRE/JDK 1.6+
+
+= Step 2: 创建GoogleAppEngine帐号/应用 =
+  在官方站点创建自己的GAE帐号以及appid http://appengine.google.com/
+
+= Step 3: 准备GAE SDK环境 =
+  * 下载解压Google App Engine SDK(Java/Go) ([http://code.google.com/intl/en/appengine/downloads.html 最新版本])， snova-gae支持Java/Go两种语言的server端实现，任选一个即可
+  * Windows先没有Go的SDK，但上传snova-gae可以用任意Linux下的Go SDK上传
+
+= Step 4: 部署Server到Appengine服务器 =
+  * Java
+    ** GUI方式
+      * appcfgwrapper安装程序已经集成到`snova-gae-jserver-[version].zip`中，执行install.bat/install.sh即可，具体请参考此项目说明 http://code.google.com/p/appcfgwrapper/ 
+    ** 命令行方式
+       * 下载并解压`snova-gae-jserver-[version].zip`
+       * 进入解压的目录, 修改war/WEB-INF/appengine-web.xml， 将`<application>`值改为自己创建的appid
+       * 执行appcfg.cmd/appcfg.sh update war上传, 注意在解压后进入的目录执行(appcfg在'<Google App Engine Java SDK>/bin'下 )
+  * Go(Windows下可以用Linux SDK上传)
+    ** 下载并解压`snova-gae-gserver-[version].zip`
+    ** 进入解压的目录, 修改app.yaml， 将`application: snova-master`中snova-master值改为自己创建的appid
+    ** 执行appcfg.py update `snova-gae-gserver-<version>`上传(appcfg.py在'<Google App Engine Go SDK>/'下
+    
+= Step 5: 配置Snova GAE Plugin的客户端 =
+  * Framework
+        Framework的配置仅有两三项，具体涉及proxy的配置均在相应plugin的配置中;目前均在conf/snova.xml中（GUI启动则在Config对话框中配置）,简要说明如下：
+       # `<localserver host="localhost" port="48100" />`, 默认的proxy地址，相应的浏览器的proxy地址应该填"127.0.0.1:48100"
+       # `<ProxyEventHandler>GAE</ProxyEventHandler>`, 默认选择的proxy实现，若安装了其他的plugin，则可以在此修改为其它的proxy实现
+            http://hyk-proxy.googlecode.com/svn/wiki/images/maincfg.png
+     ** GAE Plugin
+         基于GAE实现大部分配置均在gae-client.xml中（GUI启动则在GAE plugin的相应Config对话框中配置），简要说明如下：
+       * `<WorkerNode appid="" />` 为已部署的ApplicationID， 即`<appid>.appspot.com`中`<appid>`, eg:
+         {{{ 
+          <WorkerNode appid="gosnova" /> 
+         }}}
+          GUI方式下参考下面方式
+            http://hyk-proxy.googlecode.com/svn/wiki/images/gaecfg1.png
+            http://hyk-proxy.googlecode.com/svn/wiki/images/gaecfg2.png
+       * `<WorkerNode appid="" />`可配置多个，此情况下， 代理过程中采用轮询策略选择, eg:
+         {{{
+           <WorkerNode appid="gosnova1" /> 
+           <WorkerNode appid="gosnova2" /> 
+         }}}
+       * `<WorkerNode appid="" />` 中可以配置用户名/密码，具体用户名/密码概念请参考[http://code.google.com/p/hyk-proxy/wiki/Authorization Authorization], eg:
+        {{{
+          <WorkerNode  appid="hyk-proxy-demo" user="root" passwd="12345"/> 
+        }}}
+       * 如果不配置appid的话，client会到master node上获取数个共享的appid用于自身启动，注意：
+           * 共享的appid只能用于匿名用户使用（匿名用户的概念看这里[http://code.google.com/p/hyk-proxy/wiki/Authorization Authorization]）
+       * `XMPP下 <Account user="" passwd="" />`为XMPP账户，是可选配置，在HTTP无法直连情况下可启用，目前可配置GTALK/jabber.org/OVI等几乎所有XMPP帐号（若有不支持的XMPP account，请提交[http://code.google.com/p/snova/issues/list ISSUE]）, eg:
+        {{{
+         <XMPP>
+            <Account user="abc@gmail.com" passwd="123456" />
+         </XMPP>
+        }}}
+       GUI方式则需要在Connection Tab下配置
+         http://hyk-proxy.googlecode.com/svn/wiki/images/xmpp.png
+       * XMPP账户可配置多个，此情况下代理过程中采用轮询策略选择,eg:
+        {{{
+          <XMPP>
+             <Account user="abc@gmail.com" passwd="123456" />
+             <Account user="xyz@gmail.com" passwd="123456" />
+          </XMPP>
+        }}}
+       * XMPP模式仅在`ConnectionMode`模式为XMPP（`<ConnectionMode>XMPP</ConnectionMode>`）情况下生效
+       * `<ConcurrentRangeFetchWorker>3</ConcurrentRangeFetchWorker>` 在下载文件/观看视频时生效，含义为并发的下载线程数，可以任意调整，建议在1～5之间调整
