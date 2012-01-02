@@ -10,28 +10,28 @@
     ** 上传/下载不能超过1m(下载在大部分情况下可以绕过)
     ** 只支持GET/POST/PUT/DELETE/HEAD 请求
     ** 只支持POST/PUT携带body
-  * 鉴于PAC的限制，hyk-proxy提供了一个SPAC插件来完成更为强大的类PAC功能
+  * 鉴于PAC的限制，snova提供了一个SPAC插件来完成更为强大的类PAC功能
 
 = SPAC插件 =
   * snova从V0.12.0101开始集成SPAC插件.
   * 用户可以定义任意的第三方proxy client，不仅仅局限于Snova GAE/Heroku本身;换句话说， Snova SPAC可以仅仅作为一个类PAC实现运行
-  * SPAC插件中包含一个TykeDog脚本语言解释器，用户需要少量修改tykedog脚本完成自定义PAC功能
+  * SPAC插件中包含一个`TykeDog`脚本语言解释器，用户需要少量修改tykedog脚本完成自定义PAC功能
 
 
-= TykeDog脚本语言 = 
+= `TykeDog`脚本语言 = 
   * 此脚本语言较简单，而执行效率比JS等其他脚本为高10倍以上，语法类似C/shell
-  * 修改编写TykeDog脚本注意几点即可：
+  * 修改编写`TykeDog`脚本注意几点即可：
     ** if/elif/else/while后的代码必须用 "{ }" (与C不同)
     ** 变量只有两个作用域：全局作用域以及函数作用域（第三方proxy都是全局变量表示）
     ** 语法上支持几乎所有运算符，但语义上仅实现了字符串/整数的比较（">，<，！＝，==等"），此由SPAC插件实现决定
     ** “＃ //"都可以作为注释符
-    ** 脚本的目前入口有三处：OnInit/OnRoutine/SelectProxy, 入口的详细解释请参考后面"配置/脚本"章节
+    ** 脚本的目前入口有三处：`OnInit/OnRoutine/SelectProxy`, 入口的详细解释请参考后面"配置/脚本"章节
     ** 目前支持的内置函数：
         {{{
               1. 打印函数 Print($content)：打印到标准输出
                   eg: Print("hello,world!");
               2. 获取头域值 GetHeader($req, $name) : 获取HTTP请求/响应中具体头域
-                  eg： $host = getHeader($request, "Host");
+                  eg： $host = GetHeader($request, "Host");
               3. int转化函数 Int($str): 将字符串转化为int
                   eg:  $contentLength = Int(GetHeader($errorRes, "Content-Length"));
               4. 调用外部程序 System($cmd): 执行外部程序
@@ -63,7 +63,7 @@
         {{{
           $SSHD="socks5:127.0.0.1:7070";
         }}}
-    ** spac.td中定义了Routine接口方法OnRoutine, 用户控制routine频率，若有定期执行某项动作的需要，可在此定义(如修改选择的proxy地址等):
+    ** spac.td中定义了Routine接口方法`OnRoutine`, 用户控制routine频率，若有定期执行某项动作的需要，可在此定义(如修改选择的proxy地址等):
         {{{
               def OnRoutine()
               {
@@ -74,7 +74,7 @@
                 return 10;
                }
         }}}
-    ** 第二步修改选择proxy方法，spac.td定义了proxy选择点方法SelectProxy：
+    ** 第二步修改选择proxy方法，spac.td定义了proxy选择点方法`SelectProxy`：
        {{{
 ##此示例方法在GAE的限制条件下选择Heroku/Google作为proxy， 用户可以参考修改
 def SelectProxy(protocol, method, url, headers)
