@@ -64,10 +64,10 @@ public class GAEEventHelper
 				segment.total = total;
 				segment.content = new Buffer(splitsize);
 				segment.content.write(msgbuffer, splitsize);
-				i++;
 				Buffer buf = GAEEventHelper.encodeEvent(tags, segment);
 				segment.encode(buf);
 				bufs[i] = buf;
+				i++;
 			}
 			return bufs;
 		}
