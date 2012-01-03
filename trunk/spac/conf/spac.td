@@ -38,7 +38,7 @@ def SelectProxy(protocol, method, url, headers)
         return $GOOGLE;
      }
      
-     $contentLength = int(getHeader($headers, "Content-Length"));
+     $contentLength = Int(GetHeader($headers, "Content-Length"));
      if $contentLength > 10240000
      {
          return $HEROKU;
