@@ -5,8 +5,8 @@ _You can download the latest version of the Snova [http://code.google.com/p/snov
 
 Snova - Release Notes
 ===Version 0.12.0107 - (2012.01.01--2012.01.07)===
- * [GAE]:XMPP大消息（>4KB）情况下的bug fix（Client & Java Server）
- * [GAE]:完全异步化的HTTP连接（Client）
+ * `[GAE]`:XMPP大消息（>4KB）情况下的bug fix（Client & Java Server）
+ * `[GAE]`:完全异步化的HTTP连接（Client）
 
 ===Version 0.12.0101 - (2011.12.25--2012.01.01)===
  * 新的plugin: SPAC, 增强的PAC功能.
