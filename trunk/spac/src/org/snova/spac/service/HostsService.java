@@ -199,11 +199,19 @@ public class HostsService implements Runnable
 	
 	public static String getMappingHostIPV4(String host)
 	{
+		if(host.indexOf(":") != -1)
+		{
+			host = host.substring(0, host.indexOf(":"));
+		}
 		return instance._getMappingHostIPV4(host);
 	}
 	
 	public static String getMappingHostIPV6(String host)
 	{
+		if(host.indexOf(":") != -1)
+		{
+			host = host.substring(0, host.indexOf(":"));
+		}
 		return instance._getMappingHostIPV6(host);
 	}
 }

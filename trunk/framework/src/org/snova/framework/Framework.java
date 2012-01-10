@@ -95,15 +95,15 @@ public class Framework
 			SharedObjectHelper.getTrace().info("Local HTTP(S) Server Running...\nat "
 			        + cfg.getLocalProxyServerAddress());
 			
-			Runnable gcTask = new Runnable()
-			{	
-				@Override
-				public void run()
-				{
-					System.gc();	
-				}
-			};
-			SharedObjectHelper.getGlobalTimer().scheduleAtFixedRate(gcTask, 10, 10, TimeUnit.SECONDS);
+//			Runnable gcTask = new Runnable()
+//			{	
+//				@Override
+//				public void run()
+//				{
+//					System.gc();	
+//				}
+//			};
+//			SharedObjectHelper.getGlobalTimer().scheduleAtFixedRate(gcTask, 10, 10, TimeUnit.SECONDS);
 			isStarted = true;
 			return true;
 		}
