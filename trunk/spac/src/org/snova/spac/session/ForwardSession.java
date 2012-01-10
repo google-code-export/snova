@@ -84,6 +84,10 @@ public class ForwardSession extends Session
 			logger.error("Failed to connect forward address.", future.getCause());
 			return null;
 		}
+		if(logger.isDebugEnabled())
+		{
+			logger.debug("Connect remote channel with address " + host + ":" + port + " success!");
+		}
 		return channel;
 	}
 	
@@ -108,15 +112,15 @@ public class ForwardSession extends Session
 			case HTTPEventContants.HTTP_REQUEST_EVENT_TYPE:
 			{
 				SimpleSocketAddress addr = getRemoteAddress((HTTPRequestEvent) event);
-				Channel ch = getRemoteChannel(addr.host, addr.port);
-				if(null == ch)
+				remoteChannel = getRemoteChannel(addr.host, addr.port);
+				if(null == remoteChannel)
 				{
 					HttpResponse res = new DefaultHttpResponse(
 					        HttpVersion.HTTP_1_1, HttpResponseStatus.SERVICE_UNAVAILABLE);
 					localChannel.write(res);
 				}
 				ChannelBuffer msg = buildRequestChannelBuffer((HTTPRequestEvent) event);
-				ch.write(msg);
+				remoteChannel.write(msg);
 				break;
 			}
 			case HTTPEventContants.HTTP_CHUNK_EVENT_TYPE:

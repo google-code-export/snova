@@ -65,18 +65,18 @@ public class HostsFowwardSession extends ForwardSession
 			{
 				HTTPRequestEvent req = (HTTPRequestEvent) event;
 				SimpleSocketAddress addr = getRemoteAddress((HTTPRequestEvent) event);
-				Channel ch = getRemoteChannel(addr.host, addr.port);
+				remoteChannel = getRemoteChannel(addr.host, addr.port);
 				if (req.method.equalsIgnoreCase("Connect"))
 				{
 					HttpResponse res = new DefaultHttpResponse(
 					        HttpVersion.HTTP_1_1,
-					        ch != null ? HttpResponseStatus.OK
+					        remoteChannel != null ? HttpResponseStatus.OK
 					                : HttpResponseStatus.SERVICE_UNAVAILABLE);
 					ChannelFuture future = localChannel.write(res);
 					removeCodecHandler(localChannel, future);
 					return;
 				}
-				if (null == ch)
+				if (null == remoteChannel)
 				{
 					HttpResponse res = new DefaultHttpResponse(
 					        HttpVersion.HTTP_1_1,
@@ -102,7 +102,7 @@ public class HostsFowwardSession extends ForwardSession
 					else
 					{
 						ChannelBuffer msg = buildRequestChannelBuffer((HTTPRequestEvent) event);
-						ch.write(msg);
+						remoteChannel.write(msg);
 					}
 				}
 				break;

@@ -57,6 +57,9 @@ public class SPAC implements Plugin
 		csl.addFunction(Commands.GETRESCODE);
 		csl.addFunction(Commands.SYSTEM);
 		csl.addFunction(Commands.LOG);
+		csl.addFunction(Commands.INHOSTS);
+		csl.addFunction(Commands.INIPV4);
+		csl.addFunction(Commands.INIPV6);
 		is.close();
 		return csl;
 	}
