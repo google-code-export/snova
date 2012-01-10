@@ -65,4 +65,14 @@ public class IniProperties
 	{
 		return propsTable.get(tag);
 	}
+	
+	public String getProperty(String tagName, String key)
+	{
+		Properties props = propsTable.get(tagName);
+		if(null != props)
+		{
+			return props.getProperty(key);
+		}
+		return null;
+	}
 }

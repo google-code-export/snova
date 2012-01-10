@@ -16,6 +16,7 @@ import org.arch.event.http.HTTPMessageEvent;
 import org.arch.event.http.HTTPResponseEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.snova.spac.service.HostsService;
 import org.tykedog.csl.api.InvokeCommand;
 
 /**
@@ -145,6 +146,63 @@ public class Commands
 		{
 			logger.info(arg0[0].toString());
 			return null;
+		}
+	};
+	
+	public static final InvokeCommand INIPV4 = new InvokeCommand()
+	{
+		@Override
+		public String getName()
+		{
+			return "InIPv4Hosts";
+		}
+
+		@Override
+		public Object execute(Object[] arg0)
+		{
+			Object obj = arg0[0];
+			if (obj == null)
+			{
+				return 0;
+			}
+			String o = obj.toString();
+			return HostsService.getMappingHostIPV4(o) != null;
+		}
+	};
+	
+	public static final InvokeCommand INHOSTS = new InvokeCommand()
+	{
+		@Override
+		public String getName()
+		{
+			return "InHosts";
+		}
+
+		@Override
+		public Object execute(Object[] arg0)
+		{
+			return INIPV4.execute(arg0);
+		}
+	};
+	
+	public static final InvokeCommand INIPV6 = new InvokeCommand()
+	{
+		@Override
+		public String getName()
+		{
+			return "InIPv6Hosts";
+		}
+
+		@Override
+		public Object execute(Object[] arg0)
+		{
+			Object obj = arg0[0];
+			if (obj == null)
+			{
+				return 0;
+			}
+			String o = obj.toString();
+			return HostsService.getMappingHostIPV6(o) != null;
 		}
 	};
 }

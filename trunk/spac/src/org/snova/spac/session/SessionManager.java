@@ -17,7 +17,6 @@ import org.arch.event.http.HTTPRequestEvent;
 import org.arch.util.NetworkHelper;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
@@ -73,6 +72,10 @@ public class SessionManager
 			else if (sessionName.equalsIgnoreCase("DIRECT"))
 			{
 				session = new DirectSession();
+			}
+			else if (sessionName.toLowerCase().startsWith("hosts"))
+			{
+				session = new HostsFowwardSession(sessionName);
 			}
 			else if (sessionName.toLowerCase().startsWith("google"))
 			{

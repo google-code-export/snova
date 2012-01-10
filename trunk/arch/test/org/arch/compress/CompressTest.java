@@ -10,6 +10,7 @@ import org.arch.compress.fastlz.JFastLZLevel;
 import org.arch.compress.jsnappy.SnappyBuffer;
 import org.arch.compress.jsnappy.SnappyCompressor;
 import org.arch.compress.jsnappy.SnappyDecompressor;
+import org.arch.compress.lz4.LZ4;
 import org.arch.compress.lzf.LZFDecoder;
 import org.arch.compress.lzf.LZFEncoder;
 import org.arch.compress.quicklz.QuickLZ;
@@ -17,17 +18,17 @@ import org.junit.Test;
 
 public class CompressTest
 {
-	
-	int	loopcount	= 100;
-	
-	@Test
+
+	int loopcount = 100;
+
+	// @Test
 	public void testFastLZ() throws IOException
 	{
 		InputStream fis = getClass().getResourceAsStream("sina.htm");
 		byte[] buffer = new byte[1024 * 1024];
 		int len = fis.read(buffer);
 		byte[] cmp = new byte[len];
-		
+
 		System.arraycopy(buffer, 0, cmp, 0, len);
 		JFastLZ fastlz = new JFastLZ();
 		byte[] newbuf = new byte[len];
@@ -57,15 +58,15 @@ public class CompressTest
 		System.out.println("FastLZ Decompress cost " + (end - start) + "ms");
 		assertArrayEquals(cmp, resume);
 	}
-	
-	@Test
+
+	// @Test
 	public void testLZF() throws IOException
 	{
 		InputStream fis = getClass().getResourceAsStream("sina.htm");
 		byte[] buffer = new byte[1024 * 1024];
 		int len = fis.read(buffer);
 		byte[] cmp = new byte[len];
-		
+
 		System.arraycopy(buffer, 0, cmp, 0, len);
 		long start = System.currentTimeMillis();
 		for (int i = 0; i < loopcount; i++)
@@ -87,19 +88,19 @@ public class CompressTest
 		System.out.println("LZF Decompress cost " + (end - start) + "ms");
 		assertArrayEquals(cmp, resume);
 	}
-	
-	@Test
+
+	// @Test
 	public void testSnappy() throws IOException
 	{
 		InputStream fis = getClass().getResourceAsStream("sina.htm");
 		byte[] buffer = new byte[1024 * 1024];
 		int len = fis.read(buffer);
 		byte[] cmp = new byte[len];
-		
+
 		System.arraycopy(buffer, 0, cmp, 0, len);
 		byte[] newbuf = new byte[len];
 		long start = System.currentTimeMillis();
-		
+
 		for (int i = 0; i < loopcount; i++)
 		{
 			SnappyBuffer afterCompress = SnappyCompressor.compress(cmp);
@@ -114,7 +115,7 @@ public class CompressTest
 		{
 			SnappyBuffer resume = SnappyDecompressor.decompress(afterCompress);
 		}
-		
+
 		end = System.currentTimeMillis();
 		SnappyBuffer resume = SnappyDecompressor.decompress(afterCompress);
 		System.out.println("Snappy Decompress cost " + (end - start) + "ms");
@@ -122,7 +123,7 @@ public class CompressTest
 		// Snappy.compress(uncompressed, uncompressedOffset, uncompressedLength,
 		// compressed, compressedOffset)
 	}
-	
+
 	@Test
 	public void testQuickLZ() throws IOException
 	{
@@ -130,7 +131,7 @@ public class CompressTest
 		byte[] buffer = new byte[1024 * 1024];
 		int len = fis.read(buffer);
 		byte[] cmp = new byte[len];
-		
+
 		System.arraycopy(buffer, 0, cmp, 0, len);
 		long start = System.currentTimeMillis();
 		for (int i = 0; i < loopcount; i++)
@@ -152,6 +153,39 @@ public class CompressTest
 		System.out.println("QuickLZ Decompress cost " + (end - start) + "ms");
 		assertArrayEquals(cmp, resume);
 	}
-	
-	
+
+	@Test
+	public void testLZ4() throws IOException
+	{
+		InputStream fis = getClass().getResourceAsStream("sina.htm");
+		byte[] buffer = new byte[1024 * 1024];
+		int len = fis.read(buffer);
+		byte[] cmp = new byte[len];
+
+		System.arraycopy(buffer, 0, cmp, 0, len);
+		long start = System.currentTimeMillis();
+		for (int i = 0; i < loopcount; i++)
+		{
+			byte[] newbuf = new byte[len];
+			LZ4.compress(cmp, newbuf);
+		}
+		long end = System.currentTimeMillis();
+		byte[] newbuf = new byte[len];
+		int xlen = LZ4.compress(cmp, newbuf);
+		System.out.println("LZ4 Compressed size:" + xlen
+		        + " for uncompressed size:" + len + ", cost " + (end - start)
+		        + "ms");
+		start = System.currentTimeMillis();
+		for (int i = 0; i < loopcount; i++)
+		{
+			byte[] resume = new byte[len];
+			LZ4.uncompress(newbuf, 0, xlen, resume,0);
+			//byte[] resume = QuickLZ.decompress(newbuf, 0, newbuf.length);
+		}
+		end = System.currentTimeMillis();
+		byte[] resume = new byte[len];
+		int ylen = LZ4.uncompress(newbuf, 0, xlen, resume,0);
+		System.out.println("QuickLZ Decompress cost " + (end - start) + "ms");
+		assertArrayEquals(cmp, resume);
+	}
 }

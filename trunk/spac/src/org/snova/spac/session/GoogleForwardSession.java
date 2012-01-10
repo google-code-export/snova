@@ -60,7 +60,7 @@ public class GoogleForwardSession extends Session
 	private int proxyPort;
 	private String proxyUser;
 	private String proxyPass;
-	private boolean isHttps;
+	//private boolean isHttps;
 
 	public GoogleForwardSession(String sessionname)
 	{
@@ -78,7 +78,7 @@ public class GoogleForwardSession extends Session
 			else if (ss.length == 1)
 			{
 				proxyHost = ss[0].trim();
-				proxyPort = 8080;
+				proxyPort = 80;
 			}
 		}
 	}
@@ -138,13 +138,13 @@ public class GoogleForwardSession extends Session
 			        .awaitUninterruptibly();
 			retry--;
 		}
-		if(!future.isSuccess())
+		if (!future.isSuccess())
 		{
 			return null;
 		}
 		if (null != proxyHost)
 		{
-			if(logger.isDebugEnabled())
+			if (logger.isDebugEnabled())
 			{
 				logger.debug("Start Send Connect Request!");
 			}
@@ -183,14 +183,14 @@ public class GoogleForwardSession extends Session
 			}
 		}
 		remoteChannel = channel;
-		if(!handshake)
+		if (!handshake)
 		{
 			removeCodecHandler(remoteChannel, null);
 			return remoteChannel;
 		}
 		try
 		{
-			
+
 			SSLContext sslContext = SSLContext.getDefault();
 			SSLEngine sslEngine = sslContext.createSSLEngine();
 			sslEngine.setUseClientMode(true);
@@ -204,7 +204,7 @@ public class GoogleForwardSession extends Session
 				channel.close();
 				return null;
 			}
-			//channel.getPipeline().remove("sslHandler");
+			// channel.getPipeline().remove("sslHandler");
 			removeCodecHandler(remoteChannel, null);
 			if (logger.isDebugEnabled())
 			{
@@ -228,7 +228,7 @@ public class GoogleForwardSession extends Session
 			case HTTPEventContants.HTTP_REQUEST_EVENT_TYPE:
 			{
 				HTTPRequestEvent req = (HTTPRequestEvent) event;
-				
+
 				if (req.method.equalsIgnoreCase("Connect"))
 				{
 					Channel ch = getRemoteGoogleChannel(false);
@@ -238,24 +238,26 @@ public class GoogleForwardSession extends Session
 					                : HttpResponseStatus.SERVICE_UNAVAILABLE);
 					ChannelFuture future = localChannel.write(res);
 					removeCodecHandler(localChannel, future);
-					//remoteChannel.getPipeline().remove("sslHandler");
+					// remoteChannel.getPipeline().remove("sslHandler");
 					return;
 				}
-				
+
 				Channel ch = getRemoteGoogleChannel(true);
-				if(null == ch)
+				if (null == ch)
 				{
 					HttpResponse res = new DefaultHttpResponse(
-					        HttpVersion.HTTP_1_1, HttpResponseStatus.SERVICE_UNAVAILABLE);
+					        HttpVersion.HTTP_1_1,
+					        HttpResponseStatus.SERVICE_UNAVAILABLE);
 					localChannel.write(res);
 					return;
 				}
-				if(DesktopFrameworkConfiguration.getInstance().getProxyEventHandler().equalsIgnoreCase("Google"))
+				if (DesktopFrameworkConfiguration.getInstance()
+				        .getProxyEventHandler().equalsIgnoreCase("Google"))
 				{
-					//remove codec handlers for performance
+					// remove codec handlers for performance
 					removeCodecHandler(localChannel, null);
 				}
-				//removeCodecHandler(localChannel, null);
+				// removeCodecHandler(localChannel, null);
 				ChannelBuffer msg = buildRequestChannelBuffer((HTTPRequestEvent) event);
 				ch.write(msg);
 				break;
@@ -352,7 +354,7 @@ public class GoogleForwardSession extends Session
 			}
 			else if (obj instanceof HttpResponse)
 			{
-				if(logger.isDebugEnabled())
+				if (logger.isDebugEnabled())
 				{
 					logger.debug("Recv Connect Response!");
 				}
@@ -366,14 +368,14 @@ public class GoogleForwardSession extends Session
 				if (casSSLProxyConnectionStatus(WAITING_CONNECT_RESPONSE,
 				        CONNECT_RESPONSED))
 				{
-//					 HttpMessageDecoder decoder = e.getChannel().getPipeline()
-//					 .get(HttpResponseDecoder.class);
-//					 Method m = HttpMessageDecoder.class.getDeclaredMethod(
-//					 "reset", null);
-//					 m.setAccessible(true);
-//					 m.invoke(decoder, null);
-//					
-//					return;
+					// HttpMessageDecoder decoder = e.getChannel().getPipeline()
+					// .get(HttpResponseDecoder.class);
+					// Method m = HttpMessageDecoder.class.getDeclaredMethod(
+					// "reset", null);
+					// m.setAccessible(true);
+					// m.invoke(decoder, null);
+					//
+					// return;
 				}
 			}
 			else
