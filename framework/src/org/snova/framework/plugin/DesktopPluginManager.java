@@ -502,9 +502,9 @@ public class DesktopPluginManager implements PluginManager
 				try
 				{
 					plugin.plugin.onStop();
-					SharedObjectHelper.getTrace().info(
-					        "Stop plugin:" + plugin.desc.name
-					                + " ...   Success");
+					//SharedObjectHelper.getTrace().info(
+					//       "Stop plugin:" + plugin.desc.name
+					//                + " ...   Success");
 				}
 				catch (Exception e)
 				{

@@ -1,5 +1,16 @@
 snova Changelog
 ===================
+Changes in version 0.12.0107(2012.01.07)
+-------------------------------------------
+
+** Features
+   * NA
+   
+** Improvement
+   * Upgrade gae plugin to 0.12.0107
+      
+** Task
+   * NA
 
 Changes in version 0.12.0101(2012.01.01)
 -------------------------------------------
