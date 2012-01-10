@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<plugin name="SPAC" version="0.12.0101">
+<plugin name="SPAC" version="0.12.0110">
    <depend/>
    <entryClass>org.snova.spac.plugin.SPAC</entryClass>   
    <description>

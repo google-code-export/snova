@@ -18,13 +18,11 @@ public class DirectSession extends ForwardSession
 	public DirectSession()
     {
 	    super("127.0.0.1:0");
-	    // TODO Auto-generated constructor stub
     }
 
 	@Override
     public SessionType getType()
     {
-	    // TODO Auto-generated method stub
 	    return SessionType.FORWARD;
     }
 	

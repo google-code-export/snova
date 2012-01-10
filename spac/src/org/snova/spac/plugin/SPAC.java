@@ -17,6 +17,8 @@ import org.snova.framework.plugin.PluginContext;
 import org.snova.spac.handler.SpacProxyEventHandler;
 import org.snova.spac.script.TykedogApiImpl;
 import org.snova.spac.script.Commands;
+import org.snova.spac.service.HostsService;
+import org.snova.spac.service.ScriptService;
 import org.tykedog.csl.interpreter.CSL;
 
 /**
@@ -111,6 +113,10 @@ public class SPAC implements Plugin
 
 			}
 		}).start();
+		
+		//just let the services init
+		HostsService.getMappingHostIPV4("");
+		ScriptService.getInstance();
 	}
 
 	@Override

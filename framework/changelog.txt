@@ -3,8 +3,6 @@ snova Changelog
 
 Changes in version 0.12.0101(2012.01.01)
 -------------------------------------------
-Initial version
-
 ** Features
    * New Plugin:Heroku
    * New Plugin:SPAC

@@ -23,6 +23,7 @@
 	
 	<target name="compile" depends="prepare">
 	    <javac debug="on" target="1.5" source="1.5" srcdir="${srcroot}" destdir="${classes}">
+	    	 <exclude name="**/stringsearch/**"/>
 	    </javac>
 	</target>
 	

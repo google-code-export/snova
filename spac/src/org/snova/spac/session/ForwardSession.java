@@ -5,7 +5,6 @@ package org.snova.spac.session;
 
 import java.net.InetSocketAddress;
 
-import org.arch.common.KeyValuePair;
 import org.arch.event.Event;
 import org.arch.event.EventHeader;
 import org.arch.event.http.HTTPChunkEvent;
@@ -24,9 +23,7 @@ import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
-import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.SocketChannel;
-import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
@@ -34,7 +31,6 @@ import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.framework.config.SimpleSocketAddress;
-import org.snova.framework.util.SharedObjectHelper;
 
 /**
  * @author wqy
@@ -59,7 +55,6 @@ public class ForwardSession extends Session
 	@Override
     public SessionType getType()
     {
-	    // TODO Auto-generated method stub
 	    return SessionType.FORWARD;
     }
 	
