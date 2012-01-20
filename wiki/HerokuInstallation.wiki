@@ -4,8 +4,8 @@
 = Step 1: 准备Heroku SDK环境 =
 按照Heroku官方的[http://devcenter.heroku.com/articles/quickstart QuickStart]注册帐号，安装SDK（注册较简单，仅需要email）
 
-= Step 2: 部署Snova Heroku Plugin的服务端 =
-  * 下载`snova-heroku-jserver-[version].zip`， 在任意目录下解压
+= Step 2: 部署Snova C4 Plugin的服务端到Heroku =
+  * 下载`snova-c4-heroku-serverr-[version].zip`， 在任意目录下解压
   * 在命令行下进入解压的目录，依次顺序执行以下的命令,每一行单独执行
     {{{
        heroku login
@@ -17,17 +17,17 @@
     }}}
   * 留意执行“heroku create --stack cedar”时的输出，一般会显示创建的域名，为 "xx.herokuapp.com", 记下该域名，为配置Client准备（该域名也可登录Heroku的Web找到）
     
-= Step 3: 配置Snova Heroku Plugin的客户端 =
-  * 从snova-0.12.0101开始自动集成heroku plugin，无需单独安装
-  * 修改`<snova>/plugins/heroku/conf/heroku-client.xml`
+= Step 3: 配置Snova C4 Plugin的客户端 =
+  * 从snova-0.12.0120开始自动集成c4 plugin，无需单独安装
+  * 修改`<snova>/plugins/c4/conf/c4-client.xml`
     {{{
-       <!--修改domain为Step2创建的域名-->
+       <!--修改domain为Step2创建的域名, 可加多个域名-->
        <WorkerNode domain="xyz.herokuapp.com" /> 
     }}}
   * 修改`<snova>/conf/snova.xml`，将heroku改为默认proxy实现(可选)
    {{{
-       <!--修改Proxy实现为heroku， 默认为GAE-->
-       <ProxyEventHandler>Heroku</ProxyEventHandler>
+       <!--修改Proxy实现为C4， 默认为GAE-->
+       <ProxyEventHandler>C4</ProxyEventHandler>
     }}}
 
 = Step 4: 与SPAC集成（可选） =
