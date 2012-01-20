@@ -12,7 +12,7 @@
    }}}
 
 = Step 3: 部署服务到`CloundFoundry` =
-  * 将snova-c4-server-[version].war放到任意的空目录下，然后在命令行下进入该目录，逐个执行下面的三行命令
+  * 将`snova-c4-server-[version].war`放到任意的空目录下，然后在命令行下进入该目录，逐个执行下面的三行命令
     {{{
        vmc target api.cloudfoundry.com
        vmc login
