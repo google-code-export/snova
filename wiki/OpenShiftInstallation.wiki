@@ -12,7 +12,7 @@
    }}}
 
 = Step 3: 部署服务到`OpenShift` =
-  * 将snova-c4-server-[version].war放到任意的空目录下，然后在命令行下进入该目录，逐个执行下面的命令
+  * 将`snova-c4-server-[version].war`放到任意的空目录下，然后在命令行下进入该目录，逐个执行下面的命令
     {{{
       rhc-create-domain -n <domainName> -l <yourId> -p <yourPassword>  创建主域名， 部署新应用是这一步可不执行
       rhc-create-app -a <appName> -t jbossas-7.0 -p <yourPassword>  创建app
