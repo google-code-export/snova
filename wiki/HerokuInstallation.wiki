@@ -1,4 +1,4 @@
-#summary Heroku Plugin的部署配置说明.
+#summary C4 Plugin在Heroku上的部署配置说明.
 #labels Featured,Phase-Support
 
 = Step 1: 准备Heroku SDK环境 =
