@@ -4,6 +4,11 @@
 _You can download the latest version of the Snova [http://code.google.com/p/snova/downloads/list here]
 
 Snova - Release Notes
+===Version 0.12.0120 - (2012.01.08--2012.01.20)===
+ * 新的plugin: C4, 代替原来的Heroku，支持更多的PaaS平台`Heroku/CloudFoundry/OpenShift/Jelastic`
+ * `[GAE]`:Range fetch时增加错误retry机制
+ * `[SPAC]`:两个新的内置函数 `IsBlockedByGFW/InHosts`
+
 ===Version 0.12.0107 - (2012.01.01--2012.01.07)===
  * `[GAE]`:XMPP大消息（>4KB）情况下的bug fix（Client & Java Server）
  * `[GAE]`:完全异步化的HTTP连接（Client）
