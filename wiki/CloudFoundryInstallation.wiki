@@ -1,6 +1,7 @@
 #summary C4 Plugin在CloundFoundry上的部署配置说明.
+#labels Featured,Phase-Support
 
-= Step 1: 注册CloundFoundry环境 =
+= Step 1: 注册`CloundFoundry`环境 =
 到官方链接[https://my.cloudfoundry.com/signup CloundFoundry]注册帐号， 注意，注册不是马上成功，一般第二天才会收到注册成功的邮件，其中包含用户名密码
 
 = Step 2: 安装CloundFoundry部署工具 =
@@ -10,7 +11,7 @@
        gem install --http-proxy http://127.0.0.1:48100 vmc 
    }}}
 
-= Step 3: 部署服务到CloundFoundry =
+= Step 3: 部署服务到`CloundFoundry` =
   * 将snova-c4-server-[version].war放到任意的空目录下，然后在命令行下进入该目录，逐个执行下面的三行命令
     {{{
        vmc target api.cloudfoundry.com
