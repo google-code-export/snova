@@ -1,0 +1,25 @@
+#summary C4 Plugin在Jelastic上的部署配置说明.
+#labels Featured,Phase-Support
+
+= Step 1: 注册`Jelastic`环境 =
+到官方链接[http://jelastic.com jelastic]注册帐号
+
+= Step 2: 部署 =
+  * 完全图形化的操作，无需安装工具，按照说明将`snova-c4-server-[version].war`上传并deploy到ROOT下即可   [http://jelastic.com/docs/upload-deploy-application  jelastic部署指南]
+
+= Step 4: 配置Snova C4 Plugin的客户端 =
+  * 从snova-0.12.0120开始自动集成c4 plugin，无需单独安装
+  * 修改`<snova>/plugins/c4/conf/c4-client.xml`
+    {{{
+       <!--修改domain为Step2创建的域名, 可加多个域名-->
+       <WorkerNode domain="xyz.herokuapp.com" /> 
+    }}}
+  * 修改`<snova>/conf/snova.xml`，将heroku改为默认proxy实现(可选)
+   {{{
+       <!--修改Proxy实现为C4， 默认为GAE-->
+       <ProxyEventHandler>C4</ProxyEventHandler>
+    }}}
+
+= Step 4: 与SPAC集成（可选） =
+  * 在SPAC的解释语言中，c4被定义为$C4="C4"
+  * 参考SPAC的说明[http://code.google.com/p/snova/wiki/SpecialProxyAutoConfig SpecialProxyAutoConfig]修改`SelectProxy`方法打造自己的proxy环境
