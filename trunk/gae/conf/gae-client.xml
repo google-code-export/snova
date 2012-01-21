@@ -30,7 +30,7 @@
 	<FetchLimitSize>512000</FetchLimitSize>
 	<!-- for big file(>=1m) & video -->
 	<ConcurrentRangeFetchWorker>3</ConcurrentRangeFetchWorker>
-
+    <RangeFetchRetryLimit>1</RangeFetchRetryLimit>
 	<!-- If you want use hyk-proxy througth a proxy, config this item -->
 	<LocalProxy type="HTTP" host="GoogleCNIP"/>
 	<GoogleProxyChain enable="false" host="GoogleHttps"/>

@@ -1,9 +1,10 @@
 snova-spac Changelog
 ===================
-Changes in version 0.12.0110(2012.01.10)
+Changes in version 0.12.0120
 -------------------------------------------
 ** Features
    * Integrate smart hosts for facebook/twitter
+   * Support GFWList subscribe/parse
    
 ** Improvement
    * better https support for google sites

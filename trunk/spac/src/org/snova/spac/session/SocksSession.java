@@ -5,28 +5,25 @@ package org.snova.spac.session;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 import net.sourceforge.jsocks.socks.Proxy;
 import net.sourceforge.jsocks.socks.Socks4Proxy;
 import net.sourceforge.jsocks.socks.Socks5Proxy;
-import net.sourceforge.jsocks.socks.SocksException;
 import net.sourceforge.jsocks.socks.SocksSocket;
 
 import org.arch.buffer.Buffer;
-import org.arch.common.KeyValuePair;
 import org.arch.event.Event;
 import org.arch.event.EventHeader;
 import org.arch.event.http.HTTPChunkEvent;
 import org.arch.event.http.HTTPConnectionEvent;
 import org.arch.event.http.HTTPEventContants;
 import org.arch.event.http.HTTPRequestEvent;
-import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
-import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.handler.codec.http.HttpVersion;
@@ -39,13 +36,14 @@ import org.snova.framework.util.SharedObjectHelper;
  * @author wqy
  * 
  */
-public class SocksSession extends Session implements Runnable
+public class SocksSession extends Session
 {
-	protected static Logger logger = LoggerFactory
-	        .getLogger(SocksSession.class);
-	private SocksSocket client;
-	private Proxy socksproxy;
-
+	protected static Logger	                      logger	   = LoggerFactory
+	                                                                   .getLogger(SocksSession.class);
+	private SocksSocket currentClient;
+	private Proxy	                              socksproxy;
+	private Map<SimpleSocketAddress, SocksSocket>	clientTable	= new HashMap<SimpleSocketAddress, SocksSocket>();
+	private List<SocksSocket> clientList = new LinkedList<SocksSocket>();
 	public SocksSession(String target) throws UnknownHostException
 	{
 		String[] ss = target.split(":");
@@ -59,7 +57,7 @@ public class SocksSession extends Session implements Runnable
 		int port = Integer.parseInt(ss[2].trim());
 		setSocksProxy(protocol, host, port);
 	}
-
+	
 	protected void setSocksProxy(String protocol, String host, int port)
 	        throws UnknownHostException
 	{
@@ -77,14 +75,39 @@ public class SocksSession extends Session implements Runnable
 			throw new UnknownHostException("Invalid protocol");
 		}
 	}
-
+	
+	private SocksSocket getSocksSocket(SimpleSocketAddress addr)
+	{
+		if (!clientTable.containsKey(addr))
+		{
+			try
+			{
+				SocksSocket client = new SocksSocket(socksproxy, addr.host,
+				        addr.port);
+				clientTable.put(addr, client);
+				clientList.add(client);
+			}
+			catch (Exception e)
+			{
+				logger.error("Failed to create SocksSocket:" + addr, e);
+				HttpResponse res = new DefaultHttpResponse(
+				        HttpVersion.HTTP_1_1,
+				        HttpResponseStatus.SERVICE_UNAVAILABLE);
+				localChannel.write(res);
+				// closeLocalChannel();
+				return null;
+			}
+		}
+		return clientTable.get(addr);
+	}
+	
 	@Override
 	public SessionType getType()
 	{
 		return SessionType.SOCKS;
 	}
-
-	private boolean writeRemoteSocket(Buffer buffer)
+	
+	private boolean writeRemoteSocket(Buffer buffer, SocksSocket client)
 	{
 		if (null != client)
 		{
@@ -102,8 +125,8 @@ public class SocksSession extends Session implements Runnable
 		}
 		return true;
 	}
-
-	private boolean writeRemoteSocket(byte[] buffer)
+	
+	private boolean writeRemoteSocket(byte[] buffer, SocksSocket client)
 	{
 		if (null != client)
 		{
@@ -117,13 +140,11 @@ public class SocksSession extends Session implements Runnable
 				logger.error("Failed to write socks proxy client.");
 				return false;
 			}
-
+			
 		}
 		return true;
 	}
-
 	
-
 	@Override
 	public void onEvent(EventHeader header, Event event)
 	{
@@ -133,52 +154,43 @@ public class SocksSession extends Session implements Runnable
 			{
 				HTTPRequestEvent req = (HTTPRequestEvent) event;
 				SimpleSocketAddress addr = getRemoteAddressFromRequestEvent(req);
+				SocksSocket client = getSocksSocket(addr);
 				if (null == client)
 				{
-					try
-					{
-						client = new SocksSocket(socksproxy, addr.host,
-						        addr.port);
-					}
-					catch (Exception e)
-					{
-						logger.error("Failed to create SocksSocket:" + addr, e);
-						HttpResponse res = new DefaultHttpResponse(
-						        HttpVersion.HTTP_1_1,
-						        HttpResponseStatus.SERVICE_UNAVAILABLE);
-						localChannel.write(res);
-						// closeLocalChannel();
-						return;
-					}
-
-					if (logger.isDebugEnabled())
-					{
-						logger.debug("Create a socks proxy socket fore remote:"
-						        + addr);
-					}
-					SharedObjectHelper.getGlobalThreadPool().submit(this);
+					return;
 				}
+				if (logger.isDebugEnabled())
+				{
+					logger.debug("Create a socks proxy socket fore remote:"
+					        + addr);
+				}
+				SharedObjectHelper.getGlobalThreadPool().submit(
+				        new InputTask(client));
 				if (req.method.equalsIgnoreCase("Connect"))
 				{
-					HttpResponse res = new DefaultHttpResponse(
-					        HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
-					ChannelFuture future = localChannel.write(res);
-					removeCodecHandler(localChannel, future);
+					String msg = "HTTP/1.1 200 Connection established\r\n"
+					        + "Connection: Keep-Alive\r\n"
+					        + "Proxy-Connection: Keep-Alive\r\n\r\n";
+					removeCodecHandler(localChannel);
+					localChannel.write(ChannelBuffers
+					        .wrappedBuffer(msg.getBytes()));
+					
 					return;
 				}
 				else
 				{
+					currentClient = client;
 					Buffer buf = buildRequestBuffer(req);
-					writeRemoteSocket(buf);
+					writeRemoteSocket(buf, client);
 				}
 				break;
 			}
 			case HTTPEventContants.HTTP_CHUNK_EVENT_TYPE:
 			{
 				HTTPChunkEvent chunk = (HTTPChunkEvent) event;
-				if (null != client)
+				if (null != currentClient)
 				{
-					writeRemoteSocket(chunk.content);
+					writeRemoteSocket(chunk.content, currentClient);
 				}
 				else
 				{
@@ -191,7 +203,7 @@ public class SocksSession extends Session implements Runnable
 				HTTPConnectionEvent ev = (HTTPConnectionEvent) event;
 				if (ev.status == HTTPConnectionEvent.CLOSED)
 				{
-					closeSocksClient();
+					closeSocksClients();
 				}
 				break;
 			}
@@ -201,10 +213,19 @@ public class SocksSession extends Session implements Runnable
 				break;
 			}
 		}
-
+		
 	}
-
-	private void closeSocksClient()
+	
+	private void closeSocksClients()
+	{
+		for(SocksSocket client:clientList)
+		{
+			closeSocksClient(client);
+		}
+		clientList.clear();
+	}
+	
+	private void closeSocksClient(SocksSocket client)
 	{
 		if (null != client)
 		{
@@ -216,42 +237,49 @@ public class SocksSession extends Session implements Runnable
 			{
 				logger.error("Failed to close socks client.", e);
 			}
-			client = null;
 		}
 	}
-
-	@Override
-	public void run()
+	
+	class InputTask implements Runnable
 	{
-		byte[] buf = new byte[8192];
-		while (true)
+		SocksSocket	client;
+		
+		public InputTask(SocksSocket client)
 		{
-			try
+			this.client = client;
+		}
+		
+		@Override
+		public void run()
+		{
+			byte[] buf = new byte[8192];
+			while (true)
 			{
-				int ret = client.getInputStream().read(buf);
-				if (ret > 0)
+				try
 				{
-					localChannel
-					        .write(ChannelBuffers.copiedBuffer(buf, 0, ret));
-				}
-				else
-				{
-					if (ret < 0)
+					int ret = client.getInputStream().read(buf);
+					if (ret > 0)
 					{
-						logger.error("Recv none bytes:" + ret);
-						break;
+						localChannel.write(ChannelBuffers.copiedBuffer(buf, 0,
+						        ret));
+					}
+					else
+					{
+						if (ret < 0)
+						{
+							logger.error("Recv none bytes:" + ret);
+							break;
+						}
 					}
 				}
+				catch (IOException e)
+				{
+					logger.error("Failed to read socks client.", e);
+					break;
+				}
 			}
-			catch (IOException e)
-			{
-				logger.error("Failed to read socks client.", e);
-				break;
-			}
+			// closeLocalChannel();
+			closeSocksClient(client);
 		}
-		// closeLocalChannel();
-		closeSocksClient();
-
 	}
-
 }

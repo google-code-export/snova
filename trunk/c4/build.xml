@@ -1,0 +1,148 @@
+<?xml version="1.0"?>
+
+<project name="snova-c4" default="release">
+	<property name="root" value="." />
+	<property name="srcroot" value="${root}/src" />
+	<property name="releasedir" value="${root}/release" />
+	<property name="clientclasses" value="${root}/build" />
+	<property name="clientjar" value="c4-client.jar" />
+	<property name="distroot" value="${root}/lib" />
+	<property name="docdir" value="${root}/doc" />
+	<property name="lib" value="${root}/lib" />
+	<property name="war" value="${root}/war" />
+	<property name="warlib" value="${root}/war/WEB-INF/lib" />
+	<property name="warclasses" value="${root}/war/WEB-INF/classes" />
+	<property name="conf" value="${root}/conf" />
+	<property name="temp" value="${root}/temp" />
+	<property name="release" value="release" />
+	<property name="version" value="0.12.0120" />
+	<property name="versionfile" value="org/snova/c4/common/C4PluginVersion.java" />
+	<property name="release_dir_name" value="c4" />
+	<property name="project_name" value="snova-c4" />
+
+	<tstamp />
+	<target name="prepare">
+		<mkdir dir="${clientclasses}" />
+		<mkdir dir="${distroot}" />
+		<echo message="package org.snova.c4.common;
+			public class C4PluginVersion
+			{
+			   public static final String value = &quot;${version}&quot;;
+			}" file="${srcroot}/${versionfile}" />
+	</target>
+
+	<target name="compile-client" depends="prepare">
+		<javac debug="on" destdir="${clientclasses}">
+			<src path="${srcroot}" />
+			<exclude name="org/snova/c4/server/**/*" />
+			<classpath>
+				<fileset dir="${lib}">
+					<include name="*.jar" />
+				</fileset>
+				<pathelement path="${root}/../framework/lib/framework.jar" />
+				<pathelement path="${root}/../framework/lib/jboss-netty.jar" />
+				<pathelement path="${root}/../framework/lib/arch.jar" />
+				<pathelement path="${root}/../framework/lib/slf4j-api-1.6.4.jar" />
+			</classpath>
+		</javac>
+		<copy todir="${clientclasses}">
+			<fileset dir="${srcroot}">
+				<include name="**/*.png" />
+				<include name="**/*.txt" />
+			</fileset>
+		</copy>
+	</target>
+
+	<target name="compile-server" depends="prepare">
+		<javac debug="on" destdir="${warclasses}">
+			<src path="${srcroot}" />
+			<exclude name="org/snova/c4/client/**/*" />
+			<classpath>
+				<fileset dir="${lib}">
+					<include name="*.jar" />
+				</fileset>
+				<pathelement path="${root}/../framework/lib/framework.jar" />
+				<pathelement path="${root}/../gae/lib/geronimo-servlet_2.5_spec-1.2.jar" />
+				<pathelement path="${root}/../framework/lib/jboss-netty.jar" />
+				<pathelement path="${root}/../framework/lib/arch.jar" />
+				<pathelement path="${root}/../framework/lib/slf4j-api-1.6.4.jar" />
+			</classpath>
+		</javac>
+	</target>
+
+	<target name="compile" depends="compile-client, compile-server" />
+
+	<target name="jarclient" depends="compile">
+		<jar destfile="${distroot}/${clientjar}" basedir="${clientclasses}">
+		</jar>
+		<delete dir="${clientclasses}" />
+	</target>
+
+	<target name="war" depends="compile">
+		<copy todir="${warlib}" file="${root}/../framework/lib/framework.jar"/>
+		<copy todir="${warlib}" file="${root}/../framework/lib/arch.jar"/>
+		<copy todir="${warlib}" file="${root}/../framework/lib/jboss-netty.jar"/>
+		<copy todir="${warlib}" file="${root}/../framework/lib/slf4j-api-1.6.4.jar"/>
+
+		<zip destfile="${project_name}-server-${version}.war" basedir="${war}"/>
+	</target>
+
+	<target name="herokupackage" depends="compile">
+		<property name="herokurelease" value="${root}/heroku-release" />
+		<property name="herokuserverdir" value="${herokurelease}/snova-heroku-server-${version}" />
+		<mkdir dir="${herokuserverdir}" />
+		<mkdir dir="${herokuserverdir}/target" />
+		<property name="herokusrc" value="${herokuserverdir}/src/main/java" />
+		<property name="herokurepo" value="${herokuserverdir}/repo/snova" />
+		<mkdir dir="${herokurepo}/arch/1.0" />
+		<mkdir dir="${herokurepo}/framework/1.0" />
+		<copy tofile="${herokurepo}/arch/1.0/arch-1.0.jar" file="${root}/../framework/lib/arch.jar"/>
+		<copy tofile="${herokurepo}/framework/1.0/framework-1.0.jar" file="${root}/../framework/lib/framework.jar"/>
+		<mkdir dir="${herokusrc}" />
+		<copy todir="${herokusrc}">
+			<fileset dir="${srcroot}">
+				<include name="**/org/snova/c4/server/**" />
+				<include name="**/org/snova/c4/common/**" />
+			</fileset>
+			<fileset dir="${root}/test">
+				<include name="**/LauncherServer.java" />
+			</fileset>
+		</copy>
+		<copy todir="${herokuserverdir}">
+			<fileset dir="${root}/heroku">
+				<include name="*" />
+			</fileset>
+		</copy>
+		<zip destfile="${project_name}-heroku-server-${version}.zip" basedir="${herokurelease}"/>
+		<delete dir="${herokurelease}"/>
+	</target>
+
+	<target name="packageserver" depends="herokupackage, war">
+	</target>
+
+	<target name="release" depends="jarclient, packageserver">
+		<property name="releaseprojectdir" value="${releasedir}/${release_dir_name}" />
+		<mkdir dir="${releaseprojectdir}" />
+		<copy todir="${releaseprojectdir}/lib">
+			<fileset dir="${lib}">
+				<include name="${clientjar}" />
+			</fileset>
+
+		</copy>
+		<copy todir="${releaseprojectdir}/conf">
+			<fileset dir="${conf}" />
+		</copy>
+		<!--
+		<copy todir="${releaseprojectdir}/bin">
+			<fileset dir="${shell}" />
+		</copy>
+		-->
+		<copy todir="${releaseprojectdir}" file="${root}/plugin.xml" />
+		<copy todir="${releaseprojectdir}" file="${root}/readme.txt" />
+		<copy todir="${releaseprojectdir}" file="${root}/changelog.txt" />
+		<copy todir="${releaseprojectdir}" file="${root}/licence.txt" />
+		<zip destfile="${root}/${project_name}-${version}.zip" basedir="${releasedir}" />
+		<delete dir="${releasedir}" />
+	</target>
+
+</project>

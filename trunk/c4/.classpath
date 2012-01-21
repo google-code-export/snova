@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" path="test"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="/snova-framework/lib/arch.jar"/>
+	<classpathentry kind="lib" path="/snova-gae/lib/geronimo-servlet_2.5_spec-1.2.jar"/>
+	<classpathentry kind="lib" path="C:/Src/MyProject/jetty-distribution-7.4.5.v20110725/lib/jetty-ajp-7.4.5.v20110725.jar"/>
+	<classpathentry kind="lib" path="C:/Src/MyProject/jetty-distribution-7.4.5.v20110725/lib/jetty-annotations-7.4.5.v20110725.jar"/>
+	<classpathentry kind="lib" path="C:/Src/MyProject/jetty-distribution-7.4.5.v20110725/lib/jetty-client-7.4.5.v20110725.jar"/>
+	<classpathentry kind="lib" path="C:/Src/MyProject/jetty-distribution-7.4.5.v20110725/lib/jetty-continuation-7.4.5.v20110725.jar"/>
+	<classpathentry kind="lib" path="C:/Src/MyProject/jetty-distribution-7.4.5.v20110725/lib/jetty-deploy-7.4.5.v20110725.jar"/>
+	<classpathentry kind="lib" path="C:/Src/MyProject/jetty-distribution-7.4.5.v20110725/lib/jetty-http-7.4.5.v20110725.jar"/>
+	<classpathentry kind="lib" path="C:/Src/MyProject/jetty-distribution-7.4.5.v20110725/lib/jetty-io-7.4.5.v20110725.jar"/>
+	<classpathentry kind="lib" path="C:/Src/MyProject/jetty-distribution-7.4.5.v20110725/lib/jetty-jmx-7.4.5.v20110725.jar"/>
+	<classpathentry kind="lib" path="C:/Src/MyProject/jetty-distribution-7.4.5.v20110725/lib/jetty-jndi-7.4.5.v20110725.jar"/>
+	<classpathentry kind="lib" path="C:/Src/MyProject/jetty-distribution-7.4.5.v20110725/lib/jetty-overlay-deployer-7.4.5.v20110725.jar"/>
+	<classpathentry kind="lib" path="C:/Src/MyProject/jetty-distribution-7.4.5.v20110725/lib/jetty-plus-7.4.5.v20110725.jar"/>
+	<classpathentry kind="lib" path="C:/Src/MyProject/jetty-distribution-7.4.5.v20110725/lib/jetty-policy-7.4.5.v20110725.jar"/>
+	<classpathentry kind="lib" path="C:/Src/MyProject/jetty-distribution-7.4.5.v20110725/lib/jetty-rewrite-7.4.5.v20110725.jar"/>
+	<classpathentry kind="lib" path="C:/Src/MyProject/jetty-distribution-7.4.5.v20110725/lib/jetty-security-7.4.5.v20110725.jar"/>
+	<classpathentry kind="lib" path="C:/Src/MyProject/jetty-distribution-7.4.5.v20110725/lib/jetty-server-7.4.5.v20110725.jar"/>
+	<classpathentry kind="lib" path="C:/Src/MyProject/jetty-distribution-7.4.5.v20110725/lib/jetty-servlet-7.4.5.v20110725.jar"/>
+	<classpathentry kind="lib" path="C:/Src/MyProject/jetty-distribution-7.4.5.v20110725/lib/jetty-servlets-7.4.5.v20110725.jar"/>
+	<classpathentry kind="lib" path="C:/Src/MyProject/jetty-distribution-7.4.5.v20110725/lib/jetty-util-7.4.5.v20110725.jar"/>
+	<classpathentry kind="lib" path="C:/Src/MyProject/jetty-distribution-7.4.5.v20110725/lib/jetty-webapp-7.4.5.v20110725.jar"/>
+	<classpathentry kind="lib" path="C:/Src/MyProject/jetty-distribution-7.4.5.v20110725/lib/jetty-websocket-7.4.5.v20110725.jar"/>
+	<classpathentry kind="lib" path="C:/Src/MyProject/jetty-distribution-7.4.5.v20110725/lib/jetty-xml-7.4.5.v20110725.jar"/>
+	<classpathentry kind="lib" path="C:/Src/MyProject/jetty-distribution-7.4.5.v20110725/lib/servlet-api-2.5.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/snova-framework"/>
+	<classpathentry kind="lib" path="/snova-framework/lib/slf4j-api-1.6.4.jar"/>
+	<classpathentry kind="lib" path="/snova-framework/lib/jboss-netty.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

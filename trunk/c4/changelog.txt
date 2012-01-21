@@ -1,0 +1,19 @@
+snova-c4 Changelog
+===================
+Changes in version 0.12.0120
+-------------------------------------------
+Initial version
+
+** Features
+   * Support Heroku/Openshift/Cloundfoudry/Jelastic
+   * Full HTTP/HTTPS Proxy support
+   
+   
+** Task
+   * NA
+
+
+
+
+
+

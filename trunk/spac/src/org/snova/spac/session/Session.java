@@ -20,9 +20,10 @@ import org.snova.framework.util.SharedObjectHelper;
 
 public abstract class Session
 {
-	protected static Logger logger = LoggerFactory.getLogger(Session.class);
-	private static ClientSocketChannelFactory factory;
-
+	protected static Logger	                  logger	= LoggerFactory
+	                                                         .getLogger(Session.class);
+	private static ClientSocketChannelFactory	factory;
+	
 	protected static ClientSocketChannelFactory getClientSocketChannelFactory()
 	{
 		if (null == factory)
@@ -30,10 +31,11 @@ public abstract class Session
 			factory = new NioClientSocketChannelFactory(
 			        SharedObjectHelper.getGlobalThreadPool(),
 			        SharedObjectHelper.getGlobalThreadPool());
+			
 		}
 		return factory;
 	}
-
+	
 	protected static Buffer buildRequestBuffer(HTTPRequestEvent ev)
 	{
 		StringBuilder buffer = new StringBuilder();
@@ -45,7 +47,7 @@ public abstract class Session
 			        .append(header.getValue()).append("\r\n");
 		}
 		buffer.append("\r\n");
-
+		
 		Buffer msg = new Buffer(buffer.length() + ev.content.readableBytes());
 		msg.write(buffer.toString().getBytes());
 		if (ev.content.readable())
@@ -59,9 +61,35 @@ public abstract class Session
 			return msg;
 		}
 	}
-
+	
 	protected static ChannelBuffer buildRequestChannelBuffer(HTTPRequestEvent ev)
 	{
+		return buildRequestChannelBuffer(ev, false);
+	}
+	
+	protected static ChannelBuffer buildRequestChannelBuffer(HTTPRequestEvent ev, boolean transparent)
+	{
+		SimpleSocketAddress addr = getRemoteAddressFromRequestEvent(ev);
+		String pc = ev.getHeader("Proxy-Connection");
+		if(pc != null)
+		{
+			ev.removeHeader("Proxy-Connection");
+			ev.setHeader("Connection", pc);
+		}
+		if(!transparent)
+		{
+			if (ev.url.startsWith("http://" + addr.host.trim()))
+			{
+				int start = "http://".length();
+				int end = ev.url.indexOf("/", start);
+				ev.url = ev.url.substring(end);
+			}
+		}
+		
+//		if(ev.getContentLength() == 0)
+//		{
+//			ev.setHeader("Content-Length", "0");
+//		}
 		StringBuilder buffer = new StringBuilder();
 		buffer.append(ev.method).append(" ").append(ev.url).append(" ")
 		        .append("HTTP/1.1\r\n");
@@ -85,79 +113,58 @@ public abstract class Session
 			return headerbuf;
 		}
 	}
-
-	protected static void removeCodecHandler(final Channel channel,
-	        ChannelFuture future)
+	
+	protected static void removeCodecHandler(Channel channel)
 	{
-		if (null != future)
+		if (null != channel.getPipeline().get("decoder"))
 		{
-			future.addListener(new ChannelFutureListener()
-			{
-				@Override
-				public void operationComplete(ChannelFuture future)
-				        throws Exception
-				{
-					if (null != channel.getPipeline().get("decoder"))
-					{
-						channel.getPipeline().remove("decoder");
-					}
-					if (null != channel.getPipeline().get("encoder"))
-					{
-						channel.getPipeline().remove("encoder");
-					}
-				}
-
-			});
+			channel.getPipeline().remove("decoder");
 		}
-		else
+		if (null != channel.getPipeline().get("encoder"))
 		{
-			if (null != channel.getPipeline().get("decoder"))
-			{
-				channel.getPipeline().remove("decoder");
-			}
-			if (null != channel.getPipeline().get("encoder"))
-			{
-				channel.getPipeline().remove("encoder");
-			}
+			channel.getPipeline().remove("encoder");
 		}
-
+		if (null != channel.getPipeline().get("chunkedWriter"))
+		{
+			channel.getPipeline().remove("chunkedWriter");
+		}
 	}
-
-	protected String name;
-	protected int ID;
-	protected Channel localChannel;
-
+	
+	protected String	name;
+	protected int	  ID;
+	protected Channel	localChannel;
+	
 	public int getID()
 	{
 		return ID;
 	}
-
+	
 	public void setID(int iD)
 	{
 		ID = iD;
 	}
-
+	
 	public String getName()
 	{
 		return name;
 	}
-
+	
 	public void setName(String name)
 	{
 		this.name = name;
 	}
-
+	
 	protected void closeLocalChannel()
 	{
-		if (null != localChannel && localChannel.isOpen())
+		if (null != localChannel && localChannel.isConnected())
 		{
 			localChannel.close();
 		}
 		localChannel = null;
 	}
-
+	
 	public abstract SessionType getType();
-
+	
 	protected static SimpleSocketAddress getRemoteAddressFromRequestEvent(
 	        HTTPRequestEvent req)
 	{
@@ -188,24 +195,21 @@ public abstract class Session
 			hostValue = host.substring(0, index).trim();
 			port = Integer.parseInt(host.substring(index + 1).trim());
 		}
-		if (logger.isDebugEnabled())
-		{
-			logger.debug("Get remote address " + hostValue + ":" + port);
-		}
+		
 		SimpleSocketAddress addr = new SimpleSocketAddress(hostValue, port);
 		return addr;
 	}
-
+	
 	protected abstract void onEvent(EventHeader header, Event event);
-
-	public void handleEvent(EventHeader header, Event event)
+	
+	public synchronized void handleEvent(EventHeader header, Event event)
 	{
 		Pair<Channel, Integer> attch = (Pair<Channel, Integer>) event
 		        .getAttachment();
 		localChannel = attch.first;
 		if (logger.isDebugEnabled())
 		{
-			logger.debug("Handler event:" + header.type + " in session:"
+			logger.debug("Handler event:" + header.type + " in session[" + getID() + "] "
 			        + getName());
 		}
 		onEvent(header, event);

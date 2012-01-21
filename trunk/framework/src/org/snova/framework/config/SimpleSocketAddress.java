@@ -19,12 +19,13 @@ public class SimpleSocketAddress
 	@XmlAttribute
 	public String	host;
 	@XmlAttribute
-	public int		port;
+	public int	  port;
 	
 	public SimpleSocketAddress()
 	{
 		
 	}
+	
 	public SimpleSocketAddress(String host, int port)
 	{
 		this.host = host;
@@ -33,6 +34,34 @@ public class SimpleSocketAddress
 	
 	public String toString()
 	{
-		return host+":"+port;
+		return host + ":" + port;
+	}
+	
+	@Override
+	public int hashCode()
+	{
+		return host.hashCode() + port;
+	}
+	
+	@Override
+	public boolean equals(Object anObject)
+	{
+		if (this == anObject)
+		{
+			return true;
+		}
+		if(null == anObject)
+		{
+			return false;
+		}
+		if (anObject instanceof SimpleSocketAddress)
+		{
+			SimpleSocketAddress anotherString = (SimpleSocketAddress) anObject;
+			if (anotherString.host.equals(host) && anotherString.port == port)
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 }

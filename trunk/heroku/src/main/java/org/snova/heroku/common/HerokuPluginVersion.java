@@ -1,1 +1,0 @@
-package org.snova.heroku.common;    public class HerokuPluginVersion    {       public static final String value = "0.12.0101";    }

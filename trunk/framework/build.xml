@@ -14,7 +14,7 @@
 	<property name="docs" value="${root}/docs" />
 	<property name="shell" value="${root}/shell" />
 	<property name="release" value="release" />
-	<property name="version" value="0.12.0107" />
+	<property name="version" value="0.12.0120" />
 	<property name="versionfile" value="org/snova/framework/common/Version.java" />
 	<property name="project_name" value="snova" />
 	<property name="releasename" value="${project_name}-${version}"/>
@@ -56,20 +56,36 @@
 			<manifest>
 				<attribute name="Version" value="${version}"/>
 				<attribute name="Class-Path" value="../conf  
-					arch.jar netty-3.1.5.GA.jar bcprov-jdk16-146.jar
+					arch.jar jboss-netty.jar bcprov-jdk16-146.jar
 					slf4j-api-1.6.4.jar slf4j-jdk14-1.6.4.jar"/>
 			</manifest>
 		</jar>
 		<delete dir="${classes}"/>
 	</target>
-	
+
 	<target name="release" depends="jar">
 		<property name="binreleasedir" value="${releasedir}/${releasename}"/>
+		<delete file="${lib}/jboss-netty.jar"/>
+		<jar destfile="${lib}/jboss-netty.jar">
+			<zipfileset src="${lib}/netty-3.2.6.Final.jar">
+				<exclude name="org/jboss/netty/container/**"/>
+				<exclude name="org/jboss/netty/handler/codec/compression/**"/>
+				<exclude name="org/jboss/netty/handler/codec/protobuf/**"/>
+				<exclude name="org/jboss/netty/handler/codec/rtsp/**"/>
+				<exclude name="org/jboss/netty/handler/codec/embedder/**"/>
+				<exclude name="org/jboss/netty/handler/codec/serialization/**"/>
+				<exclude name="org/jboss/netty/handler/codec/http/websocket/**"/>
+				<exclude name="org/jboss/netty/channel/socket/http/**"/>
+				<exclude name="org/jboss/netty/util/internal/jzlib/**"/>
+			</zipfileset>
+		</jar>
 		<mkdir dir="${binreleasedir}"/>
 		<mkdir dir="${binreleasedir}/plugins"/>
 		<mkdir dir="${binreleasedir}/log"/>
 		<copy todir="${binreleasedir}/lib">
-			<fileset dir="${lib}"/>
+			<fileset dir="${lib}">
+				<exclude name="netty-3.2.6.Final.jar"/>
+			</fileset>
 		</copy>
 		<copy todir="${binreleasedir}/conf">
 			<fileset dir="${conf}"/>
@@ -82,10 +98,10 @@
 		<copy todir="${binreleasedir}/bin">
 			<fileset dir="${shell}" />
 		</copy>
-		
-		<unzip dest="${binreleasedir}/plugins" src="../gae/snova-gae-0.12.0107.zip"/>
-		<unzip dest="${binreleasedir}/plugins" src="../spac/snova-spac-0.12.0110.zip"/>
-		<unzip dest="${binreleasedir}/plugins" src="../heroku/snova-heroku-0.12.0101.zip"/>
+
+		<unzip dest="${binreleasedir}/plugins" src="../gae/snova-gae-0.12.0120.zip"/>
+		<unzip dest="${binreleasedir}/plugins" src="../spac/snova-spac-0.12.0120.zip"/>
+		<unzip dest="${binreleasedir}/plugins" src="../c4/snova-c4-0.12.0120.zip"/>
 		<copy todir="${binreleasedir}" file="${root}/readme.txt" />
 		<copy todir="${binreleasedir}" file="${root}/changelog.txt" />
 		<copy todir="${binreleasedir}" file="${root}/licence.txt" />

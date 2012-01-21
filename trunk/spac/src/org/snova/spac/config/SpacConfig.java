@@ -58,6 +58,11 @@ public class SpacConfig
 		return props.getProperty("Script", "Source");
 	}
 	
+	public String getGFWListSource()
+	{
+		return props.getProperty("GFWList", "Source");
+	}
+	
 	public boolean isHttpsOnlyHost(String host)
 	{
 		if(null == httpsOnlySites)
