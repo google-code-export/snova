@@ -20,7 +20,6 @@ import org.jboss.netty.channel.socket.oio.OioServerSocketChannelFactory;
 import org.jboss.netty.handler.codec.http.HttpRequestDecoder;
 import org.jboss.netty.handler.codec.http.HttpResponseEncoder;
 import org.jboss.netty.handler.execution.ExecutionHandler;
-import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.framework.config.SimpleSocketAddress;
@@ -31,21 +30,21 @@ import org.snova.framework.config.SimpleSocketAddress;
  */
 public class HttpLocalProxyServer
 {
-	protected static Logger logger = LoggerFactory
-	        .getLogger(HttpLocalProxyServer.class);
-
+	protected static Logger	logger	     = LoggerFactory
+	                                             .getLogger(HttpLocalProxyServer.class);
+	
 	// private List<RpcChannel> rpcChannels = new LinkedList<RpcChannel>();
-	private ServerBootstrap bootstrap;
+	private ServerBootstrap	bootstrap;
 	// private final ThreadPoolExecutor workerExecutor;
-	private Channel serverChannel;
-	private Executor bossExecutor = Executors.newCachedThreadPool();
-
+	private Channel	        serverChannel;
+	private Executor	    bossExecutor	= Executors.newCachedThreadPool();
+	
 	public HttpLocalProxyServer(SimpleSocketAddress listenAddress,
 	        final ExecutorService workerExecutor)
 	{
 		String host = listenAddress.host;
 		int port = listenAddress.port;
-
+		
 		if (NetworkHelper.isIPV6Address(host))
 		{
 			bootstrap = new ServerBootstrap(new OioServerSocketChannelFactory(
@@ -54,7 +53,7 @@ public class HttpLocalProxyServer
 		else
 		{
 			bootstrap = new ServerBootstrap(new NioServerSocketChannelFactory(
-			        bossExecutor, workerExecutor));
+					Executors.newCachedThreadPool(), Executors.newCachedThreadPool()));
 		}
 		bootstrap.setPipelineFactory(new ChannelPipelineFactory()
 		{
@@ -67,17 +66,17 @@ public class HttpLocalProxyServer
 				        workerExecutor));
 				pipeline.addLast("decoder", new HttpRequestDecoder());
 				pipeline.addLast("encoder", new HttpResponseEncoder());
-				pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());
+				// pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());
 				pipeline.addLast("handler", new HttpLocalProxyRequestHandler());
 				return pipeline;
 			}
 		});
 		serverChannel = bootstrap.bind(new InetSocketAddress(host, port));
 	}
-
+	
 	public void close()
 	{
 		serverChannel.close();
 	}
-
+	
 }

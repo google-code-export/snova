@@ -75,7 +75,7 @@ public class SessionManager
 			}
 			else if (sessionName.toLowerCase().startsWith("hosts"))
 			{
-				session = new HostsFowwardSession(sessionName);
+				session = new HostsFowwardSession();
 			}
 			else if (sessionName.toLowerCase().startsWith("google"))
 			{

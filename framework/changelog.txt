@@ -1,5 +1,18 @@
 snova Changelog
 ===================
+Changes in version 0.12.0120
+-------------------------------------------
+
+** Features
+   * New Plugin:C4, support PaaS services Heroku/Cloundfoundry/Openshift/Jelastic
+   * Remove heroku plugin
+   
+** Improvement
+   * Upgrade gae plugin to 0.12.0120
+   * Upgrade spac plugin to 0.12.0120
+      
+** Task
+   * NA
 Changes in version 0.12.0107(2012.01.07)
 -------------------------------------------
 

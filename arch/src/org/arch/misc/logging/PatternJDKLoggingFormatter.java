@@ -11,6 +11,7 @@ import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.logging.Formatter;
+import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.LogRecord;
 
@@ -20,13 +21,15 @@ import java.util.logging.LogRecord;
  */
 public class PatternJDKLoggingFormatter extends Formatter
 {
-	private static final String DEFAULT_FORMAT = "%L: %m";
+	private static final String DEFAULT_FORMAT = "[%t][%L]%m";
 	//private static final String DEFAULT_FORMAT = "%L: %m [%c.%M %t]";
 
 	private final MessageFormat messageFormat;
 
+	//private final DateFormat dateFormat = new SimpleDateFormat(
+	//        "yyyy-MM-dd HH:mm:ss Z");
 	private final DateFormat dateFormat = new SimpleDateFormat(
-	        "yyyy-MM-dd HH:mm:ss Z");
+	        "MM-dd HH:mm:ss.SSS");
 
 	/** */
 	public PatternJDKLoggingFormatter()
@@ -50,13 +53,26 @@ public class PatternJDKLoggingFormatter extends Formatter
 		messageFormat = new MessageFormat(format);
 	}
 
+	protected String levelToString(Level level)
+	{
+		if(level.equals(Level.FINE))
+		{
+			return "DEBUG";
+		}
+		else if(level.equals(Level.SEVERE))
+		{
+			return "ERROR";
+		}
+		return level.toString();
+	}
+	
 	@Override
 	public String format(LogRecord record)
 	{
 
 		String[] arguments = new String[8];
 		// %L
-		arguments[0] = record.getLevel().toString();
+		arguments[0] = levelToString(record.getLevel());
 		arguments[1] = record.getMessage();
 		Throwable thrown = record.getThrown();
 		// sometimes the message is empty, but there is a throwable

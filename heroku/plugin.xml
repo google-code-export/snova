@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<plugin name="Heroku" version="0.12.0101">
-   <depend/>
-   <entryClass>org.snova.heroku.client.plugin.Heroku</entryClass>   
-   <description>
-      Default plugin, powered by Heroku.
-   </description>
-</plugin>

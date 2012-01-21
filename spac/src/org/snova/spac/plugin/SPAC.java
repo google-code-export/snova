@@ -60,6 +60,7 @@ public class SPAC implements Plugin
 		csl.addFunction(Commands.INHOSTS);
 		csl.addFunction(Commands.INIPV4);
 		csl.addFunction(Commands.INIPV6);
+		csl.addFunction(Commands.IS_GFW_BLOCKED);
 		is.close();
 		return csl;
 	}

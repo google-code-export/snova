@@ -7,9 +7,8 @@ include ../Inc.mk
 
 TARG=misc
 GOFILES=\
-	xx.go\
+	quicklz.go\
 
 
-export GCIMPORTS=-I../codec/_obj -I../snappy/_obj -I../se/_obj -I../event/_obj -I../service/_obj -I$(APPENGINE_PKG)
 include $(GOROOT)/src/Make.pkg
 

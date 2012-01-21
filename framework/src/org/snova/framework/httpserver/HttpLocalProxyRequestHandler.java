@@ -9,6 +9,7 @@
  */
 package org.snova.framework.httpserver;
 
+import java.nio.channels.ClosedChannelException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.arch.common.KeyValuePair;
@@ -21,7 +22,6 @@ import org.arch.event.http.HTTPRequestEvent;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelPipelineCoverage;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
@@ -35,7 +35,7 @@ import org.slf4j.LoggerFactory;
  * @author yinqiwen
  * 
  */
-@ChannelPipelineCoverage("one")
+//@ChannelPipelineCoverage("one")
 public class HttpLocalProxyRequestHandler extends SimpleChannelUpstreamHandler
 {
 	protected Logger logger = LoggerFactory.getLogger(getClass());
@@ -119,13 +119,13 @@ public class HttpLocalProxyRequestHandler extends SimpleChannelUpstreamHandler
 		{
 			content = (ChannelBuffer) e.getMessage();
 		}
-		if (null != content)
+		if (null != content && content.readable())
 		{
 			event.content = new byte[content.readableBytes()];
 			content.readBytes(event.content);
+			event.setHash(id);
+			dispatchEvent(event);
 		}
-		event.setHash(id);
-		dispatchEvent(event);
 	}
 
 	private void handleHttpRequest(HttpRequest request, MessageEvent e)
@@ -162,7 +162,7 @@ public class HttpLocalProxyRequestHandler extends SimpleChannelUpstreamHandler
 		{
 			logger.debug("Browser connection[" +id + "]  closed");
 		}
-		super.channelClosed(ctx, e);
+		//super.channelClosed(ctx, e);
 		close();
 	}
 
@@ -170,8 +170,19 @@ public class HttpLocalProxyRequestHandler extends SimpleChannelUpstreamHandler
 	public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
 	        throws Exception
 	{
-		logger.error("exceptionCaught.", e.getCause());
-		close();
+		if(e.getCause() instanceof ClosedChannelException)
+		{
+			if(logger.isDebugEnabled())
+			{
+				logger.error("Browser connection[" + id+"] exceptionCaught.", e.getCause());
+			}
+		}
+		else
+		{
+			logger.error("Browser connection[" + id+"] exceptionCaught.", e.getCause());
+		}
+		
+		//close();
 	}
 
 	public void close()

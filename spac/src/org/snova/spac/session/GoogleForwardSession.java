@@ -20,9 +20,9 @@ import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineCoverage;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.ExceptionEvent;
@@ -49,19 +49,18 @@ import org.snova.framework.util.HostsHelper;
  */
 public class GoogleForwardSession extends Session
 {
-	private static final int INITED = 0;
-	private static final int WAITING_CONNECT_RESPONSE = 1;
-	private static final int CONNECT_RESPONSED = 2;
-	private static final int CONNECT_FAIELD = 2;
-	private static final int DISCONNECTED = 3;
-	private AtomicInteger sslProxyConnectionStatus = new AtomicInteger(0);
-	protected Channel remoteChannel;
-	private String proxyHost;
-	private int proxyPort;
-	private String proxyUser;
-	private String proxyPass;
-	//private boolean isHttps;
-
+	private static final int	INITED	                 = 0;
+	private static final int	WAITING_CONNECT_RESPONSE	= 1;
+	private static final int	CONNECT_RESPONSED	     = 2;
+	private static final int	CONNECT_FAIELD	         = 2;
+	private AtomicInteger	 sslProxyConnectionStatus	 = new AtomicInteger(0);
+	protected Channel	     remoteChannel;
+	private String	         proxyHost;
+	private int	             proxyPort;
+	private String	         proxyUser;
+	private String	         proxyPass;
+	private int	             retryCount	                 = 0;
+	
 	public GoogleForwardSession(String sessionname)
 	{
 		if (sessionname.indexOf("[") != -1 && sessionname.indexOf("]") != -1)
@@ -82,13 +81,13 @@ public class GoogleForwardSession extends Session
 			}
 		}
 	}
-
+	
 	@Override
 	public SessionType getType()
 	{
 		return SessionType.GOOGLE_FORWARD;
 	}
-
+	
 	private String getGoogleHttpsHost()
 	{
 		String s = HostsHelper.getMappingHost("GoogleHttpsIP");
@@ -98,50 +97,19 @@ public class GoogleForwardSession extends Session
 		}
 		return s;
 	}
-
-	protected Channel getRemoteGoogleChannel(boolean handshake)
+	
+	protected SocketChannel newRemoteGoogleChannel()
 	{
-		if (null != remoteChannel && remoteChannel.isConnected())
-		{
-			return remoteChannel;
-		}
 		ChannelPipeline pipeline = Channels.pipeline();
 		pipeline.addLast("decoder", new HttpResponseDecoder());
 		pipeline.addLast("encoder", new HttpRequestEncoder());
 		pipeline.addLast("handler", new GoogleRemoteChannelResponseHandler());
-		SocketChannel channel = getClientSocketChannelFactory().newChannel(
-		        pipeline);
-		String connectHost = proxyHost;
-		int connectPort = proxyPort;
-		if (null == proxyHost)
-		{
-			connectHost = getGoogleHttpsHost();
-			connectPort = 443;
-		}
-		connectHost = HostsHelper.getMappingHost(connectHost);
-		if (logger.isDebugEnabled())
-		{
-			logger.debug("Connect remote address " + connectHost + ":"
-			        + connectPort);
-		}
-		ChannelFuture future = channel.connect(
-		        new InetSocketAddress(connectHost, connectPort))
-		        .awaitUninterruptibly();
-		int retry = 3;
-		while (!future.isSuccess() && null == proxyHost && retry > 0)
-		{
-			logger.error("Failed to connect forward address.",
-			        future.getCause());
-			connectHost = getGoogleHttpsHost();
-			future = channel.connect(
-			        new InetSocketAddress(connectHost, connectPort))
-			        .awaitUninterruptibly();
-			retry--;
-		}
-		if (!future.isSuccess())
-		{
-			return null;
-		}
+		return getClientSocketChannelFactory().newChannel(pipeline);
+	}
+	
+	protected void initConnectedChannel(boolean handshake,
+	        ChannelFuture future, final ChannelFutureListener listener)
+	{
 		if (null != proxyHost)
 		{
 			if (logger.isDebugEnabled())
@@ -161,7 +129,7 @@ public class GoogleForwardSession extends Session
 				        "Basic " + encode);
 			}
 			sslProxyConnectionStatus.set(WAITING_CONNECT_RESPONSE);
-			channel.write(request);
+			future.getChannel().write(request);
 			synchronized (sslProxyConnectionStatus)
 			{
 				try
@@ -169,7 +137,9 @@ public class GoogleForwardSession extends Session
 					sslProxyConnectionStatus.wait(60000);
 					if (sslProxyConnectionStatus.get() != CONNECT_RESPONSED)
 					{
-						return null;
+						closeLocalChannel();
+						remoteChannel = null;
+						return;
 					}
 				}
 				catch (InterruptedException e)
@@ -182,84 +152,184 @@ public class GoogleForwardSession extends Session
 				}
 			}
 		}
-		remoteChannel = channel;
+		remoteChannel = future.getChannel();
 		if (!handshake)
 		{
-			removeCodecHandler(remoteChannel, null);
-			return remoteChannel;
+			removeCodecHandler(remoteChannel);
+			try
+			{
+				listener.operationComplete(null);
+			}
+			catch (Exception e)
+			{
+				//
+			}
+			return;
 		}
 		try
 		{
-
 			SSLContext sslContext = SSLContext.getDefault();
 			SSLEngine sslEngine = sslContext.createSSLEngine();
 			sslEngine.setUseClientMode(true);
-			pipeline.addFirst("sslHandler", new SslHandler(sslEngine));
-			ChannelFuture hf = channel.getPipeline().get(SslHandler.class)
-			        .handshake(channel);
-			hf.awaitUninterruptibly();
-			if (!hf.isSuccess())
+			SslHandler sl = null;
+			
+			remoteChannel.getPipeline().addFirst("sslHandler",
+			        new SslHandler(sslEngine));
+			ChannelFuture hf = remoteChannel.getPipeline()
+			        .get(SslHandler.class).handshake();
+			hf.addListener(new ChannelFutureListener()
 			{
-				logger.error("Handshake failed", hf.getCause());
-				channel.close();
-				return null;
-			}
-			// channel.getPipeline().remove("sslHandler");
-			removeCodecHandler(remoteChannel, null);
-			if (logger.isDebugEnabled())
-			{
-				logger.debug("SSL handshake success!");
-			}
+				
+				@Override
+				public void operationComplete(ChannelFuture fa)
+				        throws Exception
+				{
+					if (!fa.isSuccess())
+					{
+						logger.error("Handshake failed", fa.getCause());
+						closeRemote();
+						closeLocalChannel();
+						return;
+					}
+					removeCodecHandler(remoteChannel);
+					if (logger.isDebugEnabled())
+					{
+						logger.debug("SSL handshake success!");
+					}
+					listener.operationComplete(null);
+				}
+			});
 		}
 		catch (Exception ex)
 		{
 			logger.error(null, ex);
-			channel.close();
-			return null;
+			closeRemote();
 		}
-		return channel;
 	}
-
+	
+	protected void getGoogleChannel(final boolean handshake,
+	        final ChannelFutureListener listener)
+	{
+		if (null != remoteChannel && remoteChannel.isConnected())
+		{
+			try
+			{
+				listener.operationComplete(null);
+			}
+			catch (Exception e)
+			{
+				
+			}
+			return;
+		}
+		SocketChannel channel = newRemoteGoogleChannel();
+		String connectHost = proxyHost;
+		int connectPort = proxyPort;
+		if (null == proxyHost)
+		{
+			connectHost = getGoogleHttpsHost();
+			connectPort = 443;
+		}
+		connectHost = HostsHelper.getMappingHost(connectHost);
+		if (logger.isDebugEnabled())
+		{
+			logger.debug("Connect remote address " + connectHost + ":"
+			        + connectPort);
+		}
+		ChannelFuture future = channel.connect(new InetSocketAddress(
+		        connectHost, connectPort));
+		future.addListener(new ChannelFutureListener()
+		{
+			@Override
+			public void operationComplete(ChannelFuture future)
+			        throws Exception
+			{
+				if (!future.isSuccess())
+				{
+					retryCount++;
+					if (retryCount < 3)
+					{
+						getGoogleChannel(handshake, listener);
+					}
+					else
+					{
+						retryCount = 0;
+						closeLocalChannel();
+					}
+				}
+				else
+				{
+					retryCount = 0;
+					initConnectedChannel(handshake, future, listener);
+				}
+			}
+		});
+	}
+	
 	@Override
-	protected void onEvent(EventHeader header, Event event)
+	protected void onEvent(EventHeader header, final Event event)
 	{
 		switch (header.type)
 		{
 			case HTTPEventContants.HTTP_REQUEST_EVENT_TYPE:
 			{
 				HTTPRequestEvent req = (HTTPRequestEvent) event;
-
+				
 				if (req.method.equalsIgnoreCase("Connect"))
 				{
-					Channel ch = getRemoteGoogleChannel(false);
-					HttpResponse res = new DefaultHttpResponse(
-					        HttpVersion.HTTP_1_1,
-					        ch != null ? HttpResponseStatus.OK
-					                : HttpResponseStatus.SERVICE_UNAVAILABLE);
-					ChannelFuture future = localChannel.write(res);
-					removeCodecHandler(localChannel, future);
+					getGoogleChannel(false, new ChannelFutureListener()
+					{
+						@Override
+						public void operationComplete(ChannelFuture future)
+						        throws Exception
+						{
+							String msg = "HTTP/1.1 200 Connection established\r\n"
+							        + "Connection: Keep-Alive\r\n"
+							        + "Proxy-Connection: Keep-Alive\r\n\r\n";
+							
+							// HttpResponse res = new DefaultHttpResponse(
+							// HttpVersion.HTTP_1_1,
+							// remoteChannel != null ? HttpResponseStatus.OK
+							// : HttpResponseStatus.SERVICE_UNAVAILABLE);
+							// localChannel.setReadable(false);
+							removeCodecHandler(localChannel);
+							localChannel.write(ChannelBuffers.wrappedBuffer(msg
+							        .getBytes()));
+							
+						}
+					});
 					// remoteChannel.getPipeline().remove("sslHandler");
 					return;
 				}
-
-				Channel ch = getRemoteGoogleChannel(true);
-				if (null == ch)
+				getGoogleChannel(true, new ChannelFutureListener()
 				{
-					HttpResponse res = new DefaultHttpResponse(
-					        HttpVersion.HTTP_1_1,
-					        HttpResponseStatus.SERVICE_UNAVAILABLE);
-					localChannel.write(res);
-					return;
-				}
-				if (DesktopFrameworkConfiguration.getInstance()
-				        .getProxyEventHandler().equalsIgnoreCase("Google"))
-				{
-					// remove codec handlers for performance
-					removeCodecHandler(localChannel, null);
-				}
-				// removeCodecHandler(localChannel, null);
-				ChannelBuffer msg = buildRequestChannelBuffer((HTTPRequestEvent) event);
-				ch.write(msg);
+					
+					@Override
+					public void operationComplete(ChannelFuture arg0)
+					        throws Exception
+					{
+						if (null == remoteChannel)
+						{
+							HttpResponse res = new DefaultHttpResponse(
+							        HttpVersion.HTTP_1_1,
+							        HttpResponseStatus.SERVICE_UNAVAILABLE);
+							localChannel.write(res);
+							return;
+						}
+						if (DesktopFrameworkConfiguration.getInstance()
+						        .getProxyEventHandler()
+						        .equalsIgnoreCase("Google"))
+						{
+							// remove codec handlers for performance
+							removeCodecHandler(localChannel);
+						}
+						// removeCodecHandler(localChannel, null);
+						ChannelBuffer msg = buildRequestChannelBuffer(
+						        (HTTPRequestEvent) event, true);
+						remoteChannel.write(msg);
+					}
+				});
+				
 				break;
 			}
 			case HTTPEventContants.HTTP_CHUNK_EVENT_TYPE:
@@ -288,16 +358,40 @@ public class GoogleForwardSession extends Session
 			}
 		}
 	}
-
+	
 	protected void closeRemote()
 	{
 		if (null != remoteChannel)
 		{
-			remoteChannel.close();
-			remoteChannel = null;
+			SslHandler ssl = remoteChannel.getPipeline().get(SslHandler.class);
+			if (null != ssl)
+			{
+				ssl.close().addListener(new ChannelFutureListener()
+				{
+					@Override
+					public void operationComplete(ChannelFuture future)
+					        throws Exception
+					{
+						if (remoteChannel.isConnected())
+						{
+							remoteChannel.close();
+						}
+						
+						remoteChannel = null;
+					}
+				});
+			}
+			else
+			{
+				if (remoteChannel.isConnected())
+				{
+					remoteChannel.close();
+				}
+				remoteChannel = null;
+			}
 		}
 	}
-
+	
 	private boolean casSSLProxyConnectionStatus(int current, int status)
 	{
 		synchronized (sslProxyConnectionStatus)
@@ -312,8 +406,8 @@ public class GoogleForwardSession extends Session
 			return true;
 		}
 	}
-
-	@ChannelPipelineCoverage("one")
+	
+	// @ChannelPipelineCoverage("one")
 	class GoogleRemoteChannelResponseHandler extends
 	        SimpleChannelUpstreamHandler
 	{
@@ -326,7 +420,7 @@ public class GoogleForwardSession extends Session
 				logger.debug("Connection closed.");
 			}
 		}
-
+		
 		@Override
 		public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
 		        throws Exception
@@ -334,7 +428,7 @@ public class GoogleForwardSession extends Session
 			logger.error("exceptionCaught in RemoteChannelResponseHandler",
 			        e.getCause());
 		}
-
+		
 		@Override
 		public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
 		        throws Exception
@@ -368,14 +462,6 @@ public class GoogleForwardSession extends Session
 				if (casSSLProxyConnectionStatus(WAITING_CONNECT_RESPONSE,
 				        CONNECT_RESPONSED))
 				{
-					// HttpMessageDecoder decoder = e.getChannel().getPipeline()
-					// .get(HttpResponseDecoder.class);
-					// Method m = HttpMessageDecoder.class.getDeclaredMethod(
-					// "reset", null);
-					// m.setAccessible(true);
-					// m.invoke(decoder, null);
-					//
-					// return;
 				}
 			}
 			else
@@ -385,5 +471,5 @@ public class GoogleForwardSession extends Session
 			}
 		}
 	}
-
+	
 }

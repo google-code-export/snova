@@ -16,6 +16,7 @@ import org.arch.event.http.HTTPMessageEvent;
 import org.arch.event.http.HTTPResponseEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.snova.spac.service.GFWListService;
 import org.snova.spac.service.HostsService;
 import org.tykedog.csl.api.InvokeCommand;
 
@@ -203,6 +204,27 @@ public class Commands
 			}
 			String o = obj.toString();
 			return HostsService.getMappingHostIPV6(o) != null;
+		}
+	};
+	
+	public static final InvokeCommand IS_GFW_BLOCKED = new InvokeCommand()
+	{
+		@Override
+		public String getName()
+		{
+			return "IsBlockedByGFW";
+		}
+
+		@Override
+		public Object execute(Object[] arg0)
+		{
+			Object obj = arg0[0];
+			if (obj == null)
+			{
+				return 0;
+			}
+			String o = obj.toString();
+			return GFWListService.isBlockedByGFW(o);
 		}
 	};
 }

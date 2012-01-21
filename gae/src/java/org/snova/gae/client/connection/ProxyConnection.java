@@ -51,6 +51,10 @@ public abstract class ProxyConnection
 	private AtomicInteger	                        authTokenLock	  = new AtomicInteger(0);
 	private Set<Integer>	                relevantSessions	= new HashSet<Integer>();
 	private EventHandler	                outSessionHandler	= null;
+	private Event retryEvent;
+	private boolean waitingResponse;
+	private int retryCount;
+	private int retryLimit;
 	
 	protected ProxyConnection(GAEServerAuth auth)
 	{
@@ -63,7 +67,6 @@ public abstract class ProxyConnection
 	
 	protected void doClose()
 	{
-		
 	}
 	
 	public abstract boolean isReady();
@@ -91,6 +94,21 @@ public abstract class ProxyConnection
 	
 	public void close()
 	{
+		if(waitingResponse && null != retryEvent)
+		{
+			waitingResponse = false;
+			if(retryCount < retryLimit)
+			{
+				if(logger.isDebugEnabled())
+				{
+					logger.debug("Retry proxy request.");
+				}
+				send(retryEvent);
+				retryCount++;
+				return;
+			}
+			retryCount = 0;
+		}
 		doClose();
 		closeRelevantSessions(null);
 		authTokenLock.set(AuthRequestEvent.AUTH_TRANSPORT_FAILED);
@@ -184,8 +202,11 @@ public abstract class ProxyConnection
 		outSessionHandler = handler;
 		return send(event);
 	}
-	
 	public boolean send(Event event)
+	{
+		return send(event, false, -1);
+	}
+	public boolean send(Event event, boolean retryEnable, int retryCount)
 	{
 		Pair<Channel, Integer> attach = (Pair<Channel, Integer>) event
 		        .getAttachment();
@@ -218,6 +239,12 @@ public abstract class ProxyConnection
 		if (null == attach)
 		{
 			attach = new Pair<Channel, Integer>(null, -1);
+		}
+		if(retryEnable)
+		{
+			retryEvent = event;
+			waitingResponse = true;
+			this.retryCount = retryCount;
 		}
 		
 		EventHeaderTags tags = new EventHeaderTags();
@@ -256,7 +283,7 @@ public abstract class ProxyConnection
 			close();
 			return;
 		}
-		
+		waitingResponse = false;
 		relevantSessions.remove(ev.getHash());
 		int type;
 		type = Event.getTypeVersion(ev.getClass()).type;
@@ -376,6 +403,5 @@ public abstract class ProxyConnection
 		{
 			send(queuedEvent);
 		}
-		
 	}
 }

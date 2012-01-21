@@ -533,6 +533,19 @@ public class GAEClientConfiguration
 	{
 		return concurrentFetchWorker;
 	}
+	
+	private int rangeFetchRetryLimit = 1;
+
+	@XmlElement(name = "RangeFetchRetryLimit")
+	public void setRangeFetchRetryLimit(int num)
+	{
+		this.rangeFetchRetryLimit = num;
+	}
+
+	public int getRangeFetchRetryLimit()
+	{
+		return rangeFetchRetryLimit;
+	}
 
 	private ProxyInfo localProxy;
 

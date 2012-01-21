@@ -8,7 +8,7 @@ $GAE="GAE";
 $DIRECT="DIRECT";
 $SEATTLE="SeattleGENI";
 $GOOGLE="Google";
-$HEROKU="Heroku";
+$C4="C4";
 
 #defined selected proxy
 
@@ -41,7 +41,7 @@ def SelectProxy(protocol, method, url, headers)
      $contentLength = Int(GetHeader($headers, "Content-Length"));
      if $contentLength > 10240000
      {
-         return $HEROKU;
+         return $C4;
      }
      
      ##Only "GET/POST/PUT/DELETE/HEAD" supported in GAE
@@ -49,7 +49,7 @@ def SelectProxy(protocol, method, url, headers)
         && $method != "PUT" && $method != "DELETE"
         && $method != "HEAD"
      {
-        return $HEROKU;
+        return $C4;
      }
      
      ##Request with body not allowed in GAE if it's not POST/PUT
@@ -57,7 +57,7 @@ def SelectProxy(protocol, method, url, headers)
      {
         if $method != "POST" && $method != "PUT" 
         {
-           return $HEROKU;
+           return $C4;
         }
      }  
      return $GAE;
