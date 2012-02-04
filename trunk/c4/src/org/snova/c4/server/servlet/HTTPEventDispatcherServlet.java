@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.c4.common.event.EventRestNotify;
 import org.snova.c4.server.service.EventService;
+import org.snova.c4.server.service.TimeoutService;
 import org.snova.c4.server.session.DirectSession;
 import org.snova.c4.server.session.SessionManager;
 import org.snova.framework.util.SharedObjectHelper;
@@ -32,36 +33,28 @@ import org.snova.framework.util.SharedObjectHelper;
 public class HTTPEventDispatcherServlet extends HttpServlet
 {
 	protected Logger	logger	= LoggerFactory.getLogger(getClass());
-	private static long timeoutCheckPeriod = 5000;
-	static TimeoutTask task = new TimeoutTask();
-    static class TimeoutTask implements Runnable
-    {
-    	private long lastTouchTime;
-    	private boolean running = false;
-    	public void touch()
-    	{
-    		lastTouchTime = System.currentTimeMillis();
-    	}
-		@Override
-        public void run()
-        {
-	        long now = System.currentTimeMillis();
-	        if(now - lastTouchTime > timeoutCheckPeriod*2)
-	        {
-	        	DirectSession.releaseExternalConnections();
-	        	SessionManager.getInstance().clear();
-	        	EventService.getInstance().releaseEvents();
-	        }
-        }
-    }
 	
 	public HTTPEventDispatcherServlet()
 	{
-		if(!task.running)
+	}
+	
+	private void writeBytes(HttpServletResponse resp, byte[] buf, int off,
+	        int len) throws IOException
+	{
+		int maxWriteLen = 8192;
+		int writed = 0;
+		while (writed < len)
 		{
-			task.running = true;
-			SharedObjectHelper.getGlobalTimer().scheduleAtFixedRate(task, timeoutCheckPeriod, timeoutCheckPeriod, TimeUnit.MILLISECONDS);
+			int writeLen = maxWriteLen;
+			if (writed + writeLen > len)
+			{
+				writeLen = len - writed;
+			}
+			resp.getOutputStream().write(buf, off + writed, writeLen);
+			resp.getOutputStream().flush();
+			writed += writeLen;
 		}
+		//resp.getOutputStream().close();
 	}
 	
 	private void send(HttpServletResponse resp, Buffer buf) throws Exception
@@ -71,17 +64,33 @@ public class HTTPEventDispatcherServlet extends HttpServlet
 		resp.setContentType("image/jpeg");
 		// resp.setHeader("Cache-Control", "no-cache");
 		resp.setContentLength(buf.readableBytes());
-		resp.getOutputStream().write(buf.getRawBuffer(), buf.getReadIndex(),
+		// resp.getOutputStream().write(buf.getRawBuffer(), buf.getReadIndex(),
+		// buf.readableBytes());
+		// resp.getOutputStream().flush();
+		writeBytes(resp, buf.getRawBuffer(), buf.getReadIndex(),
 		        buf.readableBytes());
-		resp.getOutputStream().flush();
-		resp.getOutputStream().close();
+		// resp.getOutputStream().close();
 	}
 	
 	@Override
 	protected void doPost(HttpServletRequest req, final HttpServletResponse resp)
 	        throws ServletException, IOException
 	{
-		task.touch();
+		String userToken = req.getHeader("UserToken");
+		if (null == userToken)
+		{
+			userToken = "";
+		}
+		String actor = req.getHeader("ClientActor");
+		boolean assist = false;
+		if (actor != null && actor.equals("Assist"))
+		{
+			assist = true;
+		}
+		int transacTimeValue = ServletHelper.getTransacTime(req);
+		//long start = System.currentTimeMillis();
+		boolean sentData = false;
+		TimeoutService.touch(userToken);
 		try
 		{
 			int bodylen = req.getContentLength();
@@ -89,25 +98,48 @@ public class HTTPEventDispatcherServlet extends HttpServlet
 			{
 				Buffer content = new Buffer(bodylen);
 				int len = 0;
-				while(len < bodylen)
+				while (len < bodylen)
 				{
 					content.read(req.getInputStream());
 					len = content.readableBytes();
 				}
 				if (len > 0)
 				{
-					EventService.getInstance().dispatchEvent(content);
-					// int evcount = 0;
+					EventService service = EventService.getInstance(userToken);
+					service.dispatchEvent(content);
+					if (assist)
+					{
+						synchronized (service)
+						{
+							if (service.getRestEventQueueSize() == 0)
+							{
+								service.wait(transacTimeValue - 5000);
+							}
+						}
+					}
 					Buffer buf = new Buffer(4096);
-					EventService.getInstance().extractEventResponses(buf);
-					
-					//EventRestNotify notify = new EventRestNotify();
-					//notify.rest = EventService.getInstance()
-					 //       .getRestEventQueueSize();
-					//notify.encode(buf);
+					int maxResSize = ServletHelper.getMaxResponseSize(req);
+					service.extractEventResponses(buf, maxResSize);
+//					while (assist && buf.readableBytes() < maxResSize)
+//					{
+//						long now = System.currentTimeMillis();
+//						if (now - start < 2000)
+//						{
+//							synchronized (service)
+//							{
+//								service.wait(2000);
+//							}
+//						}
+//						else
+//						{
+//							break;
+//						}
+//						service.extractEventResponses(buf, maxResSize);
+//					}
 					int size = buf.readableBytes();
 					try
 					{
+						sentData = true;
 						send(resp, buf);
 					}
 					catch (Exception e)
@@ -125,6 +157,12 @@ public class HTTPEventDispatcherServlet extends HttpServlet
 			e.printStackTrace(new PrintStream(resp.getOutputStream()));
 			// logger.warn("Failed to process message", e);
 		}
-		task.touch();
+		TimeoutService.touch(userToken);
+		if (!sentData)
+		{
+			resp.setStatus(200);
+			resp.setContentLength(0);
+		}
+		// resp.getOutputStream().close();
 	}
 }

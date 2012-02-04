@@ -10,6 +10,7 @@
  */
 package org.snova.gae.client.shell.swing;
 
+import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -25,13 +26,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.framework.shell.swing.ImageUtil;
 import org.snova.framework.util.SharedObjectHelper;
+import org.snova.framework.util.proxy.ProxyInfo;
+import org.snova.framework.util.proxy.ProxyType;
 import org.snova.gae.client.admin.handler.ShareAppID;
 import org.snova.gae.client.admin.handler.UnShareAppID;
 import org.snova.gae.client.config.GAEClientConfiguration;
 import org.snova.gae.client.config.GAEClientConfiguration.ConnectionMode;
 import org.snova.gae.client.config.GAEClientConfiguration.GAEServerAuth;
-import org.snova.gae.client.config.GAEClientConfiguration.ProxyInfo;
-import org.snova.gae.client.config.GAEClientConfiguration.ProxyType;
+import org.snova.gae.client.config.GAEClientConfiguration.GoolgeProxyMode;
 import org.snova.gae.client.config.GAEClientConfiguration.XmppAccount;
 import org.snova.gae.client.connection.ProxyConnection;
 import org.snova.gae.client.connection.ProxyConnectionManager;
@@ -59,1023 +61,509 @@ public class GAEConfigPanel extends javax.swing.JPanel
 	 */
 	@SuppressWarnings("unchecked")
 	// <editor-fold defaultstate="collapsed"
-	// desc="Generated Code">//GEN-BEGIN:initComponents
-	private void initComponents()
-	{
-		
-		jTabbedPane1 = new javax.swing.JTabbedPane();
-		jPanel1 = new javax.swing.JPanel();
-		jPanel7 = new javax.swing.JPanel();
-		jScrollPane1 = new javax.swing.JScrollPane();
-		appidTable = new javax.swing.JTable();
-		newAppIdButton = new javax.swing.JButton();
-		modifyAppIdButton = new javax.swing.JButton();
-		deleteAppIdButton = new javax.swing.JButton();
-		deployButton = new javax.swing.JButton();
-		jPanel2 = new javax.swing.JPanel();
-		jPanel4 = new javax.swing.JPanel();
-		jLabel1 = new javax.swing.JLabel();
-		localHttpProxyHostText = new javax.swing.JTextField();
-		isHttpProxyEnable = new javax.swing.JCheckBox();
-		jLabel2 = new javax.swing.JLabel();
-		localHttpProxyUserText = new javax.swing.JTextField();
-		jLabel3 = new javax.swing.JLabel();
-		localHttpProxyPassText = new javax.swing.JPasswordField();
-		jLabel4 = new javax.swing.JLabel();
-		localHttpProxyPortText = new javax.swing.JTextField();
-		jLabel14 = new javax.swing.JLabel();
-		proxyTypeComboBox = new javax.swing.JComboBox();
-		jPanel5 = new javax.swing.JPanel();
-		jScrollPane3 = new javax.swing.JScrollPane();
-		xmppAccountTable = new javax.swing.JTable();
-		newXmppButton = new javax.swing.JButton();
-		modifyXmppButton = new javax.swing.JButton();
-		removeXmppButton = new javax.swing.JButton();
-		connectionModeCombox = new javax.swing.JComboBox();
-		jLabel8 = new javax.swing.JLabel();
-		jPanel3 = new javax.swing.JPanel();
-		compressorType = new javax.swing.JComboBox();
-		jLabel9 = new javax.swing.JLabel();
-		jLabel10 = new javax.swing.JLabel();
-		connectionPoolText = new javax.swing.JTextField();
-		jLabel11 = new javax.swing.JLabel();
-		fetcherNumText = new javax.swing.JTextField();
-		jLabel12 = new javax.swing.JLabel();
-		rpcTimeoutText = new javax.swing.JTextField();
-		jLabel13 = new javax.swing.JLabel();
-		fetchLimitTextField1 = new javax.swing.JTextField();
-		jLabel7 = new javax.swing.JLabel();
-		encrypterCombox = new javax.swing.JComboBox();
-		isHttpSimpleUrlEnable = new javax.swing.JCheckBox();
-		jPanel6 = new javax.swing.JPanel();
-		jLabel5 = new javax.swing.JLabel();
-		shareAppIdTextField = new javax.swing.JTextField();
-		shareAppIdButton = new javax.swing.JButton();
-		unshareButton = new javax.swing.JButton();
-		jScrollPane2 = new javax.swing.JScrollPane();
-		jTextArea2 = new javax.swing.JTextArea();
-		jLabel6 = new javax.swing.JLabel();
-		shareEmailAccount = new javax.swing.JTextField();
-		applyButton = new javax.swing.JButton();
-		
-		jPanel1.setPreferredSize(new java.awt.Dimension(406, 316));
-		
-		jPanel7.setBorder(javax.swing.BorderFactory
-		        .createTitledBorder("AppIDs Setting"));
-		
-		appidTable.setModel(appIdTableModel);
-		jScrollPane1.setViewportView(appidTable);
-		
-		newAppIdButton.setIcon(ImageUtil.ADD);
-		newAppIdButton.setText("New...");
-		newAppIdButton.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(java.awt.event.ActionEvent evt)
-			{
-				newAppIdButtonActionPerformed(evt);
-			}
-		});
-		
-		modifyAppIdButton.setIcon(ImageUtil.MODIFY);
-		modifyAppIdButton.setText("Modify...");
-		modifyAppIdButton.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(java.awt.event.ActionEvent evt)
-			{
-				modifyAppIdButtonActionPerformed(evt);
-			}
-		});
-		
-		deleteAppIdButton.setIcon(ImageUtil.REMOVE);
-		deleteAppIdButton.setText("Remove...");
-		deleteAppIdButton.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(java.awt.event.ActionEvent evt)
-			{
-				deleteAppIdButtonActionPerformed(evt);
-			}
-		});
-		
-		javax.swing.GroupLayout jPanel7Layout = new javax.swing.GroupLayout(
-		        jPanel7);
-		jPanel7.setLayout(jPanel7Layout);
-		jPanel7Layout
-		        .setHorizontalGroup(jPanel7Layout
-		                .createParallelGroup(
-		                        javax.swing.GroupLayout.Alignment.LEADING)
-		                .addGroup(
-		                        jPanel7Layout
-		                                .createSequentialGroup()
-		                                .addContainerGap()
-		                                .addGroup(
-		                                        jPanel7Layout
-		                                                .createParallelGroup(
-		                                                        javax.swing.GroupLayout.Alignment.LEADING)
-		                                                .addGroup(
-		                                                        javax.swing.GroupLayout.Alignment.TRAILING,
-		                                                        jPanel7Layout
-		                                                                .createSequentialGroup()
-		                                                                .addComponent(
-		                                                                        newAppIdButton,
-		                                                                        javax.swing.GroupLayout.PREFERRED_SIZE,
-		                                                                        101,
-		                                                                        javax.swing.GroupLayout.PREFERRED_SIZE)
-		                                                                .addGap(34,
-		                                                                        34,
-		                                                                        34)
-		                                                                .addComponent(
-		                                                                        modifyAppIdButton,
-		                                                                        javax.swing.GroupLayout.PREFERRED_SIZE,
-		                                                                        98,
-		                                                                        javax.swing.GroupLayout.PREFERRED_SIZE)
-		                                                                .addPreferredGap(
-		                                                                        javax.swing.LayoutStyle.ComponentPlacement.RELATED,
-		                                                                        javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                                                        Short.MAX_VALUE)
-		                                                                .addComponent(
-		                                                                        deleteAppIdButton))
-		                                                .addComponent(
-		                                                        jScrollPane1,
-		                                                        javax.swing.GroupLayout.Alignment.TRAILING,
-		                                                        javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                                        346,
-		                                                        Short.MAX_VALUE))
-		                                .addContainerGap()));
-		jPanel7Layout
-		        .setVerticalGroup(jPanel7Layout
-		                .createParallelGroup(
-		                        javax.swing.GroupLayout.Alignment.LEADING)
-		                .addGroup(
-		                        jPanel7Layout
-		                                .createSequentialGroup()
-		                                .addGroup(
-		                                        jPanel7Layout
-		                                                .createParallelGroup(
-		                                                        javax.swing.GroupLayout.Alignment.BASELINE)
-		                                                .addComponent(
-		                                                        newAppIdButton)
-		                                                .addComponent(
-		                                                        deleteAppIdButton)
-		                                                .addComponent(
-		                                                        modifyAppIdButton))
-		                                .addPreferredGap(
-		                                        javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-		                                .addComponent(
-		                                        jScrollPane1,
-		                                        javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                        131, Short.MAX_VALUE)
-		                                .addContainerGap()));
-		
-		deployButton.setIcon(GAEImageUtil.APPENGINE16);
-		deployButton.setText("Deploy Server");
-		deployButton.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(java.awt.event.ActionEvent evt)
-			{
-				
-			}
-		});
-		
-		javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(
-		        jPanel1);
-		jPanel1.setLayout(jPanel1Layout);
-		jPanel1Layout
-		        .setHorizontalGroup(jPanel1Layout
-		                .createParallelGroup(
-		                        javax.swing.GroupLayout.Alignment.LEADING)
-		                .addGroup(
-		                        jPanel1Layout
-		                                .createSequentialGroup()
-		                                .addGroup(
-		                                        jPanel1Layout
-		                                                .createParallelGroup(
-		                                                        javax.swing.GroupLayout.Alignment.LEADING)
-		                                                .addGroup(
-		                                                        jPanel1Layout
-		                                                                .createSequentialGroup()
-		                                                                .addContainerGap()
-		                                                                .addComponent(
-		                                                                        jPanel7,
-		                                                                        javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                                                        javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                                                        Short.MAX_VALUE))
-		                                                .addGroup(
-		                                                        jPanel1Layout
-		                                                                .createSequentialGroup()
-		                                                                .addGap(147,
-		                                                                        147,
-		                                                                        147)
-		                                                                .addComponent(
-		                                                                        deployButton)))
-		                                .addContainerGap()));
-		jPanel1Layout
-		        .setVerticalGroup(jPanel1Layout
-		                .createParallelGroup(
-		                        javax.swing.GroupLayout.Alignment.LEADING)
-		                .addGroup(
-		                        javax.swing.GroupLayout.Alignment.TRAILING,
-		                        jPanel1Layout
-		                                .createSequentialGroup()
-		                                .addContainerGap(
-		                                        javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                        Short.MAX_VALUE)
-		                                .addComponent(
-		                                        jPanel7,
-		                                        javax.swing.GroupLayout.PREFERRED_SIZE,
-		                                        javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                        javax.swing.GroupLayout.PREFERRED_SIZE)
-		                                .addPreferredGap(
-		                                        javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-		                                .addComponent(deployButton)
-		                                .addGap(360, 360, 360)));
-		
-		jTabbedPane1.addTab("General", jPanel1);
-		
-		jPanel4.setBorder(javax.swing.BorderFactory
-		        .createTitledBorder("Http Proxy Connection Setting"));
-		
-		jLabel1.setText("Server:");
-		
-		isHttpProxyEnable.setText("Enable Http Proxy");
-		isHttpProxyEnable.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(java.awt.event.ActionEvent evt)
-			{
-				isHttpProxyEnableActionPerformed(evt);
-			}
-		});
-		
-		jLabel2.setText("Username:");
-		
-		jLabel3.setText("Password:");
-		
-		jLabel4.setText("Port:");
-		
-		localHttpProxyPortText.setText("80");
-		
-		jLabel14.setText("Type:");
-		
-		proxyTypeComboBox.setMaximumRowCount(2);
-		proxyTypeComboBox.setModel(new javax.swing.DefaultComboBoxModel(
-		        new String[] { "HTTP", "HTTPS" }));
-		
-		javax.swing.GroupLayout jPanel4Layout = new javax.swing.GroupLayout(
-		        jPanel4);
-		jPanel4.setLayout(jPanel4Layout);
-		jPanel4Layout
-		        .setHorizontalGroup(jPanel4Layout
-		                .createParallelGroup(
-		                        javax.swing.GroupLayout.Alignment.LEADING)
-		                .addGroup(
-		                        jPanel4Layout
-		                                .createSequentialGroup()
-		                                .addContainerGap()
-		                                .addGroup(
-		                                        jPanel4Layout
-		                                                .createParallelGroup(
-		                                                        javax.swing.GroupLayout.Alignment.LEADING)
-		                                                .addComponent(
-		                                                        isHttpProxyEnable)
-		                                                .addGroup(
-		                                                        jPanel4Layout
-		                                                                .createSequentialGroup()
-		                                                                .addGroup(
-		                                                                        jPanel4Layout
-		                                                                                .createParallelGroup(
-		                                                                                        javax.swing.GroupLayout.Alignment.TRAILING,
-		                                                                                        false)
-		                                                                                .addComponent(
-		                                                                                        jLabel1,
-		                                                                                        javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                                                                        javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                                                                        Short.MAX_VALUE)
-		                                                                                .addComponent(
-		                                                                                        jLabel2,
-		                                                                                        javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                                                                        javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                                                                        Short.MAX_VALUE))
-		                                                                .addPreferredGap(
-		                                                                        javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-		                                                                .addGroup(
-		                                                                        jPanel4Layout
-		                                                                                .createParallelGroup(
-		                                                                                        javax.swing.GroupLayout.Alignment.LEADING,
-		                                                                                        false)
-		                                                                                .addComponent(
-		                                                                                        localHttpProxyUserText)
-		                                                                                .addComponent(
-		                                                                                        localHttpProxyHostText,
-		                                                                                        javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                                                                        106,
-		                                                                                        Short.MAX_VALUE))))
-		                                .addPreferredGap(
-		                                        javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-		                                .addGroup(
-		                                        jPanel4Layout
-		                                                .createParallelGroup(
-		                                                        javax.swing.GroupLayout.Alignment.LEADING)
-		                                                .addComponent(
-		                                                        jLabel4,
-		                                                        javax.swing.GroupLayout.PREFERRED_SIZE,
-		                                                        72,
-		                                                        javax.swing.GroupLayout.PREFERRED_SIZE)
-		                                                .addComponent(jLabel3)
-		                                                .addComponent(jLabel14))
-		                                .addGap(1, 1, 1)
-		                                .addGroup(
-		                                        jPanel4Layout
-		                                                .createParallelGroup(
-		                                                        javax.swing.GroupLayout.Alignment.LEADING)
-		                                                .addGroup(
-		                                                        jPanel4Layout
-		                                                                .createSequentialGroup()
-		                                                                .addComponent(
-		                                                                        proxyTypeComboBox,
-		                                                                        javax.swing.GroupLayout.PREFERRED_SIZE,
-		                                                                        javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                                                        javax.swing.GroupLayout.PREFERRED_SIZE)
-		                                                                .addContainerGap())
-		                                                .addGroup(
-		                                                        jPanel4Layout
-		                                                                .createParallelGroup(
-		                                                                        javax.swing.GroupLayout.Alignment.LEADING)
-		                                                                .addComponent(
-		                                                                        localHttpProxyPassText,
-		                                                                        javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                                                        102,
-		                                                                        Short.MAX_VALUE)
-		                                                                .addComponent(
-		                                                                        localHttpProxyPortText,
-		                                                                        javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                                                        102,
-		                                                                        Short.MAX_VALUE)))));
-		jPanel4Layout
-		        .setVerticalGroup(jPanel4Layout
-		                .createParallelGroup(
-		                        javax.swing.GroupLayout.Alignment.LEADING)
-		                .addGroup(
-		                        jPanel4Layout
-		                                .createSequentialGroup()
-		                                .addGroup(
-		                                        jPanel4Layout
-		                                                .createParallelGroup(
-		                                                        javax.swing.GroupLayout.Alignment.BASELINE)
-		                                                .addComponent(
-		                                                        isHttpProxyEnable)
-		                                                .addComponent(jLabel14)
-		                                                .addComponent(
-		                                                        proxyTypeComboBox,
-		                                                        javax.swing.GroupLayout.PREFERRED_SIZE,
-		                                                        javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                                        javax.swing.GroupLayout.PREFERRED_SIZE))
-		                                .addPreferredGap(
-		                                        javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-		                                .addGroup(
-		                                        jPanel4Layout
-		                                                .createParallelGroup(
-		                                                        javax.swing.GroupLayout.Alignment.BASELINE)
-		                                                .addComponent(jLabel1)
-		                                                .addComponent(
-		                                                        localHttpProxyHostText,
-		                                                        javax.swing.GroupLayout.PREFERRED_SIZE,
-		                                                        javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                                        javax.swing.GroupLayout.PREFERRED_SIZE)
-		                                                .addComponent(jLabel4)
-		                                                .addComponent(
-		                                                        localHttpProxyPortText,
-		                                                        javax.swing.GroupLayout.PREFERRED_SIZE,
-		                                                        javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                                        javax.swing.GroupLayout.PREFERRED_SIZE))
-		                                .addPreferredGap(
-		                                        javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-		                                .addGroup(
-		                                        jPanel4Layout
-		                                                .createParallelGroup(
-		                                                        javax.swing.GroupLayout.Alignment.BASELINE)
-		                                                .addComponent(jLabel2)
-		                                                .addComponent(
-		                                                        localHttpProxyUserText,
-		                                                        javax.swing.GroupLayout.PREFERRED_SIZE,
-		                                                        javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                                        javax.swing.GroupLayout.PREFERRED_SIZE)
-		                                                .addComponent(jLabel3)
-		                                                .addComponent(
-		                                                        localHttpProxyPassText,
-		                                                        javax.swing.GroupLayout.PREFERRED_SIZE,
-		                                                        javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                                        javax.swing.GroupLayout.PREFERRED_SIZE))
-		                                .addContainerGap(
-		                                        javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                        Short.MAX_VALUE)));
-		
-		jPanel5.setBorder(javax.swing.BorderFactory
-		        .createTitledBorder("XMPP Accounts"));
-		
-		xmppAccountTable.setModel(xmppTableModel);
-		jScrollPane3.setViewportView(xmppAccountTable);
-		
-		newXmppButton.setIcon(ImageUtil.ADD);
-		newXmppButton.setText("New...");
-		newXmppButton.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(java.awt.event.ActionEvent evt)
-			{
-				newXmppButtonActionPerformed(evt);
-			}
-		});
-		
-		modifyXmppButton.setIcon(ImageUtil.MODIFY);
-		modifyXmppButton.setText("Modify...");
-		modifyXmppButton.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(java.awt.event.ActionEvent evt)
-			{
-				modifyXmppButtonActionPerformed(evt);
-			}
-		});
-		
-		removeXmppButton.setIcon(ImageUtil.REMOVE);
-		removeXmppButton.setText("Remove...");
-		removeXmppButton.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(java.awt.event.ActionEvent evt)
-			{
-				removeXmppButtonActionPerformed(evt);
-			}
-		});
-		
-		javax.swing.GroupLayout jPanel5Layout = new javax.swing.GroupLayout(
-		        jPanel5);
-		jPanel5.setLayout(jPanel5Layout);
-		jPanel5Layout
-		        .setHorizontalGroup(jPanel5Layout
-		                .createParallelGroup(
-		                        javax.swing.GroupLayout.Alignment.LEADING)
-		                .addGroup(
-		                        jPanel5Layout
-		                                .createSequentialGroup()
-		                                .addContainerGap()
-		                                .addGroup(
-		                                        jPanel5Layout
-		                                                .createParallelGroup(
-		                                                        javax.swing.GroupLayout.Alignment.LEADING)
-		                                                .addGroup(
-		                                                        jPanel5Layout
-		                                                                .createSequentialGroup()
-		                                                                .addComponent(
-		                                                                        newXmppButton,
-		                                                                        javax.swing.GroupLayout.PREFERRED_SIZE,
-		                                                                        89,
-		                                                                        javax.swing.GroupLayout.PREFERRED_SIZE)
-		                                                                .addGap(39,
-		                                                                        39,
-		                                                                        39)
-		                                                                .addComponent(
-		                                                                        modifyXmppButton)
-		                                                                .addPreferredGap(
-		                                                                        javax.swing.LayoutStyle.ComponentPlacement.RELATED,
-		                                                                        29,
-		                                                                        Short.MAX_VALUE)
-		                                                                .addComponent(
-		                                                                        removeXmppButton))
-		                                                .addComponent(
-		                                                        jScrollPane3,
-		                                                        javax.swing.GroupLayout.PREFERRED_SIZE,
-		                                                        367,
-		                                                        javax.swing.GroupLayout.PREFERRED_SIZE))
-		                                .addContainerGap()));
-		jPanel5Layout
-		        .setVerticalGroup(jPanel5Layout
-		                .createParallelGroup(
-		                        javax.swing.GroupLayout.Alignment.LEADING)
-		                .addGroup(
-		                        jPanel5Layout
-		                                .createSequentialGroup()
-		                                .addGroup(
-		                                        jPanel5Layout
-		                                                .createParallelGroup(
-		                                                        javax.swing.GroupLayout.Alignment.BASELINE)
-		                                                .addComponent(
-		                                                        newXmppButton)
-		                                                .addComponent(
-		                                                        modifyXmppButton)
-		                                                .addComponent(
-		                                                        removeXmppButton))
-		                                .addPreferredGap(
-		                                        javax.swing.LayoutStyle.ComponentPlacement.RELATED,
-		                                        javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                        Short.MAX_VALUE)
-		                                .addComponent(
-		                                        jScrollPane3,
-		                                        javax.swing.GroupLayout.PREFERRED_SIZE,
-		                                        83,
-		                                        javax.swing.GroupLayout.PREFERRED_SIZE)));
-		
-		connectionModeCombox.setModel(new javax.swing.DefaultComboBoxModel(
-		        new String[] { "HTTP", "XMPP", "HTTPS" }));
-		connectionModeCombox
-		        .addActionListener(new java.awt.event.ActionListener()
-		        {
-			        public void actionPerformed(java.awt.event.ActionEvent evt)
-			        {
-				        connectionModeComboxActionPerformed(evt);
-			        }
-		        });
-		
-		jLabel8.setText("Connection Mode: ");
-		
-		javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(
-		        jPanel2);
-		jPanel2.setLayout(jPanel2Layout);
-		jPanel2Layout
-		        .setHorizontalGroup(jPanel2Layout
-		                .createParallelGroup(
-		                        javax.swing.GroupLayout.Alignment.LEADING)
-		                .addGroup(
-		                        jPanel2Layout
-		                                .createSequentialGroup()
-		                                .addContainerGap()
-		                                .addGroup(
-		                                        jPanel2Layout
-		                                                .createParallelGroup(
-		                                                        javax.swing.GroupLayout.Alignment.LEADING,
-		                                                        false)
-		                                                .addGroup(
-		                                                        jPanel2Layout
-		                                                                .createSequentialGroup()
-		                                                                .addGap(14,
-		                                                                        14,
-		                                                                        14)
-		                                                                .addComponent(
-		                                                                        jLabel8)
-		                                                                .addPreferredGap(
-		                                                                        javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-		                                                                .addComponent(
-		                                                                        connectionModeCombox,
-		                                                                        javax.swing.GroupLayout.PREFERRED_SIZE,
-		                                                                        91,
-		                                                                        javax.swing.GroupLayout.PREFERRED_SIZE))
-		                                                .addComponent(
-		                                                        jPanel4,
-		                                                        javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                                        javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                                        Short.MAX_VALUE)
-		                                                .addComponent(jPanel5,
-		                                                        0, 399,
-		                                                        Short.MAX_VALUE))
-		                                .addContainerGap(
-		                                        javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                        Short.MAX_VALUE)));
-		jPanel2Layout
-		        .setVerticalGroup(jPanel2Layout
-		                .createParallelGroup(
-		                        javax.swing.GroupLayout.Alignment.LEADING)
-		                .addGroup(
-		                        jPanel2Layout
-		                                .createSequentialGroup()
-		                                .addContainerGap()
-		                                .addGroup(
-		                                        jPanel2Layout
-		                                                .createParallelGroup(
-		                                                        javax.swing.GroupLayout.Alignment.BASELINE)
-		                                                .addComponent(jLabel8)
-		                                                .addComponent(
-		                                                        connectionModeCombox,
-		                                                        javax.swing.GroupLayout.PREFERRED_SIZE,
-		                                                        javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                                        javax.swing.GroupLayout.PREFERRED_SIZE))
-		                                .addPreferredGap(
-		                                        javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-		                                .addComponent(
-		                                        jPanel4,
-		                                        javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                        javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                        Short.MAX_VALUE)
-		                                .addPreferredGap(
-		                                        javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-		                                .addComponent(
-		                                        jPanel5,
-		                                        javax.swing.GroupLayout.PREFERRED_SIZE,
-		                                        javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                        javax.swing.GroupLayout.PREFERRED_SIZE)
-		                                .addContainerGap()));
-		
-		jTabbedPane1.addTab("Connection", jPanel2);
-		
-		CompressorType[] allCompressors = CompressorType.values();
-		compressorType.setMaximumRowCount(allCompressors.length);
-		ArrayList<String> modelStrList = new ArrayList<String>();
-		for (CompressorType compressor : allCompressors)
-		{
-			modelStrList.add(compressor.toString());
-		}
-		compressorType.setModel(new javax.swing.DefaultComboBoxModel(
-		        modelStrList.toArray()));
-		compressorType.setSelectedItem("lzf");
-		
-		jLabel9.setText("RPC Timeout:");
-		
-		jLabel10.setText("Connection Pool Size(per appid):");
-		
-		connectionPoolText.setText("7");
-		
-		jLabel11.setText("Fetcher Number for big file/video:");
-		
-		fetcherNumText.setText("3");
-		
-		jLabel12.setText("Compress Type:");
-		
-		rpcTimeoutText.setText("120");
-		
-		jLabel13.setText("Fetch Limit Size:");
-		
-		fetchLimitTextField1.setText("250000");
-		
-		jLabel7.setText("HTTP Encrypter:");
-		
-		EncryptType[] allSecServs = EncryptType.values();
-		encrypterCombox.setMaximumRowCount(allSecServs.length);
-		ArrayList<String> secModelStrList = new ArrayList<String>();
-		for (EncryptType sec : allSecServs)
-		{
-			secModelStrList.add(sec.toString());
-		}
-		encrypterCombox.setModel(new javax.swing.DefaultComboBoxModel(
-		        secModelStrList.toArray()));
-		encrypterCombox.setSelectedItem("se1");
-		
-		isHttpSimpleUrlEnable.setText("EnableSimpleURL");
-		
-		javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(
-		        jPanel3);
-		jPanel3.setLayout(jPanel3Layout);
-		jPanel3Layout
-		        .setHorizontalGroup(jPanel3Layout
-		                .createParallelGroup(
-		                        javax.swing.GroupLayout.Alignment.LEADING)
-		                .addGroup(
-		                        javax.swing.GroupLayout.Alignment.TRAILING,
-		                        jPanel3Layout
-		                                .createSequentialGroup()
-		                                .addGap(53, 53, 53)
-		                                .addGroup(
-		                                        jPanel3Layout
-		                                                .createParallelGroup(
-		                                                        javax.swing.GroupLayout.Alignment.TRAILING)
-		                                                .addComponent(
-		                                                        isHttpSimpleUrlEnable,
-		                                                        javax.swing.GroupLayout.Alignment.LEADING,
-		                                                        javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                                        309,
-		                                                        Short.MAX_VALUE)
-		                                                .addGroup(
-		                                                        jPanel3Layout
-		                                                                .createSequentialGroup()
-		                                                                .addGroup(
-		                                                                        jPanel3Layout
-		                                                                                .createParallelGroup(
-		                                                                                        javax.swing.GroupLayout.Alignment.LEADING)
-		                                                                                .addComponent(
-		                                                                                        jLabel9)
-		                                                                                .addComponent(
-		                                                                                        jLabel10)
-		                                                                                .addComponent(
-		                                                                                        jLabel7)
-		                                                                                .addComponent(
-		                                                                                        jLabel11)
-		                                                                                .addComponent(
-		                                                                                        jLabel13)
-		                                                                                .addComponent(
-		                                                                                        jLabel12))
-		                                                                .addGap(31,
-		                                                                        31,
-		                                                                        31)
-		                                                                .addGroup(
-		                                                                        jPanel3Layout
-		                                                                                .createParallelGroup(
-		                                                                                        javax.swing.GroupLayout.Alignment.LEADING)
-		                                                                                .addComponent(
-		                                                                                        compressorType,
-		                                                                                        0,
-		                                                                                        6,
-		                                                                                        Short.MAX_VALUE)
-		                                                                                .addComponent(
-		                                                                                        fetcherNumText,
-		                                                                                        javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                                                                        6,
-		                                                                                        Short.MAX_VALUE)
-		                                                                                .addComponent(
-		                                                                                        rpcTimeoutText,
-		                                                                                        javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                                                                        6,
-		                                                                                        Short.MAX_VALUE)
-		                                                                                .addComponent(
-		                                                                                        connectionPoolText,
-		                                                                                        javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                                                                        6,
-		                                                                                        Short.MAX_VALUE)
-		                                                                                .addComponent(
-		                                                                                        encrypterCombox,
-		                                                                                        0,
-		                                                                                        6,
-		                                                                                        Short.MAX_VALUE)
-		                                                                                .addComponent(
-		                                                                                        fetchLimitTextField1,
-		                                                                                        javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                                                                        6,
-		                                                                                        Short.MAX_VALUE))))
-		                                .addGap(63, 63, 63)));
-		jPanel3Layout
-		        .setVerticalGroup(jPanel3Layout
-		                .createParallelGroup(
-		                        javax.swing.GroupLayout.Alignment.LEADING)
-		                .addGroup(
-		                        jPanel3Layout
-		                                .createSequentialGroup()
-		                                .addGap(27, 27, 27)
-		                                .addGroup(
-		                                        jPanel3Layout
-		                                                .createParallelGroup(
-		                                                        javax.swing.GroupLayout.Alignment.TRAILING)
-		                                                .addComponent(
-		                                                        rpcTimeoutText,
-		                                                        javax.swing.GroupLayout.PREFERRED_SIZE,
-		                                                        javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                                        javax.swing.GroupLayout.PREFERRED_SIZE)
-		                                                .addComponent(jLabel9))
-		                                .addPreferredGap(
-		                                        javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-		                                .addGroup(
-		                                        jPanel3Layout
-		                                                .createParallelGroup(
-		                                                        javax.swing.GroupLayout.Alignment.BASELINE)
-		                                                .addComponent(
-		                                                        connectionPoolText,
-		                                                        javax.swing.GroupLayout.PREFERRED_SIZE,
-		                                                        javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                                        javax.swing.GroupLayout.PREFERRED_SIZE)
-		                                                .addComponent(jLabel10))
-		                                .addGap(8, 8, 8)
-		                                .addGroup(
-		                                        jPanel3Layout
-		                                                .createParallelGroup(
-		                                                        javax.swing.GroupLayout.Alignment.BASELINE)
-		                                                .addComponent(
-		                                                        fetcherNumText,
-		                                                        javax.swing.GroupLayout.PREFERRED_SIZE,
-		                                                        javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                                        javax.swing.GroupLayout.PREFERRED_SIZE)
-		                                                .addComponent(
-		                                                        jLabel11,
-		                                                        javax.swing.GroupLayout.PREFERRED_SIZE,
-		                                                        15,
-		                                                        javax.swing.GroupLayout.PREFERRED_SIZE))
-		                                .addPreferredGap(
-		                                        javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-		                                .addGroup(
-		                                        jPanel3Layout
-		                                                .createParallelGroup(
-		                                                        javax.swing.GroupLayout.Alignment.BASELINE)
-		                                                .addComponent(
-		                                                        compressorType,
-		                                                        javax.swing.GroupLayout.PREFERRED_SIZE,
-		                                                        javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                                        javax.swing.GroupLayout.PREFERRED_SIZE)
-		                                                .addComponent(jLabel12))
-		                                .addGap(9, 9, 9)
-		                                .addGroup(
-		                                        jPanel3Layout
-		                                                .createParallelGroup(
-		                                                        javax.swing.GroupLayout.Alignment.BASELINE)
-		                                                .addComponent(
-		                                                        encrypterCombox,
-		                                                        javax.swing.GroupLayout.PREFERRED_SIZE,
-		                                                        javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                                        javax.swing.GroupLayout.PREFERRED_SIZE)
-		                                                .addComponent(jLabel7))
-		                                .addPreferredGap(
-		                                        javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-		                                .addGroup(
-		                                        jPanel3Layout
-		                                                .createParallelGroup(
-		                                                        javax.swing.GroupLayout.Alignment.BASELINE)
-		                                                .addComponent(
-		                                                        fetchLimitTextField1,
-		                                                        javax.swing.GroupLayout.PREFERRED_SIZE,
-		                                                        javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                                        javax.swing.GroupLayout.PREFERRED_SIZE)
-		                                                .addComponent(jLabel13))
-		                                .addPreferredGap(
-		                                        javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-		                                .addComponent(isHttpSimpleUrlEnable)
-		                                .addContainerGap(82, Short.MAX_VALUE)));
-		
-		jTabbedPane1.addTab("Advance", jPanel3);
-		
-		jLabel5.setText("AppID:");
-		
-		shareAppIdButton.setIcon(GAEImageUtil.SHARE);
-		shareAppIdButton.setText("Share");
-		shareAppIdButton.setBorder(javax.swing.BorderFactory.createEmptyBorder(
-		        1, 1, 1, 1));
-		shareAppIdButton.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(java.awt.event.ActionEvent evt)
-			{
-				shareAppIdButtonActionPerformed(evt);
-			}
-		});
-		
-		unshareButton.setIcon(ImageUtil.REMOVE);
-		unshareButton.setText("Unshare");
-		unshareButton.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(java.awt.event.ActionEvent evt)
-			{
-				unshareButtonActionPerformed(evt);
-			}
-		});
-		
-		jTextArea2.setBackground(new java.awt.Color(204, 204, 204));
-		jTextArea2.setColumns(20);
-		jTextArea2.setEditable(false);
-		jTextArea2.setRows(5);
-		jTextArea2
-		        .setText("Some thing you must know before sharing your appid:\n1. An email account needed as a verify id for sharing & unsharing appid. \n2. The shared appid can be used by anybody as 'anonymouse' user.\n3. You can use admin tool to control traffic and blacklist for \n   'anonymouse'.");
-		jTextArea2.setBorder(javax.swing.BorderFactory
-		        .createTitledBorder("Note:"));
-		jScrollPane2.setViewportView(jTextArea2);
-		
-		jLabel6.setText("Email:");
-		
-		javax.swing.GroupLayout jPanel6Layout = new javax.swing.GroupLayout(
-		        jPanel6);
-		jPanel6.setLayout(jPanel6Layout);
-		jPanel6Layout
-		        .setHorizontalGroup(jPanel6Layout
-		                .createParallelGroup(
-		                        javax.swing.GroupLayout.Alignment.LEADING)
-		                .addGroup(
-		                        jPanel6Layout
-		                                .createSequentialGroup()
-		                                .addGroup(
-		                                        jPanel6Layout
-		                                                .createParallelGroup(
-		                                                        javax.swing.GroupLayout.Alignment.LEADING)
-		                                                .addGroup(
-		                                                        jPanel6Layout
-		                                                                .createSequentialGroup()
-		                                                                .addContainerGap()
-		                                                                .addComponent(
-		                                                                        jLabel5)
-		                                                                .addPreferredGap(
-		                                                                        javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-		                                                                .addComponent(
-		                                                                        shareAppIdTextField,
-		                                                                        javax.swing.GroupLayout.PREFERRED_SIZE,
-		                                                                        126,
-		                                                                        javax.swing.GroupLayout.PREFERRED_SIZE)
-		                                                                .addPreferredGap(
-		                                                                        javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-		                                                                .addComponent(
-		                                                                        jLabel6)
-		                                                                .addPreferredGap(
-		                                                                        javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-		                                                                .addComponent(
-		                                                                        shareEmailAccount,
-		                                                                        javax.swing.GroupLayout.PREFERRED_SIZE,
-		                                                                        156,
-		                                                                        javax.swing.GroupLayout.PREFERRED_SIZE))
-		                                                .addGroup(
-		                                                        jPanel6Layout
-		                                                                .createSequentialGroup()
-		                                                                .addGap(73,
-		                                                                        73,
-		                                                                        73)
-		                                                                .addComponent(
-		                                                                        shareAppIdButton,
-		                                                                        javax.swing.GroupLayout.PREFERRED_SIZE,
-		                                                                        83,
-		                                                                        javax.swing.GroupLayout.PREFERRED_SIZE)
-		                                                                .addGap(59,
-		                                                                        59,
-		                                                                        59)
-		                                                                .addComponent(
-		                                                                        unshareButton))
-		                                                .addGroup(
-		                                                        jPanel6Layout
-		                                                                .createSequentialGroup()
-		                                                                .addContainerGap()
-		                                                                .addComponent(
-		                                                                        jScrollPane2,
-		                                                                        javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                                                        404,
-		                                                                        Short.MAX_VALUE)))
-		                                .addContainerGap()));
-		jPanel6Layout
-		        .setVerticalGroup(jPanel6Layout
-		                .createParallelGroup(
-		                        javax.swing.GroupLayout.Alignment.LEADING)
-		                .addGroup(
-		                        jPanel6Layout
-		                                .createSequentialGroup()
-		                                .addContainerGap()
-		                                .addGroup(
-		                                        jPanel6Layout
-		                                                .createParallelGroup(
-		                                                        javax.swing.GroupLayout.Alignment.BASELINE)
-		                                                .addComponent(
-		                                                        shareAppIdTextField,
-		                                                        javax.swing.GroupLayout.PREFERRED_SIZE,
-		                                                        javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                                        javax.swing.GroupLayout.PREFERRED_SIZE)
-		                                                .addComponent(jLabel5)
-		                                                .addComponent(
-		                                                        shareEmailAccount,
-		                                                        javax.swing.GroupLayout.PREFERRED_SIZE,
-		                                                        javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                                        javax.swing.GroupLayout.PREFERRED_SIZE)
-		                                                .addComponent(jLabel6))
-		                                .addGap(18, 18, 18)
-		                                .addGroup(
-		                                        jPanel6Layout
-		                                                .createParallelGroup(
-		                                                        javax.swing.GroupLayout.Alignment.BASELINE)
-		                                                .addComponent(
-		                                                        unshareButton,
-		                                                        javax.swing.GroupLayout.PREFERRED_SIZE,
-		                                                        25,
-		                                                        javax.swing.GroupLayout.PREFERRED_SIZE)
-		                                                .addComponent(
-		                                                        shareAppIdButton,
-		                                                        javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                                        23,
-		                                                        Short.MAX_VALUE))
-		                                .addPreferredGap(
-		                                        javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-		                                .addComponent(
-		                                        jScrollPane2,
-		                                        javax.swing.GroupLayout.PREFERRED_SIZE,
-		                                        222,
-		                                        javax.swing.GroupLayout.PREFERRED_SIZE)
-		                                .addContainerGap()));
-		
-		jTabbedPane1.addTab("Share!", jPanel6);
-		
-		applyButton.setIcon(ImageUtil.OK);
-		applyButton.setText("Apply");
-		applyButton.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(java.awt.event.ActionEvent evt)
-			{
-				applyButtonActionPerformed(evt);
-			}
-		});
-		
-		javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
-		this.setLayout(layout);
-		layout.setHorizontalGroup(layout
-		        .createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-		        .addGroup(
-		                layout.createSequentialGroup()
-		                        .addGap(171, 171, 171)
-		                        .addComponent(applyButton,
-		                                javax.swing.GroupLayout.PREFERRED_SIZE,
-		                                88,
-		                                javax.swing.GroupLayout.PREFERRED_SIZE)
-		                        .addContainerGap(182, Short.MAX_VALUE))
-		        .addGroup(
-		                layout.createParallelGroup(
-		                        javax.swing.GroupLayout.Alignment.LEADING)
-		                        .addGroup(
-		                                layout.createSequentialGroup()
-		                                        .addGap(8, 8, 8)
-		                                        .addComponent(
-		                                                jTabbedPane1,
-		                                                javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                                419, Short.MAX_VALUE)
-		                                        .addContainerGap())));
-		layout.setVerticalGroup(layout
-		        .createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-		        .addGroup(
-		                javax.swing.GroupLayout.Alignment.TRAILING,
-		                layout.createSequentialGroup()
-		                        .addContainerGap(391, Short.MAX_VALUE)
-		                        .addComponent(applyButton).addGap(18, 18, 18))
-		        .addGroup(
-		                layout.createParallelGroup(
-		                        javax.swing.GroupLayout.Alignment.LEADING)
-		                        .addGroup(
-		                                layout.createSequentialGroup()
-		                                        .addContainerGap()
-		                                        .addComponent(
-		                                                jTabbedPane1,
-		                                                javax.swing.GroupLayout.PREFERRED_SIZE,
-		                                                javax.swing.GroupLayout.DEFAULT_SIZE,
-		                                                javax.swing.GroupLayout.PREFERRED_SIZE)
-		                                        .addContainerGap(46,
-		                                                Short.MAX_VALUE))));
-	}// </editor-fold>//GEN-END:initComponents
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
+    private void initComponents() {
+
+        jTabbedPane1 = new javax.swing.JTabbedPane();
+        jPanel1 = new javax.swing.JPanel();
+        jPanel7 = new javax.swing.JPanel();
+        jScrollPane1 = new javax.swing.JScrollPane();
+        appidTable = new javax.swing.JTable();
+        newAppIdButton = new javax.swing.JButton();
+        modifyAppIdButton = new javax.swing.JButton();
+        deleteAppIdButton = new javax.swing.JButton();
+        deployButton = new javax.swing.JButton();
+        jPanel2 = new javax.swing.JPanel();
+        jPanel4 = new javax.swing.JPanel();
+        jLabel1 = new javax.swing.JLabel();
+        localHttpProxyHostText = new javax.swing.JTextField();
+        jLabel14 = new javax.swing.JLabel();
+        proxyTypeComboBox = new javax.swing.JComboBox();
+        jPanel5 = new javax.swing.JPanel();
+        jScrollPane3 = new javax.swing.JScrollPane();
+        xmppAccountTable = new javax.swing.JTable();
+        newXmppButton = new javax.swing.JButton();
+        modifyXmppButton = new javax.swing.JButton();
+        removeXmppButton = new javax.swing.JButton();
+        connectionModeCombox = new javax.swing.JComboBox();
+        jLabel8 = new javax.swing.JLabel();
+        jPanel3 = new javax.swing.JPanel();
+        compressorType = new javax.swing.JComboBox();
+        jLabel9 = new javax.swing.JLabel();
+        jLabel10 = new javax.swing.JLabel();
+        connectionPoolText = new javax.swing.JTextField();
+        jLabel11 = new javax.swing.JLabel();
+        fetcherNumText = new javax.swing.JTextField();
+        jLabel12 = new javax.swing.JLabel();
+        rpcTimeoutText = new javax.swing.JTextField();
+        jLabel13 = new javax.swing.JLabel();
+        fetchLimitTextField1 = new javax.swing.JTextField();
+        jLabel7 = new javax.swing.JLabel();
+        encrypterCombox = new javax.swing.JComboBox();
+        isHttpSimpleUrlEnable = new javax.swing.JCheckBox();
+        rangeFetchRetryTextField = new javax.swing.JTextField();
+        jLabel15 = new javax.swing.JLabel();
+        jPanel6 = new javax.swing.JPanel();
+        jLabel5 = new javax.swing.JLabel();
+        shareAppIdTextField = new javax.swing.JTextField();
+        shareAppIdButton = new javax.swing.JButton();
+        unshareButton = new javax.swing.JButton();
+        jScrollPane2 = new javax.swing.JScrollPane();
+        jTextArea2 = new javax.swing.JTextArea();
+        jLabel6 = new javax.swing.JLabel();
+        shareEmailAccount = new javax.swing.JTextField();
+        applyButton = new javax.swing.JButton();
+
+        jPanel1.setPreferredSize(new java.awt.Dimension(406, 316));
+
+        jPanel7.setBorder(javax.swing.BorderFactory.createTitledBorder("AppIDs Setting"));
+
+        appidTable.setModel(appIdTableModel);
+        jScrollPane1.setViewportView(appidTable);
+
+        newAppIdButton.setIcon(ImageUtil.ADD);
+        newAppIdButton.setText("New...");
+        newAppIdButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                newAppIdButtonActionPerformed(evt);
+            }
+        });
+
+        modifyAppIdButton.setIcon(ImageUtil.MODIFY);
+        modifyAppIdButton.setText("Modify...");
+        modifyAppIdButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                modifyAppIdButtonActionPerformed(evt);
+            }
+        });
+
+        deleteAppIdButton.setIcon(ImageUtil.REMOVE);
+        deleteAppIdButton.setText("Remove...");
+        deleteAppIdButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                deleteAppIdButtonActionPerformed(evt);
+            }
+        });
+
+        javax.swing.GroupLayout jPanel7Layout = new javax.swing.GroupLayout(jPanel7);
+        jPanel7.setLayout(jPanel7Layout);
+        jPanel7Layout.setHorizontalGroup(
+            jPanel7Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel7Layout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanel7Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel7Layout.createSequentialGroup()
+                        .addComponent(newAppIdButton, javax.swing.GroupLayout.PREFERRED_SIZE, 101, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(34, 34, 34)
+                        .addComponent(modifyAppIdButton, javax.swing.GroupLayout.PREFERRED_SIZE, 98, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 46, Short.MAX_VALUE)
+                        .addComponent(deleteAppIdButton))
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 346, Short.MAX_VALUE))
+                .addContainerGap())
+        );
+        jPanel7Layout.setVerticalGroup(
+            jPanel7Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel7Layout.createSequentialGroup()
+                .addGroup(jPanel7Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(newAppIdButton)
+                    .addComponent(deleteAppIdButton)
+                    .addComponent(modifyAppIdButton))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 131, Short.MAX_VALUE)
+                .addContainerGap())
+        );
+
+        deployButton.setIcon(GAEImageUtil.APPENGINE16);
+        deployButton.setText("Deploy Server");
+        deployButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                deployButtonActionPerformed(evt);
+            }
+        });
+
+        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
+        jPanel1.setLayout(jPanel1Layout);
+        jPanel1Layout.setHorizontalGroup(
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addContainerGap()
+                        .addComponent(jPanel7, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addGap(147, 147, 147)
+                        .addComponent(deployButton)))
+                .addContainerGap())
+        );
+        jPanel1Layout.setVerticalGroup(
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(jPanel7, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(deployButton)
+                .addGap(360, 360, 360))
+        );
+
+        jTabbedPane1.addTab("General", jPanel1);
+
+        jPanel4.setBorder(javax.swing.BorderFactory.createTitledBorder("Google Proxy Setting"));
+
+        jLabel1.setText("Server:");
+
+        jLabel14.setText("Type:");
+
+        proxyTypeComboBox.setMaximumRowCount(GoolgeProxyMode.values().length);
+        proxyTypeComboBox.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Disable", "Override", "NextChain" }));
+
+        javax.swing.GroupLayout jPanel4Layout = new javax.swing.GroupLayout(jPanel4);
+        jPanel4.setLayout(jPanel4Layout);
+        jPanel4Layout.setHorizontalGroup(
+            jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel4Layout.createSequentialGroup()
+                .addGap(34, 34, 34)
+                .addComponent(jLabel14)
+                .addGap(1, 1, 1)
+                .addComponent(proxyTypeComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(18, 18, 18)
+                .addComponent(jLabel1)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(localHttpProxyHostText, javax.swing.GroupLayout.PREFERRED_SIZE, 160, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+        jPanel4Layout.setVerticalGroup(
+            jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel4Layout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel14)
+                    .addComponent(proxyTypeComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel1)
+                    .addComponent(localHttpProxyHostText, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+
+        jLabel1.getAccessibleContext().setAccessibleName("Proxy:");
+
+        jPanel5.setBorder(javax.swing.BorderFactory.createTitledBorder("XMPP Accounts"));
+
+        xmppAccountTable.setModel(xmppTableModel);
+        jScrollPane3.setViewportView(xmppAccountTable);
+
+        newXmppButton.setIcon(ImageUtil.ADD);
+        newXmppButton.setText("New...");
+        newXmppButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                newXmppButtonActionPerformed(evt);
+            }
+        });
+
+        modifyXmppButton.setIcon(ImageUtil.MODIFY);
+        modifyXmppButton.setText("Modify...");
+        modifyXmppButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                modifyXmppButtonActionPerformed(evt);
+            }
+        });
+
+        removeXmppButton.setIcon(ImageUtil.REMOVE);
+        removeXmppButton.setText("Remove...");
+        removeXmppButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                removeXmppButtonActionPerformed(evt);
+            }
+        });
+
+        javax.swing.GroupLayout jPanel5Layout = new javax.swing.GroupLayout(jPanel5);
+        jPanel5.setLayout(jPanel5Layout);
+        jPanel5Layout.setHorizontalGroup(
+            jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel5Layout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanel5Layout.createSequentialGroup()
+                        .addComponent(newXmppButton, javax.swing.GroupLayout.PREFERRED_SIZE, 89, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(39, 39, 39)
+                        .addComponent(modifyXmppButton)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(removeXmppButton))
+                    .addGroup(jPanel5Layout.createSequentialGroup()
+                        .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 367, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(0, 0, Short.MAX_VALUE)))
+                .addContainerGap())
+        );
+        jPanel5Layout.setVerticalGroup(
+            jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel5Layout.createSequentialGroup()
+                .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(newXmppButton)
+                    .addComponent(modifyXmppButton)
+                    .addComponent(removeXmppButton))
+                .addGap(18, 18, 18)
+                .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 107, Short.MAX_VALUE)
+                .addContainerGap())
+        );
+
+        connectionModeCombox.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "HTTP", "XMPP", "HTTPS" }));
+        connectionModeCombox.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                connectionModeComboxActionPerformed(evt);
+            }
+        });
+
+        jLabel8.setText("Connection Mode: ");
+
+        javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
+        jPanel2.setLayout(jPanel2Layout);
+        jPanel2Layout.setHorizontalGroup(
+            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel2Layout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addGroup(jPanel2Layout.createSequentialGroup()
+                        .addGap(14, 14, 14)
+                        .addComponent(jLabel8)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(connectionModeCombox, javax.swing.GroupLayout.PREFERRED_SIZE, 91, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jPanel4, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jPanel5, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+        jPanel2Layout.setVerticalGroup(
+            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel2Layout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel8)
+                    .addComponent(connectionModeCombox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(18, 18, 18)
+                .addComponent(jPanel5, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addContainerGap())
+        );
+
+        jPanel4.getAccessibleContext().setAccessibleName("Goole Proxy Setting");
+
+        jTabbedPane1.addTab("Connection", jPanel2);
+
+        compressorType.setMaximumRowCount(CompressorType.values().length);
+        ArrayList<String> modelStrList = new ArrayList<String>();
+        for(CompressorType ctype:CompressorType.values() )
+        {
+            modelStrList.add(ctype.toString());
+        }
+        compressorType.setModel(new javax.swing.DefaultComboBoxModel(modelStrList.toArray()));
+
+        jLabel9.setText("Session Timeout:");
+
+        jLabel10.setText("Connection Pool Size(per appid):");
+
+        connectionPoolText.setText("7");
+
+        jLabel11.setText("Concurrent Range Fetch Worker:");
+
+        fetcherNumText.setText("3");
+
+        jLabel12.setText("Compress Type:");
+
+        rpcTimeoutText.setText("120");
+
+        jLabel13.setText("Range Fetch Limit Size:");
+
+        fetchLimitTextField1.setText("250000");
+
+        jLabel7.setText("Encrypte Type:");
+
+        encrypterCombox.setMaximumRowCount(EncryptType.values().length);
+        ArrayList<String> encmodelStrList = new ArrayList<String>();
+        for(EncryptType ctype:EncryptType.values() )
+        {
+            encmodelStrList.add(ctype.toString());
+        }
+        encrypterCombox.setModel(new javax.swing.DefaultComboBoxModel(encmodelStrList.toArray()));
+
+        isHttpSimpleUrlEnable.setText("EnableSimpleURL");
+
+        rangeFetchRetryTextField.setText("1");
+
+        jLabel15.setText("Range Fetch Retry:");
+
+        javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);
+        jPanel3.setLayout(jPanel3Layout);
+        jPanel3Layout.setHorizontalGroup(
+            jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel3Layout.createSequentialGroup()
+                .addGap(53, 53, 53)
+                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(isHttpSimpleUrlEnable, javax.swing.GroupLayout.DEFAULT_SIZE, 309, Short.MAX_VALUE)
+                    .addGroup(jPanel3Layout.createSequentialGroup()
+                        .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jLabel9)
+                            .addComponent(jLabel10)
+                            .addComponent(jLabel7)
+                            .addComponent(jLabel11)
+                            .addComponent(jLabel13)
+                            .addComponent(jLabel12)
+                            .addComponent(jLabel15))
+                        .addGap(31, 31, 31)
+                        .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(rangeFetchRetryTextField)
+                            .addComponent(compressorType, 0, 79, Short.MAX_VALUE)
+                            .addComponent(fetcherNumText, javax.swing.GroupLayout.DEFAULT_SIZE, 79, Short.MAX_VALUE)
+                            .addComponent(rpcTimeoutText, javax.swing.GroupLayout.DEFAULT_SIZE, 79, Short.MAX_VALUE)
+                            .addComponent(connectionPoolText, javax.swing.GroupLayout.DEFAULT_SIZE, 79, Short.MAX_VALUE)
+                            .addComponent(encrypterCombox, 0, 79, Short.MAX_VALUE)
+                            .addComponent(fetchLimitTextField1, javax.swing.GroupLayout.DEFAULT_SIZE, 79, Short.MAX_VALUE))))
+                .addGap(63, 63, 63))
+        );
+        jPanel3Layout.setVerticalGroup(
+            jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel3Layout.createSequentialGroup()
+                .addGap(27, 27, 27)
+                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(rpcTimeoutText, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel9))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(connectionPoolText, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel10))
+                .addGap(8, 8, 8)
+                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(fetcherNumText, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel11, javax.swing.GroupLayout.PREFERRED_SIZE, 15, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(fetchLimitTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel13))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(rangeFetchRetryTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel15))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(compressorType, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel12))
+                .addGap(9, 9, 9)
+                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(encrypterCombox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel7))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(isHttpSimpleUrlEnable)
+                .addContainerGap(56, Short.MAX_VALUE))
+        );
+
+        jTabbedPane1.addTab("Advance", jPanel3);
+
+        jLabel5.setText("AppID:");
+
+        shareAppIdButton.setIcon(GAEImageUtil.SHARE);
+        shareAppIdButton.setText("Share");
+        shareAppIdButton.setBorder(javax.swing.BorderFactory.createEmptyBorder(1, 1, 1, 1));
+        shareAppIdButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                shareAppIdButtonActionPerformed(evt);
+            }
+        });
+
+        unshareButton.setIcon(ImageUtil.REMOVE);
+        unshareButton.setText("Unshare");
+        unshareButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                unshareButtonActionPerformed(evt);
+            }
+        });
+
+        jTextArea2.setBackground(new java.awt.Color(204, 204, 204));
+        jTextArea2.setColumns(20);
+        jTextArea2.setEditable(false);
+        jTextArea2.setRows(5);
+        jTextArea2.setText("Some thing you must know before sharing your appid:\n1. An email account needed as a verify id for sharing & unsharing appid. \n2. The shared appid can be used by anybody as 'anonymouse' user.\n3. You can use admin tool to control traffic and blacklist for \n   'anonymouse'.");
+        jTextArea2.setBorder(javax.swing.BorderFactory.createTitledBorder("Note:"));
+        jScrollPane2.setViewportView(jTextArea2);
+
+        jLabel6.setText("Email:");
+
+        javax.swing.GroupLayout jPanel6Layout = new javax.swing.GroupLayout(jPanel6);
+        jPanel6.setLayout(jPanel6Layout);
+        jPanel6Layout.setHorizontalGroup(
+            jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel6Layout.createSequentialGroup()
+                .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanel6Layout.createSequentialGroup()
+                        .addContainerGap()
+                        .addComponent(jLabel5)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(shareAppIdTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 126, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(jLabel6)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(shareEmailAccount, javax.swing.GroupLayout.PREFERRED_SIZE, 156, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(jPanel6Layout.createSequentialGroup()
+                        .addGap(73, 73, 73)
+                        .addComponent(shareAppIdButton, javax.swing.GroupLayout.PREFERRED_SIZE, 83, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(59, 59, 59)
+                        .addComponent(unshareButton))
+                    .addGroup(jPanel6Layout.createSequentialGroup()
+                        .addContainerGap()
+                        .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 398, Short.MAX_VALUE)))
+                .addContainerGap())
+        );
+        jPanel6Layout.setVerticalGroup(
+            jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel6Layout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(shareAppIdTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel5)
+                    .addComponent(shareEmailAccount, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel6))
+                .addGap(18, 18, 18)
+                .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(unshareButton, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(shareAppIdButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 222, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
+        );
+
+        jTabbedPane1.addTab("Share!", jPanel6);
+
+        applyButton.setIcon(ImageUtil.OK);
+        applyButton.setText("Apply");
+        applyButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                applyButtonActionPerformed(evt);
+            }
+        });
+
+        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
+        this.setLayout(layout);
+        layout.setHorizontalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(layout.createSequentialGroup()
+                .addGap(171, 171, 171)
+                .addComponent(applyButton, javax.swing.GroupLayout.PREFERRED_SIZE, 88, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(182, Short.MAX_VALUE))
+            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(layout.createSequentialGroup()
+                    .addGap(8, 8, 8)
+                    .addComponent(jTabbedPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 423, Short.MAX_VALUE)
+                    .addContainerGap()))
+        );
+        layout.setVerticalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                .addContainerGap(391, Short.MAX_VALUE)
+                .addComponent(applyButton)
+                .addGap(18, 18, 18))
+            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(layout.createSequentialGroup()
+                    .addContainerGap()
+                    .addComponent(jTabbedPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addContainerGap(77, Short.MAX_VALUE)))
+        );
+    }// </editor-fold>//GEN-END:initComponents
 	
 	private void loadDefaultValueFromConfig()
 	{
@@ -1101,44 +589,35 @@ public class GAEConfigPanel extends javax.swing.JPanel
 			xmppTableModel.addRow(new Object[] { account.jid });
 			xmppAccounts.put(account.jid, account);
 		}
-		connectionModeCombox.setSelectedItem(config.getConnectionModeType()
+		connectionModeCombox.setSelectedItem(config.getConnectionMode()
 		        .toString());
-		if (!config.getConnectionModeType().equals(ConnectionMode.XMPP))
+		if (!config.getConnectionMode().equals(ConnectionMode.XMPP))
 		{
 			disableXmpp();
 		}
 		
-		if (null != config.getLocalProxy())
+		if (null != config.getGoogleProxy())
 		{
-			ProxyInfo info = config.getLocalProxy();
-			isHttpProxyEnable.setSelected(true);
-			localHttpProxyHostText.setText(info.host);
-			localHttpProxyPortText.setText(info.port + "");
-			localHttpProxyUserText.setText(info.user);
-			localHttpProxyPassText.setText(info.passwd);
-			if (ProxyType.HTTPS.equals(info.type))
-			{
-				proxyTypeComboBox.setSelectedItem("HTTPS");
-			}
-			else
-			{
-				proxyTypeComboBox.setSelectedItem("HTTP");
-			}
+			ProxyInfo info = config.getGoogleProxy();
+			//isHttpProxyEnable.setSelected(true);
+			localHttpProxyHostText.setText(info.toString());
+			proxyTypeComboBox.setSelectedIndex(config.getGoolgeProxyMode().getValue());
 			
 		}
 		else
 		{
-			isHttpProxyEnable.setSelected(false);
+			proxyTypeComboBox.setSelectedIndex(GoolgeProxyMode.DISABLE.getValue());
 			disableHttpProxy();
 		}
 		
 		rpcTimeoutText.setText(config.getSessionTimeOut() + "");
 		connectionPoolText.setText(config.getConnectionPoolSize() + "");
 		fetcherNumText.setText(config.getConcurrentRangeFetchWorker() + "");
-		compressorType.setSelectedItem(config.getCompressorType().toString());
-		encrypterCombox.setSelectedItem(config.getEncrypterType().toString());
+		compressorType.setSelectedItem(config.getCompressor().toString());
+		encrypterCombox.setSelectedItem(config.getEncrypter().toString());
 		fetchLimitTextField1.setText(config.getFetchLimitSize() + "");
 		isHttpSimpleUrlEnable.setSelected(config.isSimpleURLEnable());
+		rangeFetchRetryTextField.setText(config.getRangeFetchRetryLimit() + "");
 		setVisible(true);
 	}
 	
@@ -1150,27 +629,22 @@ public class GAEConfigPanel extends javax.swing.JPanel
 		List<XmppAccount> xmppAccountList = new ArrayList<XmppAccount>(
 		        xmppAccounts.values());
 		config.setXmppAccounts(xmppAccountList);
-		config.setConnectionMode(connectionModeCombox.getSelectedItem()
-		        .toString());
+		config.setConnectionMode(ConnectionMode.valueOf(connectionModeCombox.getSelectedItem()
+		        .toString()));
 		
-		if (isHttpProxyEnable.isSelected())
+		int idx = proxyTypeComboBox.getSelectedIndex();
+		GoolgeProxyMode proxymode = GoolgeProxyMode.fromInt(idx);
+		if (!proxymode.equals(GoolgeProxyMode.DISABLE))
 		{
 			ProxyInfo localProxy = new ProxyInfo();
-			localProxy.host = localHttpProxyHostText.getText().trim();
-			localProxy.port = Integer.parseInt(localHttpProxyPortText.getText()
-			        .trim());
-			localProxy.user = localHttpProxyUserText.getText().trim();
-			localProxy.passwd = new String(localHttpProxyPassText.getPassword())
-			        .trim();
-			localProxy.type = proxyTypeComboBox.getSelectedItem().equals(
-			        "HTTPS") ? ProxyType.HTTPS : ProxyType.HTTP;
-			
-			config.setLocalProxy(localProxy);
+			localProxy.parse(localHttpProxyHostText.getText().trim());			
+			config.setGoogleProxy(localProxy);
 		}
 		else
 		{
-			config.setLocalProxy(null);
+			config.setGoogleProxy(null);
 		}
+		config.setGoolgeProxyMode(proxymode);
 		config.setSessionTimeOut(Integer.parseInt(rpcTimeoutText.getText()
 		        .trim()));
 		config.setSimpleURLEnable(isHttpSimpleUrlEnable.isSelected());
@@ -1178,10 +652,11 @@ public class GAEConfigPanel extends javax.swing.JPanel
 		        .getText().trim()));
 		config.setConnectionPoolSize(Integer.parseInt(connectionPoolText
 		        .getText().trim()));
-		config.setCompressorType(CompressorType.valueOf(compressorType
+		config.setCompressor(CompressorType.valueOf(compressorType
 		        .getSelectedItem().toString()));
 		config.setConcurrentRangeFetchWorker(Integer.parseInt(fetcherNumText
 		        .getText().trim()));
+                config.setRangeFetchRetryLimit(Integer.parseInt(rangeFetchRetryTextField.getText().trim()));
 		return config;
 		
 	}
@@ -1295,33 +770,21 @@ public class GAEConfigPanel extends javax.swing.JPanel
 		removeXmppButton.setEnabled(false);
 	}
 	
-	private void isHttpProxyEnableActionPerformed(java.awt.event.ActionEvent evt)
-	{// GEN-FIRST:event_isHttpProxyEnableActionPerformed
-		if (isHttpProxyEnable.isSelected())
-		{
-			enableHttpProxy();
-		}
-		else
-		{
-			disableHttpProxy();
-		}
-	}// GEN-LAST:event_isHttpProxyEnableActionPerformed
-	
 	protected void disableHttpProxy()
 	{
 		localHttpProxyHostText.setEditable(false);
-		localHttpProxyPortText.setEditable(false);
-		localHttpProxyUserText.setEditable(false);
-		localHttpProxyPassText.setEditable(false);
+		//localHttpProxyPortText.setEditable(false);
+		//localHttpProxyUserText.setEditable(false);
+		//localHttpProxyPassText.setEditable(false);
 	}
 	
 	protected void enableHttpProxy()
 	{
 		//
 		localHttpProxyHostText.setEditable(true);
-		localHttpProxyPortText.setEditable(true);
-		localHttpProxyUserText.setEditable(true);
-		localHttpProxyPassText.setEditable(true);
+		//localHttpProxyPortText.setEditable(true);
+		//localHttpProxyUserText.setEditable(true);
+		//localHttpProxyPassText.setEditable(true);
 	}
 	
 	private void newXmppButtonActionPerformed(java.awt.event.ActionEvent evt)
@@ -1492,6 +955,11 @@ public class GAEConfigPanel extends javax.swing.JPanel
 		}
 	}// GEN-LAST:event_unshareButtonActionPerformed
 	
+    private void deployButtonActionPerformed(java.awt.event.ActionEvent evt)
+    {
+    	
+    }
+	
 	private void connectionModeComboxActionPerformed(
 	        java.awt.event.ActionEvent evt)
 	{// GEN-FIRST:event_connectionModeComboxActionPerformed
@@ -1504,63 +972,57 @@ public class GAEConfigPanel extends javax.swing.JPanel
 			disableXmpp();
 		}
 	}// GEN-LAST:event_connectionModeComboxActionPerformed
-	 // Variables declaration - do not modify//GEN-BEGIN:variables
-	
-	private javax.swing.JTable	       appidTable;
-	private javax.swing.JButton	       applyButton;
-	private javax.swing.JComboBox	   compressorType;
-	private javax.swing.JComboBox	   connectionModeCombox;
-	private javax.swing.JTextField	   connectionPoolText;
-	private javax.swing.JButton	       deleteAppIdButton;
-	private javax.swing.JButton	       deployButton;
-	private javax.swing.JComboBox	   encrypterCombox;
-	private javax.swing.JTextField	   fetchLimitTextField1;
-	private javax.swing.JTextField	   fetcherNumText;
-	private javax.swing.JCheckBox	   isHttpProxyEnable;
-	private javax.swing.JCheckBox	   isHttpSimpleUrlEnable;
-	private javax.swing.JLabel	       jLabel1;
-	private javax.swing.JLabel	       jLabel10;
-	private javax.swing.JLabel	       jLabel11;
-	private javax.swing.JLabel	       jLabel12;
-	private javax.swing.JLabel	       jLabel13;
-	private javax.swing.JLabel	       jLabel14;
-	private javax.swing.JLabel	       jLabel2;
-	private javax.swing.JLabel	       jLabel3;
-	private javax.swing.JLabel	       jLabel4;
-	private javax.swing.JLabel	       jLabel5;
-	private javax.swing.JLabel	       jLabel6;
-	private javax.swing.JLabel	       jLabel7;
-	private javax.swing.JLabel	       jLabel8;
-	private javax.swing.JLabel	       jLabel9;
-	private javax.swing.JPanel	       jPanel1;
-	private javax.swing.JPanel	       jPanel2;
-	private javax.swing.JPanel	       jPanel3;
-	private javax.swing.JPanel	       jPanel4;
-	private javax.swing.JPanel	       jPanel5;
-	private javax.swing.JPanel	       jPanel6;
-	private javax.swing.JPanel	       jPanel7;
-	private javax.swing.JScrollPane	   jScrollPane1;
-	private javax.swing.JScrollPane	   jScrollPane2;
-	private javax.swing.JScrollPane	   jScrollPane3;
-	private javax.swing.JTabbedPane	   jTabbedPane1;
-	private javax.swing.JTextArea	   jTextArea2;
-	private javax.swing.JTextField	   localHttpProxyHostText;
-	private javax.swing.JPasswordField	localHttpProxyPassText;
-	private javax.swing.JTextField	   localHttpProxyPortText;
-	private javax.swing.JTextField	   localHttpProxyUserText;
-	private javax.swing.JButton	       modifyAppIdButton;
-	private javax.swing.JButton	       modifyXmppButton;
-	private javax.swing.JButton	       newAppIdButton;
-	private javax.swing.JButton	       newXmppButton;
-	private javax.swing.JComboBox	   proxyTypeComboBox;
-	private javax.swing.JButton	       removeXmppButton;
-	private javax.swing.JTextField	   rpcTimeoutText;
-	private javax.swing.JButton	       shareAppIdButton;
-	private javax.swing.JTextField	   shareAppIdTextField;
-	private javax.swing.JTextField	   shareEmailAccount;
-	private javax.swing.JButton	       unshareButton;
-	private javax.swing.JTable	       xmppAccountTable;
-	// End of variables declaration//GEN-END:variables
+    // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JTable appidTable;
+    private javax.swing.JButton applyButton;
+    private javax.swing.JComboBox compressorType;
+    private javax.swing.JComboBox connectionModeCombox;
+    private javax.swing.JTextField connectionPoolText;
+    private javax.swing.JButton deleteAppIdButton;
+    private javax.swing.JButton deployButton;
+    private javax.swing.JComboBox encrypterCombox;
+    private javax.swing.JTextField fetchLimitTextField1;
+    private javax.swing.JTextField fetcherNumText;
+    private javax.swing.JCheckBox isHttpSimpleUrlEnable;
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel10;
+    private javax.swing.JLabel jLabel11;
+    private javax.swing.JLabel jLabel12;
+    private javax.swing.JLabel jLabel13;
+    private javax.swing.JLabel jLabel14;
+    private javax.swing.JLabel jLabel15;
+    private javax.swing.JLabel jLabel5;
+    private javax.swing.JLabel jLabel6;
+    private javax.swing.JLabel jLabel7;
+    private javax.swing.JLabel jLabel8;
+    private javax.swing.JLabel jLabel9;
+    private javax.swing.JPanel jPanel1;
+    private javax.swing.JPanel jPanel2;
+    private javax.swing.JPanel jPanel3;
+    private javax.swing.JPanel jPanel4;
+    private javax.swing.JPanel jPanel5;
+    private javax.swing.JPanel jPanel6;
+    private javax.swing.JPanel jPanel7;
+    private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JScrollPane jScrollPane2;
+    private javax.swing.JScrollPane jScrollPane3;
+    private javax.swing.JTabbedPane jTabbedPane1;
+    private javax.swing.JTextArea jTextArea2;
+    private javax.swing.JTextField localHttpProxyHostText;
+    private javax.swing.JButton modifyAppIdButton;
+    private javax.swing.JButton modifyXmppButton;
+    private javax.swing.JButton newAppIdButton;
+    private javax.swing.JButton newXmppButton;
+    private javax.swing.JComboBox proxyTypeComboBox;
+    private javax.swing.JTextField rangeFetchRetryTextField;
+    private javax.swing.JButton removeXmppButton;
+    private javax.swing.JTextField rpcTimeoutText;
+    private javax.swing.JButton shareAppIdButton;
+    private javax.swing.JTextField shareAppIdTextField;
+    private javax.swing.JTextField shareEmailAccount;
+    private javax.swing.JButton unshareButton;
+    private javax.swing.JTable xmppAccountTable;
+    // End of variables declaration//GEN-END:variables
 	private DefaultTableModel	       appIdTableModel	= new MyTableModel();
 	private DefaultTableModel	       xmppTableModel	= new MyTableModel();
 	private Map<String, GAEServerAuth>	appids	       = new HashMap<String, GAEServerAuth>();

@@ -253,10 +253,10 @@ public abstract class ProxyConnection
 		tags.token = authToken;
 		
 		event.setHash(attach.second);
-		CompressorType compressType = cfg.getCompressorType();
+		CompressorType compressType = cfg.getCompressor();
 		CompressEvent comress = new CompressEvent(compressType, event);
 		comress.setHash(attach.second);
-		EncryptEvent enc = new EncryptEvent(cfg.getEncrypterType(), comress);
+		EncryptEvent enc = new EncryptEvent(cfg.getEncrypter(), comress);
 		enc.setHash(attach.second);
 		relevantSessions.add(attach.second);
 		Buffer msgbuffer = GAEEventHelper.encodeEvent(tags, enc);

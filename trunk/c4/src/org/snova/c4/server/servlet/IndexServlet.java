@@ -10,6 +10,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.snova.c4.common.C4PluginVersion;
+
 /**
  * @author wqy
  *
@@ -20,6 +22,6 @@ public class IndexServlet extends HttpServlet
 	protected void doGet(HttpServletRequest req, final HttpServletResponse resp)
 	        throws ServletException, IOException
 	{
-		resp.getOutputStream().print("Welcom to snova-c4 server!");
+		resp.getOutputStream().print("Welcom to snova-c4 server v" + C4PluginVersion.value + "!");
 	}
 }

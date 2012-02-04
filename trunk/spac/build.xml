@@ -11,7 +11,7 @@
 		<property name="lib" value="${root}/lib" />
 		<property name="etc" value="${root}/conf" />
 		<property name="release" value="release" />
-		<property name="version" value="0.12.0120" />
+		<property name="version" value="0.12.0204" />
 	    <property name="release_dir_name" value="spac" />
 		<property name="project_name" value="snova-spac" />
 

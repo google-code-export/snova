@@ -48,11 +48,11 @@ import org.slf4j.LoggerFactory;
 import org.snova.framework.config.SimpleSocketAddress;
 import org.snova.framework.util.HostsHelper;
 import org.snova.framework.util.SharedObjectHelper;
+import org.snova.framework.util.proxy.ProxyInfo;
+import org.snova.framework.util.proxy.ProxyType;
 import org.snova.gae.client.config.GAEClientConfiguration;
 import org.snova.gae.client.config.GAEClientConfiguration.ConnectionMode;
 import org.snova.gae.client.config.GAEClientConfiguration.GAEServerAuth;
-import org.snova.gae.client.config.GAEClientConfiguration.ProxyInfo;
-import org.snova.gae.client.config.GAEClientConfiguration.ProxyType;
 import org.snova.gae.common.GAEConstants;
 import org.snova.gae.common.http.HttpServerAddress;
 
@@ -86,7 +86,7 @@ public class HTTPProxyConnection extends ProxyConnection
 		        + "." + auth.appid) : auth.appid;
 		remoteAddress = new HttpServerAddress(appid + ".appspot.com",
 		        GAEConstants.HTTP_INVOKE_PATH, GAEClientConfiguration
-		                .getInstance().getConnectionModeType()
+		                .getInstance().getConnectionMode()
 		                .equals(ConnectionMode.HTTPS));
 		
 	}
@@ -131,10 +131,9 @@ public class HTTPProxyConnection extends ProxyConnection
 			if (null != cfg.getGoogleProxyChain())
 			{
 				sslConnectionEnable = true;
-				SimpleSocketAddress chainAddress = cfg.getGoogleProxyChain();
-				String httpsHost = chainAddress.host;
+				String httpsHost =  cfg.getGoogleProxyChain().host;
 				httpsHost = HostsHelper.getMappingHost(httpsHost);
-				int httpsport = chainAddress.port;
+				int httpsport =  cfg.getGoogleProxyChain().port;
 				if (logger.isDebugEnabled())
 				{
 					logger.debug("Connect google chain proxy " + httpsHost
@@ -299,7 +298,7 @@ public class HTTPProxyConnection extends ProxyConnection
 	protected boolean doSend(Buffer content)
 	{
 		waitingResponse.set(true);
-		if (cfg.getConnectionModeType().equals(ConnectionMode.HTTPS))
+		if (cfg.getConnectionMode().equals(ConnectionMode.HTTPS))
 		{
 			remoteAddress.trnasform2Https();
 		}

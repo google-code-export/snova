@@ -14,6 +14,7 @@ import org.arch.event.http.HTTPChunkEvent;
 import org.arch.event.http.HTTPConnectionEvent;
 import org.arch.event.http.HTTPRequestEvent;
 import org.jboss.netty.channel.Channel;
+import org.jboss.netty.util.internal.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.c4.client.config.C4ClientConfiguration;
@@ -34,18 +35,31 @@ public class ProxySessionManager implements Runnable
 	                                                         .getLogger(ProxySessionManager.class);
 	private static ProxySessionManager	instance	 = new ProxySessionManager();
 	
-	private Map<Integer, ProxySession>	sessionTable	= new HashMap<Integer, ProxySession>();
+	private Map<Integer, ProxySession>	sessionTable	= new ConcurrentHashMap<Integer, ProxySession>();
 	
 	private ProxySessionManager()
 	{
-		if (C4ClientConfiguration.getInstance().getConnectionModeType()
+		boolean enableHeartBeat = true;
+		if (C4ClientConfiguration.getInstance().getConnectionMode()
 		        .equals(ConnectionMode.HTTP))
+		{
+			if (C4ClientConfiguration.getInstance().isDualConnectionEnable()
+			        && !C4ClientConfiguration.getInstance()
+			                .isServerPullEnable())
+			{
+				enableHeartBeat = false;
+			}
+		}
+		else
+		{
+			enableHeartBeat = false;
+		}
+		if (enableHeartBeat)
 		{
 			SharedObjectHelper.getGlobalTimer().schedule(this,
 			        C4ClientConfiguration.getInstance().getHeartBeatPeriod(),
 			        TimeUnit.MILLISECONDS);
 		}
-		
 		// new Thread(this).start();
 	}
 	
@@ -54,24 +68,30 @@ public class ProxySessionManager implements Runnable
 		return instance;
 	}
 	
-	public synchronized void removeSession(ProxySession session)
+	public void removeSession(ProxySession session)
 	{
-		if (null != sessionTable.remove(session.getSessionID()))
+		synchronized (sessionTable)
 		{
-			if (logger.isDebugEnabled())
+			if (null != sessionTable.remove(session.getSessionID()))
 			{
-				logger.debug("Destroy Session:" + session.getSessionID());
+				if (logger.isDebugEnabled())
+				{
+					logger.debug("Destroy Session:" + session.getSessionID());
+				}
 			}
 		}
 		
 	}
 	
-	public synchronized ProxySession getProxySession(Integer sessionID)
+	public ProxySession getProxySession(Integer sessionID)
 	{
-		return sessionTable.get(sessionID);
+		synchronized (sessionTable)
+		{
+			return sessionTable.get(sessionID);
+		}
 	}
 	
-	private synchronized ProxySession createSession(Integer id, Channel ch)
+	private  ProxySession createSession(Integer id, Channel ch)
 	{
 		ProxySession session = getProxySession(id);
 		if (null == session)
@@ -107,7 +127,7 @@ public class ProxySessionManager implements Runnable
 		}
 		else
 		{
-			//logger.error("Can not find session with session ID:" + handleID);
+			// logger.error("Can not find session with session ID:" + handleID);
 		}
 		return session;
 	}
@@ -146,7 +166,7 @@ public class ProxySessionManager implements Runnable
 	
 	private void sendHeartBeat(List<ProxySession> sessions)
 	{
-		if (C4ClientConfiguration.getInstance().getConnectionModeType()
+		if (C4ClientConfiguration.getInstance().getConnectionMode()
 		        .equals(ConnectionMode.HTTP))
 		{
 			List<C4ServerAuth> auths = C4ClientConfiguration.getInstance()
@@ -158,15 +178,49 @@ public class ProxySessionManager implements Runnable
 				EventRestRequest ev = new EventRestRequest();
 				for (ProxySession s : sessions)
 				{
-					if(s.getProxyConnection() == conn)
+					if (s.getProxyConnection() == conn)
 					{
 						ev.restSessions.add(s.getSessionID());
 					}
 				}
 				conn.send(new EventRestRequest());
 			}
-			
 		}
+	}
+	
+	public EventRestRequest getEventRestRequest(ProxyConnection conn)
+	{
+		EventRestRequest ev = new EventRestRequest();
+		for (ProxySession s : unCompleteSessions())
+		{
+			if (s.getProxyConnection() == conn)
+			{
+				ev.restSessions.add(s.getSessionID());
+			}
+		}
+		return ev;
+	}
+	
+	private List<ProxySession> unCompleteSessions()
+	{
+		List<ProxySession> notCompleteSession = new LinkedList<ProxySession>();
+		List<ProxySession> clonesList = null;
+		synchronized (sessionTable)
+        {
+			clonesList = new LinkedList<ProxySession>(
+			        sessionTable.values());
+        }
+		
+		for (ProxySession session : clonesList)
+		{
+			ProxySessionStatus status = session.routine();
+			if (status.equals(ProxySessionStatus.WAITING_CONNECT_RESPONSE)
+			        || status.equals(ProxySessionStatus.WAITING_RESPONSE))
+			{
+				notCompleteSession.add(session);
+			}
+		}
+		return notCompleteSession;
 	}
 	
 	@Override
@@ -178,22 +232,7 @@ public class ProxySessionManager implements Runnable
 		}
 		try
 		{
-			List<ProxySession> notCompleteSession = new LinkedList<ProxySession>();
-			synchronized (this)
-			{
-				List<ProxySession> clonesList = new LinkedList<ProxySession>(sessionTable.values());
-				for (ProxySession session : clonesList)
-				{
-					ProxySessionStatus status = session.routine();
-					if (status
-					        .equals(ProxySessionStatus.WAITING_CONNECT_RESPONSE)
-					        || status
-					                .equals(ProxySessionStatus.WAITING_RESPONSE))
-					{
-						notCompleteSession.add(session);
-					}
-				}
-			}
+			List<ProxySession> notCompleteSession = unCompleteSessions();
 			if (!sessionTable.isEmpty())
 			{
 				sendHeartBeat(notCompleteSession);

@@ -14,10 +14,11 @@ import org.arch.util.ListSelector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.framework.util.SharedObjectHelper;
+import org.snova.framework.util.proxy.ProxyInfo;
+import org.snova.framework.util.proxy.ProxyType;
 import org.snova.gae.client.config.GAEClientConfiguration;
 import org.snova.gae.client.config.GAEClientConfiguration.GAEServerAuth;
-import org.snova.gae.client.config.GAEClientConfiguration.ProxyInfo;
-import org.snova.gae.client.config.GAEClientConfiguration.ProxyType;
+import org.snova.gae.client.config.GAEClientConfiguration.GoolgeProxyMode;
 import org.snova.gae.client.config.GAEClientConfiguration.XmppAccount;
 import org.snova.gae.common.GAEConstants;
 import org.snova.gae.common.event.AuthRequestEvent;
@@ -64,8 +65,8 @@ public class ProxyConnectionManager
 		if (logger.isInfoEnabled())
 		{
 			int size = auths.size();
-			//logger.info("Success to connect " + size + " GAE server"
-			//        + (size > 1 ? "s" : ""));
+			// logger.info("Success to connect " + size + " GAE server"
+			// + (size > 1 ? "s" : ""));
 			SharedObjectHelper.getTrace().info(
 			        "Success to connect " + size + " GAE server"
 			                + (size > 1 ? "s" : ""));
@@ -128,7 +129,7 @@ public class ProxyConnectionManager
 			return connlist.get(0);
 		}
 		
-		switch (GAEClientConfiguration.getInstance().getConnectionModeType())
+		switch (GAEClientConfiguration.getInstance().getConnectionMode())
 		{
 			case HTTP:
 			case HTTPS:
@@ -148,8 +149,11 @@ public class ProxyConnectionManager
 							info = new ProxyInfo();
 							info.host = GAEConstants.RESERVED_GOOGLECN_IP_MAPPING;
 							info.port = 80;
-							GAEClientConfiguration.getInstance().setLocalProxy(
-							        info);
+							GAEClientConfiguration.getInstance()
+							        .setGoogleProxy(info);
+							GAEClientConfiguration.getInstance()
+							        .setGoolgeProxyMode(
+							                GoolgeProxyMode.OVERRIDE);
 						}
 						else if (info.host == GAEConstants.RESERVED_GOOGLECN_IP_MAPPING)
 						{
@@ -159,8 +163,11 @@ public class ProxyConnectionManager
 							info.host = GAEConstants.RESERVED_GOOGLEHTTPS_HOST_MAPPING;
 							info.port = 443;
 							info.type = ProxyType.HTTPS;
-							GAEClientConfiguration.getInstance().setLocalProxy(
-							        info);
+							GAEClientConfiguration.getInstance()
+							        .setGoolgeProxyMode(
+							                GoolgeProxyMode.OVERRIDE);
+							GAEClientConfiguration.getInstance()
+							        .setGoogleProxy(info);
 						}
 						else
 						{

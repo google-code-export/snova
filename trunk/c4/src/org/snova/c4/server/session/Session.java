@@ -1,7 +1,9 @@
 package org.snova.c4.server.session;
 
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import org.arch.buffer.Buffer;
 import org.arch.common.KeyValuePair;
@@ -14,9 +16,11 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.handler.codec.http.HttpResponse;
+import org.jboss.netty.handler.execution.OrderedMemoryAwareThreadPoolExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.framework.config.SimpleSocketAddress;
+import org.snova.framework.util.SharedObjectHelper;
 
 public abstract class Session
 {
@@ -28,10 +32,12 @@ public abstract class Session
 	{
 		if (null == factory)
 		{
-			factory = new NioClientSocketChannelFactory(
-			        Executors.newCachedThreadPool(),
-			        Executors.newCachedThreadPool());
-			
+			ExecutorService workerExecutor = Executors.newFixedThreadPool(25);
+			//ThreadPoolExecutor workerExecutor = new OrderedMemoryAwareThreadPoolExecutor(
+			//        25, 0, 0);
+			SharedObjectHelper.setGlobalThreadPool(workerExecutor);
+			factory = new NioClientSocketChannelFactory(workerExecutor,
+			        workerExecutor);
 		}
 		return factory;
 	}
@@ -79,12 +85,12 @@ public abstract class Session
 		}
 		if (!transparent)
 		{
-//			if (ev.url.startsWith("http://" + addr.host.trim()))
-//			{
-//				int start = "http://".length();
-//				int end = ev.url.indexOf("/", start);
-//				ev.url = ev.url.substring(end);
-//			}
+			// if (ev.url.startsWith("http://" + addr.host.trim()))
+			// {
+			// int start = "http://".length();
+			// int end = ev.url.indexOf("/", start);
+			// ev.url = ev.url.substring(end);
+			// }
 		}
 		
 		// if(ev.getContentLength() == 0)
@@ -158,10 +164,15 @@ public abstract class Session
 		}
 	}
 	
-	protected String	name;
-	protected int	 ID;
+	protected String	     name;
+	protected int	         ID;
 	
-	// protected Channel localChannel;
+	protected SessionManager	sessionManager;
+	
+	Session(SessionManager sm)
+	{
+		this.sessionManager = sm;
+	}
 	
 	public int getID()
 	{

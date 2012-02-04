@@ -130,6 +130,10 @@ public class HttpLocalProxyRequestHandler extends SimpleChannelUpstreamHandler
 
 	private void handleHttpRequest(HttpRequest request, MessageEvent e)
 	{
+		if(logger.isDebugEnabled())
+		{
+			logger.debug("Local server received a request:" + request);
+		}
 		HTTPRequestEvent event = buildEvent(request);
 		if (!dispatchEvent(event))
 		{

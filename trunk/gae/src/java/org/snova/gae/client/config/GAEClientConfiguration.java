@@ -10,113 +10,216 @@
 package org.snova.gae.client.config;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.Properties;
 
 import javax.net.ssl.SSLSocketFactory;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementWrapper;
-import javax.xml.bind.annotation.XmlElements;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
 
+import org.arch.config.IniProperties;
 import org.arch.event.misc.CompressorType;
 import org.arch.event.misc.EncryptType;
+import org.arch.util.StringHelper;
 import org.jivesoftware.smack.ConnectionConfiguration;
 import org.jivesoftware.smack.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.snova.framework.config.SimpleSocketAddress;
-import org.snova.framework.util.SharedObjectHelper;
+import org.snova.framework.config.DesktopFrameworkConfiguration;
+import org.snova.framework.config.ReloadableConfiguration;
+import org.snova.framework.config.ReloadableConfigurationMonitor;
+import org.snova.framework.util.proxy.ProxyInfo;
+import org.snova.framework.util.proxy.ProxyType;
 import org.snova.gae.common.GAEConstants;
+import org.snova.gae.common.GAEPluginVersion;
 
 /**
  *
  */
-@XmlRootElement(name = "Configure")
-public class GAEClientConfiguration
+public class GAEClientConfiguration implements ReloadableConfiguration
 {
-	protected static Logger logger = LoggerFactory
-	        .getLogger(GAEClientConfiguration.class);
-	private static GAEClientConfiguration instance = null;
-	private static long lastModifyTime = -1;
-	static
-	{
-		loadConfig();
-		SharedObjectHelper.getGlobalTimer().scheduleAtFixedRate(new ConfigurationFileMonitor(), 5, 5, TimeUnit.SECONDS);
-	}
-	
-	static class ConfigurationFileMonitor implements Runnable
-	{
-
-		@Override
-        public void run()
-        {
-			verifyConfigurationModified();
-        }
-		
-	}
+	protected static Logger	              logger	 = LoggerFactory
+	                                                         .getLogger(GAEClientConfiguration.class);
+	private static GAEClientConfiguration	instance	= new GAEClientConfiguration();
 	
 	private static File getConfigFile()
 	{
 		URL url = GAEClientConfiguration.class.getResource("/"
 		        + GAEConstants.CLIENT_CONF_NAME);
 		String conf;
-        try
-        {
-	        conf = URLDecoder.decode(url.getFile(), "UTF-8");
-        }
-        catch (UnsupportedEncodingException e)
-        {
-	        return null;
-        }
+		try
+		{
+			conf = URLDecoder.decode(url.getFile(), "UTF-8");
+		}
+		catch (UnsupportedEncodingException e)
+		{
+			return null;
+		}
 		return new File(conf);
 	}
 	
-	private static void loadConfig()
+	private GAEClientConfiguration()
+	{
+		loadConfig();
+		ReloadableConfigurationMonitor.getInstance().registerConfigFile(this);
+	}
+	
+	private static final String	GAE_TAG	                      = "GAE";
+	private static final String	MASTER_NODE_NAME	          = "MasterNode";
+	private static final String	WORKER_NODE_NAME	          = "WorkerNode";
+	private static final String	XMPP_TAG	                  = "XMPP";
+	private static final String	ACCOUNT_NAME	              = "Account";
+	private static final String	CLIENT_TAG	                  = "Client";
+	private static final String	CONNECTION_MODE_NAME	      = "ConnectionMode";
+	private static final String	SESSION_TIMEOUT_NAME	      = "SessionTimeOut";
+	private static final String	SIMPLE_URL_ENABLE_NAME	      = "SimpleURLEnable";
+	private static final String	COMPRESSOR_NAME	              = "Compressor";
+	private static final String	ENCRYPTER_NAME	              = "Encrypter";
+	private static final String	CONN_POOL_SIZE_NAME	          = "ConnectionPoolSize";
+	private static final String	FETCH_LIMIT_NAME	          = "FetchLimitSize";
+	private static final String	CONCURRENT_RANGE_FETCHER_NAME	= "ConcurrentRangeFetchWorker";
+	private static final String	RANGE_RETRY_LIMIT_NAME	      = "RangeFetchRetryLimit";
+	private static final String	USER_AGENT_NAME	              = "UserAgent";
+	private static final String	MATCH_SITES_NAME	          = "Sites";
+	private static final String	MATCH_END_URLS_NAME	          = "EndURLs";
+	
+	private static final String	INJECT_RANGE_TAG	          = "InjectRange";
+	private static final String	APPID_BINDING_TAG	          = "AppIdBinding";
+	private static final String	GOOGLE_PROXY_TAG	          = "GoogleProxy";
+	private static final String	MODE_NAME	                  = "Mode";
+	private static final String	PROXY_NAME	                  = "Proxy";
+	
+	private void loadConfig()
 	{
 		try
 		{
-			JAXBContext context = JAXBContext
-			        .newInstance(GAEClientConfiguration.class);
-			Unmarshaller unmarshaller = context.createUnmarshaller();
-			instance = (GAEClientConfiguration) unmarshaller
-			        .unmarshal(GAEClientConfiguration.class.getResource("/"
-			                + GAEConstants.CLIENT_CONF_NAME));
-			instance.init();
-			lastModifyTime = getConfigFile().lastModified();
+			FileInputStream fis = new FileInputStream(getConfigFile());
+			IniProperties props = new IniProperties();
+			props.load(fis);
+			Properties ps = props.getProperties(GAE_TAG);
+			if (null != ps)
+			{
+				for (Object key : ps.keySet())
+				{
+					String k = ((String) key).trim();
+					if (k.equals(MASTER_NODE_NAME))
+					{
+						masterNode.parse(ps.getProperty(k));
+					}
+					else if (k.startsWith(WORKER_NODE_NAME))
+					{
+						GAEServerAuth auth = new GAEServerAuth();
+						if (!auth.parse(ps.getProperty(k)))
+						{
+							throw new Exception("Failed to parse line:" + k
+							        + "=" + ps.getProperty(k));
+						}
+						serverAuths.add(auth);
+					}
+				}
+				
+			}
+			
+			List<XmppAccount> tmp = new LinkedList<GAEClientConfiguration.XmppAccount>();
+			ps = props.getProperties(XMPP_TAG);
+			if (null != ps)
+			{
+				for (Object key : ps.keySet())
+				{
+					String k = ((String) key).trim();
+					if (k.startsWith(ACCOUNT_NAME))
+					{
+						XmppAccount accont = new XmppAccount();
+						if (!accont.parse(ps.getProperty(k)))
+						{
+							throw new Exception("Failed to parse line:" + k
+							        + "=" + ps.getProperty(k));
+						}
+						tmp.add(accont);
+					}
+				}
+				xmppAccounts = tmp;
+			}
+			
+			connectionMode = ConnectionMode.valueOf(props.getProperty(
+			        CLIENT_TAG, CONNECTION_MODE_NAME, "HTTP"));
+			sessionTimeout = props.getIntProperty(CLIENT_TAG,
+			        SESSION_TIMEOUT_NAME, sessionTimeout);
+			simpleURLEnable = props.getBoolProperty(CLIENT_TAG,
+			        SIMPLE_URL_ENABLE_NAME, false);
+			compressor = CompressorType.valueOf(props.getProperty(CLIENT_TAG,
+			        COMPRESSOR_NAME, "Snappy").toUpperCase());
+			encrypter = EncryptType.valueOf(props.getProperty(CLIENT_TAG,
+			        ENCRYPTER_NAME, "SE1"));
+			connectionPoolSize = props.getIntProperty(CLIENT_TAG,
+			        CONN_POOL_SIZE_NAME, 7);
+			fetchLimitSize = props.getIntProperty(CLIENT_TAG, FETCH_LIMIT_NAME,
+			        fetchLimitSize);
+			concurrentFetchWorker = props.getIntProperty(CLIENT_TAG,
+			        CONCURRENT_RANGE_FETCHER_NAME, 3);
+			rangeFetchRetryLimit = props.getIntProperty(CLIENT_TAG,
+			        RANGE_RETRY_LIMIT_NAME, 1);
+			httpProxyUserAgent = props.getProperty(CLIENT_TAG, USER_AGENT_NAME,
+			        "Snova-GAE V" + GAEPluginVersion.value);
+			
+			ps = props.getProperties(INJECT_RANGE_TAG);
+			if (null != ps)
+			{
+				String k = ps.getProperty(MATCH_SITES_NAME);
+				rangeMatcher.parseSites(k);
+				k = ps.getProperty(MATCH_END_URLS_NAME);
+				rangeMatcher.parseEndURLs(k);
+			}
+			
+			ps = props.getProperties(APPID_BINDING_TAG);
+			if (null != ps)
+			{
+				appIdBindings.clear();
+				for (Object key : ps.keySet())
+				{
+					String k = ((String) key).trim();
+					String v = ps.getProperty(k);
+					AppIdBinding binding = new AppIdBinding();
+					binding.parse(k, v);
+					appIdBindings.add(binding);
+				}
+			}
+			
+			int modevalue = props.getIntProperty(GOOGLE_PROXY_TAG, MODE_NAME,
+			        GoolgeProxyMode.OVERRIDE.value);
+			gProxymode = GoolgeProxyMode.fromInt(modevalue);
+			String s = props.getProperty(GOOGLE_PROXY_TAG, PROXY_NAME);
+			if (null != s)
+			{
+				googleProxy = new ProxyInfo();
+				if (!googleProxy.parse(s))
+				{
+					googleProxy = null;
+					logger.error("Failed to parse Google Proxy for gae plugin.");
+				}
+			}
 		}
 		catch (Exception e)
 		{
-			e.printStackTrace();
 			logger.error("Failed to load gae-client config file!", e);
 		}
 	}
-
+	
 	public static enum ConnectionMode
 	{
 		HTTP, HTTPS, XMPP;
 	}
-
+	
 	public static class GAEServerAuth
 	{
-		@XmlAttribute
-		public String appid;
-		@XmlAttribute
-		public String user;
-		@XmlAttribute
-		public String passwd;
-		@XmlAttribute
-		public boolean backendEnable;
+		public String	appid;
+		public String	user;
+		public String	passwd;
+		public boolean	backendEnable;
 		
 		public void init()
 		{
@@ -132,69 +235,121 @@ public class GAEClientConfiguration
 			user = user.trim();
 			passwd = passwd.trim();
 		}
+		
+		public boolean parse(String line)
+		{
+			if (null == line || line.trim().isEmpty())
+			{
+				return false;
+			}
+			line = line.trim();
+			String[] ss = StringHelper.split(line, '@');
+			if (ss.length == 1)
+			{
+				appid = line;
+			}
+			else
+			{
+				appid = ss[ss.length - 1];
+				int index = line.indexOf("@" + appid);
+				String userpass = line.substring(0, index);
+				String[] ks = StringHelper.split(userpass, ':');
+				user = ks[0];
+				passwd = ks[1];
+			}
+			if (appid.indexOf("/backend") != -1)
+			{
+				appid = appid.substring(0, appid.indexOf("/backend"));
+				backendEnable = true;
+			}
+			init();
+			return true;
+		}
+		
+		public String toString()
+		{
+			return user + ":" + passwd + "@" + appid
+			        + (backendEnable ? "/backend" : "");
+		}
 	}
-
+	
 	public static class MasterNode
 	{
-		@XmlAttribute
-		public String appid;
-		@XmlAttribute
-		public boolean backendEnable;
-	}
-
-	public static enum ProxyType
-	{
-		HTTP("http"), HTTPS("https");
-		String value;
-
-		ProxyType(String v)
+		public String	appid		  = "snova-master";
+		public boolean	backendEnable	= false;
+		
+		public boolean parse(String line)
 		{
-			value = v;
-
+			if (null == line || line.trim().isEmpty())
+			{
+				return false;
+			}
+			line = line.trim();
+			appid = line;
+			if (appid.indexOf("/backend") != -1)
+			{
+				appid = appid.substring(0, appid.indexOf("/backend"));
+				backendEnable = true;
+			}
+			return true;
 		}
-
-		public static ProxyType fromStr(String str)
+		
+		public String toString()
 		{
-			if (str.equalsIgnoreCase("http"))
-			{
-				return HTTP;
-			}
-			if (str.equalsIgnoreCase("https"))
-			{
-				return HTTPS;
-			}
-			return HTTP;
+			return appid + (backendEnable ? "/backend" : "");
 		}
 	}
-
-	public static class ProxyInfo
-	{
-		@XmlAttribute
-		public String host;
-		@XmlAttribute
-		public int port = 0;
-		@XmlAttribute
-		public String user;
-		@XmlAttribute
-		public String passwd;
-
-		@XmlAttribute
-		public ProxyType type = ProxyType.HTTP;
-
-	}
-
+	
 	public static class XmppAccount
 	{
-		private static final String GTALK_SERVER = "talk.google.com";
-		private static final String GTALK_SERVER_NAME = "gmail.com";
-		private static final int GTALK_SERVER_PORT = 5222;
-
-		private static final String OVI_SERVER = "chat.ovi.com";
-		private static final String OVI_SERVER_NAME = "ovi.com";
-		private static final int OVI_SERVER_PORT = 5223;
-
-		protected static final int DEFAULT_PORT = 5222;
-
+		private static final String	GTALK_SERVER		= "talk.google.com";
+		private static final String	GTALK_SERVER_NAME	= "gmail.com";
+		private static final int	GTALK_SERVER_PORT	= 5222;
+		
+		private static final String	OVI_SERVER		  = "chat.ovi.com";
+		private static final String	OVI_SERVER_NAME		= "ovi.com";
+		private static final int	OVI_SERVER_PORT		= 5223;
+		
+		protected static final int	DEFAULT_PORT		= 5222;
+		
+		public boolean parse(String line)
+		{
+			if (null == line || line.trim().isEmpty())
+			{
+				return false;
+			}
+			line = line.trim();
+			if (line.indexOf('#') == -1)
+			{
+				logger.error("No XMPP account/server separator '#' found in gae-client.conf.");
+				return false;
+			}
+			String accountstr = line.substring(0, line.lastIndexOf('#'));
+			String serverstr = line.substring(line.lastIndexOf('#') + 1);
+			if (accountstr.indexOf(':') == -1)
+			{
+				logger.error("No XMPP user/pass separator ':' found in gae-client.conf.");
+				return false;
+			}
+			jid = accountstr.substring(0, accountstr.lastIndexOf(':'));
+			passwd = accountstr.substring(accountstr.lastIndexOf(':') + 1);
+			
+			serverHost = serverstr;
+			if (line.indexOf(':') != -1)
+			{
+				serverHost = line.substring(0, line.indexOf(':'));
+				String portstr = line.substring(line.indexOf(':') + 1);
+				if (portstr.indexOf("/oldssl") != -1)
+				{
+					this.isOldSSLEnable = true;
+					portstr = portstr.substring(0, portstr.indexOf('/'));
+				}
+				serverPort = Integer
+				        .parseInt(line.substring(line.indexOf(':') + 1));
+			}
+			return true;
+		}
+		
 		public XmppAccount init()
 		{
 			String server = StringUtils.parseServer(jid).trim();
@@ -209,7 +364,6 @@ public class GAEClientConfiguration
 				{
 					this.serverPort = GTALK_SERVER_PORT;
 				}
-
 				this.name = jid;
 			}
 			else if (server.equals(OVI_SERVER_NAME))
@@ -247,50 +401,45 @@ public class GAEClientConfiguration
 				connectionConfig
 				        .setSocketFactory(SSLSocketFactory.getDefault());
 			}
-
+			
 			return this;
 		}
-
-		@XmlAttribute(name = "user")
-		public String jid;
-		@XmlAttribute
-		public String passwd;
-		@XmlAttribute
-		public int serverPort;
-		@XmlAttribute
-		public String serverHost;
-		@XmlAttribute(name = "oldSSLEnable")
-		public boolean isOldSSLEnable;
-
-		@XmlTransient
-		public ConnectionConfiguration connectionConfig;
-		@XmlTransient
-		public String name;
-
+		
+		public String		           jid;
+		public String		           passwd;
+		public int		               serverPort;
+		public String		           serverHost;
+		public boolean		           isOldSSLEnable;
+		
+		public ConnectionConfiguration	connectionConfig;
+		public String		           name;
+		
+		public String toString()
+		{
+			return jid + ":" + passwd + "#" + serverHost + ":" + serverPort
+			        + (isOldSSLEnable ? "/oldssl" : "");
+		}
 	}
-
-	//@XmlElementWrapper(name = "GAE")
-	@XmlElements(@XmlElement(name = "WorkerNode"))
-	private List<GAEServerAuth> serverAuths = new LinkedList<GAEServerAuth>();
-
-	@XmlTransient
+	
+	private List<GAEServerAuth>	serverAuths	= new LinkedList<GAEServerAuth>();
+	
 	public void setGAEServerAuths(List<GAEServerAuth> serverAuths)
 	{
 		this.serverAuths = serverAuths;
 	}
+	
 	public List<GAEServerAuth> getGAEServerAuths()
 	{
 		return serverAuths;
 	}
-
-	@XmlElement(name = "MasterNode")
-	private MasterNode masterNode;
-
+	
+	private MasterNode	masterNode	= new MasterNode();
+	
 	public MasterNode getMasterNode()
 	{
 		return masterNode;
 	}
-
+	
 	public GAEServerAuth getGAEServerAuth(String appid)
 	{
 		for (GAEServerAuth auth : serverAuths)
@@ -302,172 +451,152 @@ public class GAEClientConfiguration
 		}
 		return null;
 	}
-
-	private List<XmppAccount> xmppAccounts;
-
-	@XmlElementWrapper(name = "XMPP")
-	@XmlElements(@XmlElement(name = "Account"))
+	
+	private List<XmppAccount>	xmppAccounts = new LinkedList<GAEClientConfiguration.XmppAccount>();
+	
 	public void setXmppAccounts(List<XmppAccount> xmppAccounts)
 	{
 		this.xmppAccounts = xmppAccounts;
 	}
-
+	
 	public List<XmppAccount> getXmppAccounts()
 	{
 		return xmppAccounts;
 	}
-
-	private String connectionMode;
-
-	@XmlElement(name = "ConnectionMode")
-	public void setConnectionMode(String mode)
-	{
-		connectionMode = mode;
-	}
-
-	String getConnectionMode()
+	
+	private ConnectionMode	connectionMode	= ConnectionMode.HTTP;
+	
+	public ConnectionMode getConnectionMode()
 	{
 		return connectionMode;
 	}
-
-	public ConnectionMode getConnectionModeType()
+	
+	public void setConnectionMode(ConnectionMode mode)
 	{
-		return ConnectionMode.valueOf(connectionMode.toUpperCase());
+		connectionMode = mode;
 	}
-
-	private int sessionTimeout;
-
-	@XmlElement(name = "SessionTimeOut")
+	
+	private int	sessionTimeout	= 60000;
+	
 	public void setSessionTimeOut(int sessionTimeout)
 	{
 		this.sessionTimeout = sessionTimeout;
 	}
-
+	
 	public int getSessionTimeOut()
 	{
 		return sessionTimeout;
 	}
-
-	private String compressor;
-
-	@XmlElement(name = "Compressor")
-	void setCompressor(String compressor)
-	{
-		this.compressor = compressor;
-	}
-
-	String getCompressor()
+	
+	private CompressorType	compressor;
+	
+	public CompressorType getCompressor()
 	{
 		return compressor;
 	}
-
-	public CompressorType getCompressorType()
+	
+	public void setCompressor(CompressorType type)
 	{
-		return CompressorType.valueOf(compressor.toUpperCase());
+		compressor = type;
 	}
-
-	@XmlTransient
-	public void setCompressorType(CompressorType type)
-	{
-		compressor = type.toString();
-	}
-
-	private String encrypter;
-
-	String getEncrypter()
+	
+	private EncryptType	encrypter;
+	
+	public EncryptType getEncrypter()
 	{
 		return encrypter;
 	}
-
-	@XmlElement(name = "Encrypter")
-	void setEncrypter(String httpUpStreamEncrypter)
+	
+	public void setEncrypter(EncryptType type)
 	{
-		this.encrypter = httpUpStreamEncrypter;
+		this.encrypter = type;
 	}
-
-	public EncryptType getEncrypterType()
-	{
-		return EncryptType.valueOf(encrypter.toUpperCase());
-	}
-
-	@XmlTransient
-	public void setEncrypterType(EncryptType type)
-	{
-		this.encrypter = type.toString();
-	}
-
-	private boolean simpleURLEnable;
-
-	@XmlElement(name = "SimpleURLEnable")
+	
+	private boolean	simpleURLEnable;
+	
 	public void setSimpleURLEnable(boolean simpleURLEnable)
 	{
 		this.simpleURLEnable = simpleURLEnable;
 	}
-
+	
 	public boolean isSimpleURLEnable()
 	{
 		return simpleURLEnable;
 	}
-
-	private int connectionPoolSize;
-
-	@XmlElement(name = "ConnectionPoolSize")
+	
+	private int	connectionPoolSize	= 7;
+	
 	public void setConnectionPoolSize(int connectionPoolSize)
 	{
 		this.connectionPoolSize = connectionPoolSize;
 	}
-
+	
 	public int getConnectionPoolSize()
 	{
 		return connectionPoolSize;
 	}
-
-	//private String injectRangeHeaderSites;
-	//private List<String> injectRangeHeaderSiteSet = new LinkedList<String>();
-
+	
 	static class InjectRangeHeaderMatcher
 	{
-		@XmlElements(@XmlElement(name = "Site"))
-		List<String> sites;
-		@XmlElements(@XmlElement(name = "URL"))
-		List<String> urls;
+		List<String>	injectRangeHeaderSiteSet	= new LinkedList<String>();
+		List<String>	injectRangeHeaderURLSet		= new LinkedList<String>();
 		
-		@XmlTransient
-		List<String> injectRangeHeaderSiteSet = new LinkedList<String>();
-		@XmlTransient
-		List<String> injectRangeHeaderURLSet = new LinkedList<String>();
-		
-		void init()
+		void putToIniProperties(IniProperties props)
 		{
-			if(null != sites)
+			StringBuilder buffer = new StringBuilder();
+			for (String s : injectRangeHeaderSiteSet)
 			{
-				for(String s:sites)
-				{
-					String[] ss = s.split("[,|;|\\|]");
-					for(String k:ss)
-					{
-						if(!k.trim().isEmpty())
-						{
-							injectRangeHeaderSiteSet.add(k.trim());
-						}		
-					}
-				}
+				buffer.append(s).append("|");
 			}
-			if(null != urls)
+			String v = buffer.toString();
+			if (!v.isEmpty())
 			{
-				for(String s:urls)
-				{
-					String[] ss = s.split("[,|;|\\|]");
-					for(String k:ss)
-					{
-						if(!k.trim().isEmpty())
-						{
-							injectRangeHeaderURLSet.add(k.trim());
-						}		
-					}
-				}
+				props.setProperty(APPID_BINDING_TAG, MATCH_SITES_NAME,
+				        buffer.toString());
 			}
+			
+			buffer = new StringBuilder();
+			for (String s : injectRangeHeaderURLSet)
+			{
+				buffer.append(s).append("|");
+			}
+			v = buffer.toString();
+			if (!v.isEmpty())
+			{
+				props.setProperty(APPID_BINDING_TAG, MATCH_END_URLS_NAME,
+				        buffer.toString());
+			}
+			
 		}
+		
+		boolean parseSites(String line)
+		{
+			injectRangeHeaderSiteSet.clear();
+			String[] ss = line.split("[,|;|\\|]");
+			for (String k : ss)
+			{
+				if (!k.trim().isEmpty())
+				{
+					injectRangeHeaderSiteSet.add(k.trim());
+				}
+			}
+			return true;
+		}
+		
+		boolean parseEndURLs(String line)
+		{
+			injectRangeHeaderURLSet.clear();
+			String[] ss = line.split("[,|;|\\|]");
+			for (String k : ss)
+			{
+				if (!k.trim().isEmpty())
+				{
+					injectRangeHeaderURLSet.add(k.trim());
+				}
+			}
+			return true;
+		}
+		
 		boolean siteMatched(String host)
 		{
 			for (String site : injectRangeHeaderSiteSet)
@@ -479,11 +608,12 @@ public class GAEClientConfiguration
 			}
 			return false;
 		}
-		boolean urlMatched(String url)
+		
+		boolean endUrlMatched(String url)
 		{
-			for (String site : injectRangeHeaderURLSet)
+			for (String pattern : injectRangeHeaderURLSet)
 			{
-				if (!site.isEmpty() && url.indexOf(site) != -1)
+				if (!pattern.isEmpty() && url.endsWith(pattern))
 				{
 					return true;
 				}
@@ -491,96 +621,132 @@ public class GAEClientConfiguration
 			return false;
 		}
 	}
-	@XmlElement(name = "InjectRangeHeader")
-	InjectRangeHeaderMatcher rangeMatcher;
-
-//	String getInjectRangeHeaderSites()
-//	{
-//		return injectRangeHeaderSites;
-//	}
-
+	
+	private InjectRangeHeaderMatcher	rangeMatcher	= new InjectRangeHeaderMatcher();
+	
 	public boolean isInjectRangeHeaderSiteMatched(String host)
 	{
 		return rangeMatcher.siteMatched(host);
 	}
+	
 	public boolean isInjectRangeHeaderURLMatched(String url)
 	{
-		return rangeMatcher.urlMatched(url);
+		return rangeMatcher.endUrlMatched(url);
 	}
-
-	private int fetchLimitSize;
-
-	@XmlElement(name = "FetchLimitSize")
+	
+	private int	fetchLimitSize	= 512000;
+	
 	public void setFetchLimitSize(int fetchLimitSize)
 	{
 		this.fetchLimitSize = fetchLimitSize;
 	}
-
+	
 	public int getFetchLimitSize()
 	{
 		return fetchLimitSize;
 	}
-
-	private int concurrentFetchWorker;
-
-	@XmlElement(name = "ConcurrentRangeFetchWorker")
+	
+	private int	concurrentFetchWorker;
+	
 	public void setConcurrentRangeFetchWorker(int num)
 	{
 		this.concurrentFetchWorker = num;
 	}
-
+	
 	public int getConcurrentRangeFetchWorker()
 	{
 		return concurrentFetchWorker;
 	}
 	
-	private int rangeFetchRetryLimit = 1;
-
-	@XmlElement(name = "RangeFetchRetryLimit")
+	private int	rangeFetchRetryLimit	= 1;
+	
 	public void setRangeFetchRetryLimit(int num)
 	{
 		this.rangeFetchRetryLimit = num;
 	}
-
+	
 	public int getRangeFetchRetryLimit()
 	{
 		return rangeFetchRetryLimit;
 	}
-
-	private ProxyInfo localProxy;
-
-	@XmlElement(name = "LocalProxy")
-	public void setLocalProxy(ProxyInfo localProxy)
+	
+	private ProxyInfo	googleProxy;
+	
+	public void setGoogleProxy(ProxyInfo localProxy)
 	{
-		this.localProxy = localProxy;
+		this.googleProxy = localProxy;
 	}
-
-	public ProxyInfo getLocalProxy()
+	
+	public ProxyInfo getGoogleProxy()
 	{
-		return localProxy;
+		return googleProxy;
 	}
-
+	
+	public static enum GoolgeProxyMode
+	{
+		DISABLE(0), OVERRIDE(1), NEXT_CHAIN(2);
+		int	value;
+		
+		GoolgeProxyMode(int v)
+		{
+			this.value = v;
+		}
+		
+		public int getValue()
+		{
+			return value;
+			
+		}
+		
+		public static GoolgeProxyMode fromInt(int v)
+		{
+			switch (v)
+			{
+				case 0:
+					return DISABLE;
+				case 1:
+					return OVERRIDE;
+				case 2:
+					return NEXT_CHAIN;
+				default:
+					return OVERRIDE;
+			}
+		}
+	}
+	
+	private GoolgeProxyMode	gProxymode	= GoolgeProxyMode.OVERRIDE;
+	
+	public void setGoolgeProxyMode(GoolgeProxyMode mode)
+	{
+		this.gProxymode = mode;
+	}
+	
+	public GoolgeProxyMode getGoolgeProxyMode()
+	{
+		return gProxymode;
+	}
+	
 	public void init() throws Exception
 	{
-		if (localProxy != null)
+		if (googleProxy != null)
 		{
-			if (null != localProxy.host)
+			if (null != googleProxy.host)
 			{
-				localProxy.host = localProxy.host.trim();
+				googleProxy.host = googleProxy.host.trim();
 			}
-			if (null == localProxy.host || localProxy.host.isEmpty())
+			if (null == googleProxy.host || googleProxy.host.isEmpty())
 			{
-				localProxy = null;
+				googleProxy = null;
 			}
-			else if (localProxy.port == 0)
+			else if (googleProxy.port == 0)
 			{
-				if (localProxy.type.equals(ProxyType.HTTP))
+				if (googleProxy.type.equals(ProxyType.HTTP))
 				{
-					localProxy.port = 80;
+					googleProxy.port = 80;
 				}
-				else if (localProxy.type.equals(ProxyType.HTTPS))
+				else if (googleProxy.type.equals(ProxyType.HTTPS))
 				{
-					localProxy.port = 443;
+					googleProxy.port = 443;
 				}
 			}
 		}
@@ -598,8 +764,8 @@ public class GAEClientConfiguration
 				auth.init();
 			}
 		}
-
-		if (getConnectionModeType().equals(ConnectionMode.XMPP))
+		
+		if (getConnectionMode().equals(ConnectionMode.XMPP))
 		{
 			for (int i = 0; i < xmppAccounts.size(); i++)
 			{
@@ -622,57 +788,53 @@ public class GAEClientConfiguration
 			        + ConnectionMode.XMPP
 			        + ", at least one XMPP account needed.");
 		}
-
-		if (localProxy == null || localProxy.host.contains("google"))
+		
+		if (googleProxy == null || googleProxy.host.contains("google"))
 		{
 			simpleURLEnable = true;
 		}
 		
-		if(null == masterNode || masterNode.appid == null)
+		if (null == masterNode || masterNode.appid == null)
 		{
-			boolean backendEnable = null != masterNode?masterNode.backendEnable:false;
+			boolean backendEnable = null != masterNode ? masterNode.backendEnable
+			        : false;
 			masterNode = new MasterNode();
 			masterNode.appid = GAEConstants.SNOVA_MASTER_APPID;
 			masterNode.backendEnable = backendEnable;
 		}
-		rangeMatcher.init();
 	}
-
-	static class GoogleProxyChain
-	{
-		@XmlAttribute
-		boolean enable;
-		@XmlAttribute
-		String host;
-		@XmlAttribute
-		int port = 443;
-	}
-
-	@XmlElement(name = "GoogleProxyChain")
-	private GoogleProxyChain googleProxyChain;
-
-	public SimpleSocketAddress getGoogleProxyChain()
-	{
-		if (null != googleProxyChain && googleProxyChain.enable)
-		{
-			return new SimpleSocketAddress(googleProxyChain.host,
-			        googleProxyChain.port);
-		}
-		return null;
-	}
-
-	@XmlElementWrapper(name = "AppIdBindings")
-	@XmlElements(@XmlElement(name = "Binding"))
-	private List<AppIdBinding> appIdBindings;
-
+	
+	private List<AppIdBinding>	appIdBindings	= new LinkedList<GAEClientConfiguration.AppIdBinding>();
+	
 	static class AppIdBinding
 	{
-		@XmlAttribute
-		String appid;
-		@XmlElements(@XmlElement(name = "site"))
-		List<String> sites;
+		String		 appid;
+		List<String>	sites	= new LinkedList<String>();
+		
+		void parse(String appid, String line)
+		{
+			this.appid = appid;
+			String[] ss = line.split("[,|;|\\|]");
+			for (String k : ss)
+			{
+				if (!k.trim().isEmpty())
+				{
+					sites.add(k);
+				}
+			}
+		}
+		
+		void putToIniProperties(IniProperties props)
+		{
+			StringBuilder buffer = new StringBuilder();
+			for (String s : sites)
+			{
+				buffer.append(s).append("|");
+			}
+			props.setProperty(APPID_BINDING_TAG, appid, buffer.toString());
+		}
 	}
-
+	
 	public String getBindingAppId(String host)
 	{
 		if (null != appIdBindings)
@@ -690,42 +852,108 @@ public class GAEClientConfiguration
 		}
 		return null;
 	}
-
-	private String httpProxyUserAgent;
-
+	
+	private String	httpProxyUserAgent;
+	
 	public String getUserAgent()
 	{
 		return httpProxyUserAgent;
 	}
-
-	@XmlElement(name = "UserAgent")
+	
 	public void setUserAgent(String v)
 	{
 		httpProxyUserAgent = v;
 	}
-
+	public ProxyInfo getGoogleProxyChain()
+	{
+		if (null != googleProxy && gProxymode.equals(GoolgeProxyMode.NEXT_CHAIN))
+		{
+			return googleProxy;
+		}
+		return null;
+	}
+	public ProxyInfo getLocalProxy()
+	{
+		if (null == googleProxy || gProxymode.equals(GoolgeProxyMode.DISABLE)
+		        || gProxymode.equals(GoolgeProxyMode.NEXT_CHAIN))
+		{
+			return DesktopFrameworkConfiguration.getInstance().getLocalProxy();
+		}
+		switch (gProxymode)
+		{
+			case OVERRIDE:
+			{
+				return googleProxy;
+			}
+			default:
+			{
+				return null;
+			}
+		}
+	}
+	
 	public static GAEClientConfiguration getInstance()
 	{
 		return instance;
 	}
-
+	
 	public void save() throws Exception
 	{
 		try
 		{
 			init();
-			JAXBContext context = JAXBContext
-			        .newInstance(GAEClientConfiguration.class);
-			Marshaller marshaller = context.createMarshaller();
-			marshaller.setProperty("jaxb.formatted.output", Boolean.TRUE);
-			URL url = GAEClientConfiguration.class.getResource("/"
-			        + GAEConstants.CLIENT_CONF_NAME);
-			String conf = URLDecoder.decode(url.getFile(), "UTF-8");
-			FileOutputStream fos = new FileOutputStream(conf);
-			// fos.write("<!-- This is generated by hyk-proxy-client GUI, it's not the orignal conf file -->\r\n".getBytes());
-			marshaller.marshal(this, fos);
-			fos.close();
-			lastModifyTime = getConfigFile().lastModified();
+			FileOutputStream fos = new FileOutputStream(getConfigFile());
+			IniProperties props = new IniProperties();
+			int i = 0;
+			for (GAEServerAuth auth : serverAuths)
+			{
+				props.setProperty(GAE_TAG, WORKER_NODE_NAME + "[" + i + "]",
+				        auth.toString());
+				i++;
+			}
+			props.setProperty(GAE_TAG, MASTER_NODE_NAME, masterNode.toString());
+			
+			i = 0;
+			for (XmppAccount account : xmppAccounts)
+			{
+				props.setProperty(XMPP_TAG, ACCOUNT_NAME + "[" + i + "]",
+				        account.toString());
+				i++;
+			}
+			
+			props.setProperty(CLIENT_TAG, CONNECTION_MODE_NAME,
+			        connectionMode.toString());
+			props.setIntProperty(CLIENT_TAG, SESSION_TIMEOUT_NAME,
+			        sessionTimeout);
+			props.setIntProperty(CLIENT_TAG, CONN_POOL_SIZE_NAME,
+			        connectionPoolSize);
+			props.setIntProperty(CLIENT_TAG, RANGE_RETRY_LIMIT_NAME,
+			        rangeFetchRetryLimit);
+			props.setIntProperty(CLIENT_TAG, CONCURRENT_RANGE_FETCHER_NAME,
+			        concurrentFetchWorker);
+			props.setIntProperty(CLIENT_TAG, FETCH_LIMIT_NAME, fetchLimitSize);
+			props.setBoolProperty(CLIENT_TAG, SIMPLE_URL_ENABLE_NAME,
+			        simpleURLEnable);
+			props.setProperty(CLIENT_TAG, COMPRESSOR_NAME,
+			        compressor.toString());
+			props.setProperty(CLIENT_TAG, ENCRYPTER_NAME, encrypter.toString());
+			props.setProperty(CLIENT_TAG, USER_AGENT_NAME, httpProxyUserAgent);
+			
+			if (null != googleProxy)
+			{
+				props.setIntProperty(GOOGLE_PROXY_TAG, MODE_NAME,
+				        gProxymode.value);
+				props.setProperty(GOOGLE_PROXY_TAG, PROXY_NAME,
+				        googleProxy.toString());
+			}
+			
+			for (AppIdBinding binding : appIdBindings)
+			{
+				binding.putToIniProperties(props);
+			}
+			
+			rangeMatcher.putToIniProperties(props);
+			props.store(fos);
 		}
 		catch (Exception e)
 		{
@@ -733,14 +961,16 @@ public class GAEClientConfiguration
 		}
 	}
 	
-	public static boolean verifyConfigurationModified()
+	@Override
+	public void reload()
 	{
-		long ts = getConfigFile().lastModified();
-		if(ts != lastModifyTime)
-		{
-			loadConfig();
-			return true;
-		}
-		return false;
+		loadConfig();
 	}
+	
+	@Override
+	public File getConfigurationFile()
+	{
+		return getConfigFile();
+	}
+	
 }

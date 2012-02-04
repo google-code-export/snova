@@ -6,6 +6,7 @@ package org.snova.c4.client.connection;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.arch.buffer.Buffer;
 import org.arch.event.Event;
@@ -29,6 +30,7 @@ import org.snova.c4.client.handler.ProxySessionManager;
 import org.snova.c4.common.C4Constants;
 import org.snova.c4.common.event.EventRestNotify;
 import org.snova.c4.common.event.EventRestRequest;
+import org.snova.framework.util.SharedObjectHelper;
 
 /**
  * @author qiyingwang
@@ -48,6 +50,26 @@ public abstract class ProxyConnection
 	
 	private long	                       lastsendtime	     = -1;
 	private LinkedList<Event>	           queuedEvents	     = new LinkedList<Event>();
+	
+	protected ProxyConnectionStateListner	stateListener;
+	
+	public ProxyConnectionStateListner getStateListener()
+	{
+		return stateListener;
+	}
+	
+	public void setStateListener(ProxyConnectionStateListner stateListener)
+	{
+		this.stateListener = stateListener;
+	}
+	
+	protected void onAvailable()
+	{
+		if (null != stateListener)
+		{
+			stateListener.onAvailable();
+		}
+	}
 	
 	protected ProxyConnection(C4ServerAuth auth)
 	{
@@ -99,8 +121,10 @@ public abstract class ProxyConnection
 				}
 				else
 				{
-					EncryptEventV2 enc = new EncryptEventV2(
-					        cfg.getEncrypterType(), event);
+					CompressEventV2 tmp = new CompressEventV2(cfg.getCompressor(), event);
+					tmp.setHash(event.getHash());
+					EncryptEventV2 enc = new EncryptEventV2(cfg.getEncrypter(),
+							tmp);
 					enc.setHash(event.getHash());
 					ready = enc;
 				}
@@ -124,13 +148,21 @@ public abstract class ProxyConnection
 		        && now - lastsendtime < C4ClientConfiguration.getInstance()
 		                .getHTTPRequestTimeout())
 		{
-			if (logger.isDebugEnabled())
+			if (logger.isTraceEnabled())
 			{
-				logger.debug("Connection:" + this.hashCode()
+				logger.trace("Connection:" + this.hashCode()
 				        + " is not ready while ready event queue size:"
 				        + queuedEvents.size());
-				
 			}
+			SharedObjectHelper.getGlobalTimer().schedule(new Runnable()
+			{
+				@Override
+				public void run()
+				{
+					send((List<Event>) null);
+				}
+			}, C4ClientConfiguration.getInstance().getMinWritePeriod()/2,
+			        TimeUnit.MILLISECONDS);
 			return true;
 		}
 		if (queuedEvents.isEmpty())
@@ -181,7 +213,7 @@ public abstract class ProxyConnection
 		
 		TypeVersion typever = Event.getTypeVersion(ev.getClass());
 		
-		if (logger.isDebugEnabled())
+		if (logger.isDebugEnabled() && !(ev instanceof EventRestNotify))
 		{
 			logger.debug("Handle received session[" + ev.getHash()
 			        + "] response event:" + ev.getClass().getName());
@@ -224,9 +256,19 @@ public abstract class ProxyConnection
 			case C4Constants.EVENT_REST_NOTIFY_TYPE:
 			{
 				EventRestNotify notify = (EventRestNotify) ev;
+				for (Integer sessionId : notify.restSessions)
+				{
+					if (null == ProxySessionManager.getInstance()
+					        .getProxySession(sessionId))
+					{
+						HTTPConnectionEvent close = new HTTPConnectionEvent(HTTPConnectionEvent.CLOSED);
+						close.setAttachment(sessionId);
+						send(close);
+					}
+				}
 				if (notify.rest > 0)
 				{
-					send(new EventRestRequest());
+					//send(new EventRestRequest());
 					logger.info("C4 server has " + notify.rest + " responses!");
 				}
 				return;
@@ -278,7 +320,7 @@ public abstract class ProxyConnection
 		}
 	}
 	
-	protected synchronized void doRecv(Buffer content)
+	protected  void doRecv(Buffer content)
 	{
 		Event ev = null;
 		try
@@ -293,7 +335,9 @@ public abstract class ProxyConnection
 		}
 		catch (Exception e)
 		{
-			logger.error("Failed to parse event.", e);
+			logger.error(
+			        "Failed to parse event while content rest:"
+			                + content.readableBytes(), e);
 			return;
 		}
 	}

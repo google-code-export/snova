@@ -9,34 +9,73 @@
  */
 package org.snova.framework.plugin;
 
+import java.io.InputStream;
+import java.util.LinkedList;
 import java.util.List;
 
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElements;
-import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.snova.framework.httpserver.HttpLocalProxyServer;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 /**
  *
  */
-@XmlRootElement(name = "plugin")
+
 public class PluginDescription
 {
-	@XmlAttribute
-	public String name;
+	protected static Logger	logger	     = LoggerFactory
+            .getLogger(PluginDescription.class);
+	public String	    name;
 	
-	@XmlAttribute
-	public String version;
+	public String	    version;
 	
-	@XmlElement
-	public String description;
+	public String	    description;
 	
-	@XmlElement
-	public String entryClass;
+	public String	    entryClass;
 	
-	@XmlElements(@XmlElement(name = "depend"))
-	public List<String> depends;
+	public List<String>	depends	= new LinkedList<String>();
 	
-	
-	
+	public boolean parse(InputStream is)
+	{
+		try
+		{
+			DocumentBuilderFactory factory = DocumentBuilderFactory
+			        .newInstance();
+			DocumentBuilder builder = factory.newDocumentBuilder();
+			Document doc = builder.parse(is);
+			Element root = doc.getDocumentElement();
+			name = root.getAttribute("name");
+			version = root.getAttribute("version");
+			Node entryClassNode = root.getElementsByTagName("entryClass").item(
+			        0);
+			entryClass = entryClassNode.getTextContent().trim();
+			Node descriptionNode = root.getElementsByTagName("description")
+			        .item(0);
+			description = descriptionNode.getTextContent().trim();
+			
+			NodeList list = root.getElementsByTagName("depend");
+			for (int i = 0; i < list.getLength(); i++)
+			{
+				Node node = list.item(i);
+				if (!node.getTextContent().trim().isEmpty())
+				{
+					depends.add(node.getTextContent().trim());
+				}
+			}
+			return true;
+		}
+		catch (Exception e)
+		{
+			logger.error("Failed to parse plugin desc.", e);
+			return false;
+		}
+		
+	}
 }

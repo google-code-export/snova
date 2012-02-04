@@ -1,5 +1,19 @@
 snova-c4 Changelog
 ===================
+Changes in version 0.12.0204
+-------------------------------------------
+
+** Features
+   * snova-c4 server side support more than one snova-c4 clients
+   * Reload modified config file automatically
+   * Use HTTP connections to simulate full-duplex connection.
+   
+** Improvement
+   * Much better IO performance, especially when watching videos/downloading files
+      
+** Task
+   * NA
+
 Changes in version 0.12.0120
 -------------------------------------------
 Initial version

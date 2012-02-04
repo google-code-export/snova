@@ -1,59 +1,61 @@
 /**
- * This file is part of the hyk-proxy project.
- * Copyright (c) 2010 Yin QiWen <yinqiwen@gmail.com>
- *
- * Description: Config.java 
- *
- * @author yinqiwen [ 2010-5-14 | 08:49:33 PM]
- *
+ * 
  */
 package org.snova.framework.config;
 
-
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLDecoder;
-import java.util.concurrent.TimeUnit;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-
+import org.arch.config.IniProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.framework.common.Constants;
-import org.snova.framework.util.SharedObjectHelper;
+import org.snova.framework.util.proxy.ProxyInfo;
 
 /**
- *
+ * @author wqy
+ * 
  */
-@XmlRootElement(name = "Configure")
-public class DesktopFrameworkConfiguration implements FrameworkConfiguration
+public class DesktopFrameworkConfiguration implements FrameworkConfiguration,
+        ReloadableConfiguration
 {
-	protected static Logger logger = LoggerFactory.getLogger(DesktopFrameworkConfiguration.class);
-
-	private static DesktopFrameworkConfiguration instance = null;
-
-	private static long lastModifyTime = -1;
-	static
+	protected static Logger	                     logger	               = LoggerFactory
+	                                                                           .getLogger(DesktopFrameworkConfiguration.class);
+	
+	private static DesktopFrameworkConfiguration	instance	       = new DesktopFrameworkConfiguration();
+	
+	private String	                             proxyService	       = "GAE";
+	
+	private SimpleSocketAddress	                 localServerAddress	   = new SimpleSocketAddress(
+	                                                                           "localhost",
+	                                                                           48100);
+	private int	                                 threadPoolSize	       = 30;
+	private String	                             pluginRepository	   = "http://snova.googlecode.com/svn/trunk/repository/plugins.xml";
+	
+	private ProxyInfo	                         localProxy;
+	
+	private static final String	                 TAG	               = "Framework";
+	private static final String	                 PROXY_TAG	           = "LocalProxy";
+	private static final String	                 PROXY_SERVICE_NAME	   = "ProxyService";
+	private static final String	                 PROXY_SERVER_HOST	   = "LocalHost";
+	private static final String	                 PROXY_SERVER_PORT	   = "LocalPort";
+	private static final String	                 PLUGIN_REPOSITORY	   = "PluginRepository";
+	private static final String	                 THREAD_POOL_SIZE_NAME	= "ThreadPoolSize";
+	private static final String	                 PROXY_NAME	           = "Proxy";
+	
+	private DesktopFrameworkConfiguration()
 	{
 		loadConfig();
-		SharedObjectHelper.getGlobalTimer().scheduleAtFixedRate(new ConfigurationFileMonitor(), 5, 5, TimeUnit.SECONDS);
+		ReloadableConfigurationMonitor.getInstance().registerConfigFile(this);
 	}
 	
-	static class ConfigurationFileMonitor implements Runnable
+	public static DesktopFrameworkConfiguration getInstance()
 	{
-
-		@Override
-        public void run()
-        {
-			verifyConfigurationModified();
-        }
-		
+		return instance;
 	}
 	
 	private static File getConfigFile()
@@ -61,128 +63,152 @@ public class DesktopFrameworkConfiguration implements FrameworkConfiguration
 		URL url = DesktopFrameworkConfiguration.class.getResource("/"
 		        + Constants.CONF_FILE);
 		String conf;
-        try
-        {
-	        conf = URLDecoder.decode(url.getFile(), "UTF-8");
-        }
-        catch (UnsupportedEncodingException e)
-        {
-	        return null;
-        }
+		try
+		{
+			conf = URLDecoder.decode(url.getFile(), "UTF-8");
+		}
+		catch (UnsupportedEncodingException e)
+		{
+			return null;
+		}
 		return new File(conf);
 	}
-
-	private static void loadConfig()
+	
+	private void loadConfig()
 	{
-		try
+		InputStream is = DesktopFrameworkConfiguration.class
+		        .getResourceAsStream("/" + Constants.CONF_FILE);
+		if (null != is)
 		{
-			JAXBContext context = JAXBContext.newInstance(DesktopFrameworkConfiguration.class);
-			Unmarshaller unmarshaller = context.createUnmarshaller();
-			instance = (DesktopFrameworkConfiguration) unmarshaller.unmarshal(DesktopFrameworkConfiguration.class
-			        .getResource("/" + Constants.CONF_FILE));			
-			instance.init();
-			String dest = DesktopFrameworkConfiguration.class
-			        .getResource("/" + Constants.CONF_FILE).getFile();
-			lastModifyTime = getConfigFile().lastModified();
+			IniProperties props = new IniProperties();
+			try
+			{
+				props.load(is);
+				proxyService = props.getProperty(TAG, PROXY_SERVICE_NAME,
+				        proxyService);
+				threadPoolSize = props.getIntProperty(TAG,
+				        THREAD_POOL_SIZE_NAME, threadPoolSize);
+				localServerAddress.host = props.getProperty(TAG,
+				        PROXY_SERVER_HOST, localServerAddress.host);
+				localServerAddress.port = props.getIntProperty(TAG,
+				        PROXY_SERVER_PORT, localServerAddress.port);
+				
+				String s = props.getProperty(PROXY_TAG, PROXY_NAME);
+				if(null != s)
+				{
+					localProxy = new ProxyInfo();
+					if(!localProxy.parse(s))
+					{
+						logger.error("Failed to parse local proxy fro framework.");
+						localProxy = null;
+					}
+				}
+				pluginRepository = props.getProperty(TAG, PLUGIN_REPOSITORY,
+				        pluginRepository);
+			}
+			catch (Exception e)
+			{
+				logger.error("Failed to load config file:"
+				        + Constants.CONF_FILE, e);
+			}
+			
 		}
-		catch (Exception e)
-		{
-			e.printStackTrace();
-			logger.error("Failed to load default config file!", e);
-		}
-	}
-	public void save()
-	{
-		try
-		{
-			init();
-			JAXBContext context = JAXBContext.newInstance(DesktopFrameworkConfiguration.class);
-			Marshaller marshaller = context.createMarshaller();
-			marshaller.setProperty("jaxb.formatted.output", Boolean.TRUE);
-
-			FileOutputStream fos = new FileOutputStream(getConfigFile());
-			// fos.write("<!-- This is generated by hyk-proxy-client GUI, it's not the orignal conf file -->\r\n".getBytes());
-			marshaller.marshal(this, fos);
-			fos.close();
-			lastModifyTime = getConfigFile().lastModified();
-		}
-		catch (Exception e)
-		{
-			logger.error("Failed to store framework config file!", e);
-		}
-	}
-
-	@XmlElement(name = "LocalServer")
-	private SimpleSocketAddress localProxyServerAddress = new SimpleSocketAddress(
-	        "localhost", 48100);
-
-	private int threadPoolSize = 30;
-
-	@XmlElement(name = "ThreadPoolSize")
-	public void setThreadPoolSize(int threadPoolSize)
-	{
-		this.threadPoolSize = threadPoolSize;
-	}
-
-	private String proxyEventServiceHandler = "GAE";
-
-	public String getProxyEventHandler()
-	{
-		return proxyEventServiceHandler;
-	}
-
-	@XmlElement(name = "ProxyEventHandler")
-	public void setProxyEventHandler(String handlerName)
-	{
-		this.proxyEventServiceHandler = handlerName;
 	}
 	
-	private String pluginRepository = "";
-
-	public String getPluginRepository()
-    {
-    	return pluginRepository;
-    }
-
-	@XmlElement(name = "PluginRepository")
-	public void setPluginRepository(String pluginRepository)
-    {
-    	this.pluginRepository = pluginRepository;
-    }
-
-	public void init() throws Exception
+	@Override
+	public String getProxyEventHandler()
 	{
-
+		return proxyService;
 	}
-
+	
+	@Override
 	public SimpleSocketAddress getLocalProxyServerAddress()
 	{
-		return localProxyServerAddress;
+		return localServerAddress;
 	}
-
+	
+	@Override
 	public int getThreadPoolSize()
 	{
 		return threadPoolSize;
 	}
-
-	private DesktopFrameworkConfiguration()
+	
+	public String getPluginRepository()
 	{
-		// nothing
-	}
-
-	public static DesktopFrameworkConfiguration getInstance()
-	{
-		return instance;
+		return pluginRepository;
 	}
 	
-	public static boolean verifyConfigurationModified()
+	public void setLocalProxyServerHost(String host)
 	{
-		long ts = getConfigFile().lastModified();
-		if(ts != lastModifyTime)
+		this.localServerAddress.host = host;
+	}
+	
+	public void setLocalProxyServerPort(int port)
+	{
+		this.localServerAddress.port = port;
+	}
+	
+	public void setProxyService(String proxyService)
+	{
+		this.proxyService = proxyService;
+	}
+	
+	public void setThreadPoolSize(int threadPoolSize)
+	{
+		this.threadPoolSize = threadPoolSize;
+	}
+	
+	public void setPluginRepository(String pluginRepository)
+	{
+		this.pluginRepository = pluginRepository;
+	}
+	
+	public ProxyInfo getLocalProxy()
+	{
+		return localProxy;
+	}
+	
+	public void setLocalProxy(ProxyInfo info)
+	{
+		localProxy = info;
+	}
+	
+	public void save()
+	{
+		File confFile = getConfigFile();
+		try
 		{
-			loadConfig();
-			return true;
+			FileOutputStream fos = new FileOutputStream(confFile);
+			IniProperties props = new IniProperties();
+			props.setProperty(TAG, PROXY_SERVICE_NAME, proxyService);
+			props.setProperty(TAG, PROXY_SERVER_HOST, localServerAddress.host);
+			props.setIntProperty(TAG, PROXY_SERVER_PORT,
+			        localServerAddress.port);
+			props.setProperty(TAG, PLUGIN_REPOSITORY, pluginRepository);
+			props.setIntProperty(TAG, THREAD_POOL_SIZE_NAME, threadPoolSize);
+			if (null != localProxy)
+			{
+				props.setProperty(PROXY_TAG, PROXY_NAME, localProxy.toString());
+			}
+			
+			props.store(fos);
 		}
-		return false;
+		catch (Exception e)
+		{
+			logger.error("Failed to save config file:" + confFile.getName());
+		}
+		
+	}
+	
+	@Override
+	public void reload()
+	{
+		loadConfig();
+	}
+	
+	@Override
+	public File getConfigurationFile()
+	{
+		return getConfigFile();
 	}
 }
