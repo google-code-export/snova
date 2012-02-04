@@ -6,12 +6,15 @@ package org.snova.spac.plugin;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 
 import org.antlr.runtime.RecognitionException;
 import org.arch.event.EventDispatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.snova.framework.config.ReloadableConfiguration;
+import org.snova.framework.config.ReloadableConfigurationMonitor;
 import org.snova.framework.plugin.Plugin;
 import org.snova.framework.plugin.PluginContext;
 import org.snova.spac.handler.SpacProxyEventHandler;
@@ -25,10 +28,10 @@ import org.tykedog.csl.interpreter.CSL;
  * @author qiyingwang
  * 
  */
-public class SPAC implements Plugin
+public class SPAC implements Plugin, ReloadableConfiguration
 {
 	protected static Logger logger = LoggerFactory.getLogger(SPAC.class);
-	protected long tstamp = -1;
+	private SpacProxyEventHandler spacHandler = null;
 
 	@Override
 	public void onLoad(PluginContext context) throws Exception
@@ -38,14 +41,6 @@ public class SPAC implements Plugin
 	
 	private CSL reloadCSL() throws IOException, RecognitionException
 	{
-		String file = getClass().getResource("/spac.td").getFile();
-		file = URLDecoder.decode(file, "UTF-8");
-		File f = new File(file);
-		long tmp = f.lastModified();
-		if(tmp != tstamp)
-		{
-			tstamp = tmp;
-		}
 		InputStream is = getClass().getResourceAsStream("/spac.td");
 		CSL csl = CSL.Builder
 		        .build(is);
@@ -71,7 +66,7 @@ public class SPAC implements Plugin
 		
 		final SpacProxyEventHandler handler = new SpacProxyEventHandler();
 		EventDispatcher.getSingletonInstance().registerNamedEventHandler(handler);
-
+		spacHandler = handler;
 		final CSL tmp = reloadCSL();
 		try
 		{
@@ -82,6 +77,7 @@ public class SPAC implements Plugin
 		{
 			logger.error("Failed to invoke OnInit function", e);
 		}
+		ReloadableConfigurationMonitor.getInstance().registerConfigFile(this);
 		new Thread(new Runnable()
 		{
 			@Override
@@ -94,8 +90,6 @@ public class SPAC implements Plugin
 					try
 					{
 						Thread.sleep(routine_period > 0 ?routine_period:waittime);
-						CSL csl = reloadCSL();
-						handler.setScriptEngine(csl);
 						if(routine_period > 0)
 						{
 							Integer nextwait = (Integer) tmp.invoke("OnRoutine",
@@ -153,5 +147,39 @@ public class SPAC implements Plugin
     {
 	    // TODO Auto-generated method stub
 	    
+    }
+
+	@Override
+    public void reload()
+    {
+	    if(null != spacHandler)
+	    {
+	    	try
+            {
+	            spacHandler.setScriptEngine(reloadCSL());
+            }
+            catch (Exception e)
+            {
+	            logger.error("Failed to reload CSL.", e);
+            }
+	    }
+	    
+    }
+
+	@Override
+    public File getConfigurationFile()
+    {
+		String file = getClass().getResource("/spac.td").getFile();
+		try
+        {
+	        file = URLDecoder.decode(file, "UTF-8");
+	        return  new File(file);
+        }
+        catch (UnsupportedEncodingException e)
+        {
+	        logger.error("Failed to locate script file.", e);
+        }
+		
+	    return null;
     }
 }

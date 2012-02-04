@@ -3,7 +3,10 @@
  */
 package org.snova.c4.server.service;
 
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.arch.buffer.Buffer;
 import org.arch.event.Event;
@@ -17,12 +20,14 @@ import org.arch.event.misc.CompressEvent;
 import org.arch.event.misc.CompressEventV2;
 import org.arch.event.misc.EncryptEvent;
 import org.arch.event.misc.EncryptEventV2;
+import org.arch.event.misc.EncryptType;
+import org.jboss.netty.channel.Channel;
+import org.jboss.netty.util.internal.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.c4.common.C4Constants;
 import org.snova.c4.common.event.C4Events;
 import org.snova.c4.common.event.EventRestRequest;
-import org.snova.c4.common.event.SequentialChunkEvent;
 import org.snova.c4.server.session.Session;
 import org.snova.c4.server.session.SessionManager;
 
@@ -32,77 +37,169 @@ import org.snova.c4.server.session.SessionManager;
  */
 public class EventService
 {
-	private static EventService	instance	= new EventService();
+	// private static EventService instance = new EventService();
+	private static Map<String, EventService>	instanceTable	= new HashMap<String, EventService>();
 	
-	public static EventService getInstance()
+	public static EventService getInstance(String userToken)
 	{
-		return instance;
+		synchronized (instanceTable)
+		{
+			if (!instanceTable.containsKey(userToken))
+			{
+				instanceTable.put(userToken, new EventService(userToken));
+			}
+			return instanceTable.get(userToken);
+		}
 	}
 	
-	protected Logger	        logger	          = LoggerFactory
-	                                                      .getLogger(getClass());
-	protected LinkedList<Event>	reponseEventQueue	= new LinkedList<Event>();
+	private static final int	          MAX_EVENT_QUEUE_SIZE	         = 1000;
+	protected Logger	                  logger	                     = LoggerFactory
+	                                                                             .getLogger(getClass());
+	// protected LinkedList<Event> reponseEventQueue = new LinkedList<Event>();
 	
-	private EventService()
+	protected Map<Integer, AtomicInteger>	sessionReponseQueueSizeTable	= new ConcurrentHashMap<Integer, AtomicInteger>();
+	protected LinkedList<Event>	          responseQueue	                 = new LinkedList<Event>();
+	private Map<Integer, Channel>	      suspendChannels	             = new ConcurrentHashMap<Integer, Channel>();
+	
+	private String	                      userToken;
+	
+	private EventService(String userToken)
 	{
 		C4Events.init(null, true);
+		this.userToken = userToken;
 	}
 	
 	public int getRestEventQueueSize()
 	{
-		return reponseEventQueue.size();
+		synchronized (responseQueue)
+		{
+			return responseQueue.size();
+		}
 	}
 	
 	public void releaseEvents()
 	{
-		if(!reponseEventQueue.isEmpty())
+		if (!responseQueue.isEmpty())
 		{
 			logger.info("Releaase all queued events");
-			reponseEventQueue.clear();
+			responseQueue.clear();
+			sessionReponseQueueSizeTable.clear();
+		}
+		instanceTable.remove(userToken);
+		suspendChannels.clear();
+	}
+	
+	public void offer(Event ev, Channel ch)
+	{
+		synchronized (responseQueue)
+		{
+			EncryptEventV2 enc = new EncryptEventV2(EncryptType.SE1, ev);
+			enc.setHash(ev.getHash());
+			responseQueue.add(enc);
+			int sessionQueueSize = sessionEventQueueIncrementAndGet(ev
+			        .getHash());
+			if (sessionQueueSize > MAX_EVENT_QUEUE_SIZE && null != ch)
+			{
+				ch.setReadable(false);
+				suspendChannels.put(ev.getHash(), ch);
+			}
+			logger.info("Session[" + ev.getHash()
+			        + "] offer one event to queue while size="
+			        + sessionQueueSize);
+		}
+		synchronized (this)
+		{
+			this.notify();
 		}
 	}
 	
-	public void offer(Event ev)
+	// public void offer(Event ev, Channel ch)
+	// {
+	// synchronized (reponseEventQueue)
+	// {
+	// reponseEventQueue.add(ev);
+	// if (reponseEventQueue.size() > MAX_EVENT_QUEUE_SIZE)
+	// {
+	// if (null != ch)
+	// {
+	// waitingChannels.add(ch);
+	// NioSocketChannelConfig cfg = (NioSocketChannelConfig) ch
+	// .getConfig();
+	// // cfg.setPerformancePreferences(connectionTime, latency,
+	// // bandwidth)
+	// // ch.setReadable(false);
+	// //
+	// }
+	// }
+	// }
+	// logger.info("Offer one event while queue size:"
+	// + reponseEventQueue.size());
+	// synchronized (this)
+	// {
+	// this.notify();
+	// }
+	// }
+	
+	public void removeSessionQueue(int sessionID)
 	{
-		synchronized (reponseEventQueue)
-		{
-			reponseEventQueue.add(ev);
-			while (reponseEventQueue.size() > 200)
-			{
-				try
-				{
-					reponseEventQueue.wait(500);
-				}
-				catch (InterruptedException e)
-				{
-					
-				}
-			}
-		}
+		sessionReponseQueueSizeTable.remove(sessionID);
+		suspendChannels.remove(sessionID);
 	}
 	
 	public int extractEventResponses(Buffer buf)
 	{
-		int count = 0;
-		synchronized (reponseEventQueue)
+		return extractEventResponses(buf, 512 * 1024);
+	}
+	
+	private int sessionEventQueueDecrementAndGet(int sessionID)
+	{
+		AtomicInteger sessionQueueSize = sessionReponseQueueSizeTable
+		        .get(sessionID);
+		if (null == sessionQueueSize)
 		{
-			do
-			{
-				if (buf.readableBytes() >= 1024 * 1024)
-				{
-					break;
-				}
-				Event ev = null;
-				if (reponseEventQueue.isEmpty())
-				{
-					break;
-				}
-				ev = reponseEventQueue.removeFirst();
-				ev.encode(buf);
-				count++;
-			} while (true);
-			reponseEventQueue.notifyAll();
+			return 0;
 		}
+		return sessionQueueSize.decrementAndGet();
+	}
+	
+	private int sessionEventQueueIncrementAndGet(int sessionID)
+	{
+		AtomicInteger sessionQueueSize = sessionReponseQueueSizeTable
+		        .get(sessionID);
+		if (null == sessionQueueSize)
+		{
+			sessionQueueSize = new AtomicInteger(0);
+			sessionReponseQueueSizeTable.put(sessionID, sessionQueueSize);
+		}
+		return sessionQueueSize.incrementAndGet();
+	}
+	
+	public int extractEventResponses(Buffer buf, int maxSize)
+	{
+		int count = 0;
+		synchronized (responseQueue)
+		{
+			LinkedList<Event> queue = responseQueue;
+			Event ev = null;
+			while (!queue.isEmpty())
+			{
+				ev = queue.removeFirst();
+				ev.encode(buf);
+				int sessionQueueSize = sessionEventQueueDecrementAndGet(ev
+				        .getHash());
+				if (suspendChannels.containsKey(ev.getHash())
+				        && sessionQueueSize < MAX_EVENT_QUEUE_SIZE)
+				{
+					suspendChannels.remove(ev.getHash()).setReadable(true);
+				}
+				count++;
+				if (buf.readableBytes() >= maxSize)
+				{
+					break;
+				}
+			}
+		}
+		SessionManager.getInstance(userToken).getEventRestNotify().encode(buf);
 		return count;
 	}
 	
@@ -128,24 +225,27 @@ public class EventService
 		{
 			case C4Constants.EVENT_SEQUNCEIAL_CHUNK_TYPE:
 			{
-				SequentialChunkEvent sequnce = (SequentialChunkEvent) event;
-				SessionManager.getInstance().handleEvent(header, event);
+				SessionManager.getInstance(userToken)
+				        .handleEvent(header, event);
 				break;
 			}
 			case HTTPEventContants.HTTP_CHUNK_EVENT_TYPE:
 			{
-				SessionManager.getInstance().handleEvent(header, event);
+				SessionManager.getInstance(userToken)
+				        .handleEvent(header, event);
 				break;
 			}
 			case HTTPEventContants.HTTP_CONNECTION_EVENT_TYPE:
 			{
-				SessionManager.getInstance().handleEvent(header, event);
+				SessionManager.getInstance(userToken)
+				        .handleEvent(header, event);
 				break;
 			}
 			case HTTPEventContants.HTTP_REQUEST_EVENT_TYPE:
 			{
 				// fetchHandler.fetch((HTTPRequestEvent) event);
-				SessionManager.getInstance().handleEvent(header, event);
+				SessionManager.getInstance(userToken)
+				        .handleEvent(header, event);
 				break;
 			}
 			case EventConstants.COMPRESS_EVENT_TYPE:
@@ -183,14 +283,16 @@ public class EventService
 			case C4Constants.EVENT_REST_REQEUST_TYPE:
 			{
 				EventRestRequest req = (EventRestRequest) event;
-				for(Integer sessionId:req.restSessions)
+				for (Integer sessionId : req.restSessions)
 				{
-					Session s = SessionManager.getInstance().getSession(sessionId);
-					if(null == s)
+					Session s = SessionManager.getInstance(userToken)
+					        .getSession(sessionId);
+					if (null == s)
 					{
-						HTTPConnectionEvent closeEvent = new HTTPConnectionEvent(HTTPConnectionEvent.CLOSED);
+						HTTPConnectionEvent closeEvent = new HTTPConnectionEvent(
+						        HTTPConnectionEvent.CLOSED);
 						closeEvent.setHash(sessionId);
-						offer(closeEvent);
+						offer(closeEvent, null);
 					}
 					else
 					{
@@ -211,7 +313,7 @@ public class EventService
 		}
 	}
 	
-	public void dispatchEvent(Buffer content) throws Exception
+	public void dispatchEvent(final Buffer content) throws Exception
 	{
 		while (content.readable())
 		{

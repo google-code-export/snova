@@ -18,7 +18,7 @@
 	<property name="temp" value="${root}/temp" />
 	<property name="shell" value="${root}/shell" />
 	<property name="release" value="release" />
-	<property name="version" value="0.12.0120" />
+	<property name="version" value="0.12.0204" />
 	<property name="versionfile" value="org/snova/gae/common/GAEPluginVersion.java" />
 	<property name="release_dir_name" value="gae" />
 	<property name="project_name" value="snova-gae" />

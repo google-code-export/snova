@@ -1,5 +1,19 @@
-snova Changelog
+Snova Changelog
 ===================
+Changes in version 0.12.0204
+-------------------------------------------
+
+** Features
+   * Change config file format from XML to plain text
+   * Reload modified config file automatically
+   
+** Improvement
+   * Faster GUI launch
+
+      
+** Task
+   * NA
+
 Changes in version 0.12.0120
 -------------------------------------------
 
@@ -13,6 +27,7 @@ Changes in version 0.12.0120
       
 ** Task
    * NA
+   
 Changes in version 0.12.0107(2012.01.07)
 -------------------------------------------
 

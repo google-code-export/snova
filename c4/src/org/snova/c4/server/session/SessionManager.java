@@ -3,6 +3,7 @@
  */
 package org.snova.c4.server.session;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.arch.event.Event;
@@ -10,11 +11,12 @@ import org.arch.event.EventHeader;
 import org.arch.event.http.HTTPConnectionEvent;
 import org.arch.event.http.HTTPEventContants;
 import org.arch.event.http.HTTPRequestEvent;
-import org.arch.util.NetworkHelper;
 import org.jboss.netty.util.internal.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.c4.common.C4Constants;
+import org.snova.c4.common.event.EventRestNotify;
+import org.snova.c4.server.service.EventService;
 
 /**
  * @author wqy
@@ -22,24 +24,43 @@ import org.snova.c4.common.C4Constants;
  */
 public class SessionManager
 {
-	protected Logger	          logger	     = LoggerFactory
-	                                                   .getLogger(getClass());
-	private static SessionManager instance = new SessionManager();
-	private Map<Integer, Session>	sessionTable	= new ConcurrentHashMap<Integer, Session>();
-
-	public static SessionManager getInstance()
+	protected Logger	                       logger	      = LoggerFactory
+	                                                                  .getLogger(getClass());
+	private static Map<String, SessionManager>	instanceTable	= new HashMap<String, SessionManager>();
+	// private static SessionManager instance = new SessionManager();
+	private Map<Integer, Session>	           sessionTable	  = new ConcurrentHashMap<Integer, Session>();
+	
+	public static SessionManager getInstance(String userToken)
 	{
-		return instance;
+		synchronized (instanceTable)
+		{
+			if (!instanceTable.containsKey(userToken))
+			{
+				instanceTable.put(userToken, new SessionManager(userToken));
+			}
+			return instanceTable.get(userToken);
+		}
 	}
-	private SessionManager(){}
+	
+	private String	userToken;
+	
+	private SessionManager(String userToken)
+	{
+		this.userToken = userToken;
+	}
+	
+	public String getUserToken()
+	{
+		return userToken;
+	}
 	
 	private Session createSession(String sessionName, int id)
 	{
-		if(logger.isDebugEnabled())
+		if (logger.isDebugEnabled())
 		{
 			logger.debug("Create session with name:" + sessionName);
 		}
-		DirectSession session = new DirectSession();
+		DirectSession session = new DirectSession(this);
 		session.setName(sessionName);
 		session.setID(id);
 		sessionTable.put(id, session);
@@ -56,13 +77,25 @@ public class SessionManager
 		sessionTable.remove(session.getID());
 	}
 	
+	public EventRestNotify getEventRestNotify()
+	{
+		EventRestNotify ev = new EventRestNotify();
+		ev.rest = EventService.getInstance(userToken).getRestEventQueueSize();
+		for (Session session : sessionTable.values())
+		{
+			ev.restSessions.add(session.getID());
+		}
+		return ev;
+	}
+	
 	public void clear()
 	{
-		for(Session session:sessionTable.values())
+		for (Session session : sessionTable.values())
 		{
 			session.close();
 		}
 		sessionTable.clear();
+		instanceTable.remove(userToken);
 	}
 	
 	public void handleEvent(EventHeader header, Event event)
@@ -85,29 +118,26 @@ public class SessionManager
 					}
 					String sessionName = null;
 					String host = ev.getHeader("Host");
-					if(null != host)
+					if (null != host)
 					{
-						if(host.indexOf(":") != -1)
+						if (host.indexOf(":") != -1)
 						{
 							host = host.substring(0, host.indexOf(":"));
-						}
-						if(NetworkHelper.isPrivateIP(host))
-						{
-							sessionName = "Direct";
 						}
 					}
 					sessionName = "Direct";
 					
-					if(logger.isInfoEnabled())
+					if (logger.isInfoEnabled())
 					{
-						logger.info("Handle URL:" +ev.method +" "+ ev.url + " by session:" + sessionName);
+						logger.info("Handle URL:" + ev.method + " " + ev.url
+						        + " by session:" + sessionName);
 					}
 					
 					Session session = getSession(event.getHash());
 					if (null == session)
 					{
 						session = createSession(sessionName, event.getHash());
-						if(null == session)
+						if (null == session)
 						{
 							return;
 						}
@@ -130,7 +160,8 @@ public class SessionManager
 				}
 				else
 				{
-					logger.error("NULL session for handling HTTP chunk event");
+					logger.error("NULL session[" + event.getHash()
+					        + "] found to handle HTTP chunk event");
 				}
 				break;
 			}
@@ -144,6 +175,7 @@ public class SessionManager
 					if (ev.status == HTTPConnectionEvent.CLOSED)
 					{
 						removeSession(session);
+						EventService.getInstance(userToken).removeSessionQueue(event.getHash());
 					}
 				}
 				break;

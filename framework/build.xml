@@ -14,7 +14,7 @@
 	<property name="docs" value="${root}/docs" />
 	<property name="shell" value="${root}/shell" />
 	<property name="release" value="release" />
-	<property name="version" value="0.12.0120" />
+	<property name="version" value="0.12.0204" />
 	<property name="versionfile" value="org/snova/framework/common/Version.java" />
 	<property name="project_name" value="snova" />
 	<property name="releasename" value="${project_name}-${version}"/>
@@ -55,6 +55,7 @@
 		<jar destfile="${distroot}/${jar}" basedir="${classes}">
 			<manifest>
 				<attribute name="Version" value="${version}"/>
+				<attribute name="Main-Class" value="org.snova.framework.launch.ApplicationLauncher"/>
 				<attribute name="Class-Path" value="../conf  
 					arch.jar jboss-netty.jar bcprov-jdk16-146.jar
 					slf4j-api-1.6.4.jar slf4j-jdk14-1.6.4.jar"/>
@@ -99,9 +100,9 @@
 			<fileset dir="${shell}" />
 		</copy>
 
-		<unzip dest="${binreleasedir}/plugins" src="../gae/snova-gae-0.12.0120.zip"/>
-		<unzip dest="${binreleasedir}/plugins" src="../spac/snova-spac-0.12.0120.zip"/>
-		<unzip dest="${binreleasedir}/plugins" src="../c4/snova-c4-0.12.0120.zip"/>
+		<unzip dest="${binreleasedir}/plugins" src="../gae/snova-gae-0.12.0204.zip"/>
+		<unzip dest="${binreleasedir}/plugins" src="../spac/snova-spac-0.12.0204.zip"/>
+		<unzip dest="${binreleasedir}/plugins" src="../c4/snova-c4-0.12.0204.zip"/>
 		<copy todir="${binreleasedir}" file="${root}/readme.txt" />
 		<copy todir="${binreleasedir}" file="${root}/changelog.txt" />
 		<copy todir="${binreleasedir}" file="${root}/licence.txt" />

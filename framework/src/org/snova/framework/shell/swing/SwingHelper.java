@@ -9,6 +9,8 @@
  */
 package org.snova.framework.shell.swing;
 
+import java.awt.Desktop;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.concurrent.Future;
 
@@ -16,12 +18,31 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 
 import org.arch.util.ListSelector;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  */
 public class SwingHelper
 {
+	protected static Logger	logger	= LoggerFactory
+	                                       .getLogger(SwingHelper.class);
+	
+	public static void browseWebpage(String site)
+	{
+		try
+		{
+			Desktop desktop = Desktop.getDesktop();
+			desktop.browse(new URI(site));
+		}
+		catch (Exception e)
+		{
+			logger.error("Failed to go to web site!", e);
+		}
+		
+	}
+	
 	public static void showBusyButton(Future runninttask, JButton button,
 	        String busytext)
 	{
@@ -45,6 +66,5 @@ public class SwingHelper
 			}
 		}
 	}
-	
 	
 }

@@ -13,6 +13,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -47,20 +48,6 @@ public class DesktopPluginManager implements PluginManager
 	                                                         .getLogger(DesktopPluginManager.class);
 	protected static Properties	         pluginsStat	= new Properties();
 	private static DesktopPluginManager	 instance	 = new DesktopPluginManager();
-	private static JAXBContext	         descContext;
-	
-	static
-	{
-		try
-        {
-	        descContext	= JAXBContext
-	                .newInstance(PluginDescription.class);
-        }
-        catch (JAXBException e)
-        {
-        	logger.error("Failed to new jaxn context",e);
-        }
-	}
 	
 	static enum ActiveState
 	{
@@ -263,11 +250,10 @@ public class DesktopPluginManager implements PluginManager
 			loader = new JarClassLoader(
 			        DesktopPluginManager.class.getClassLoader(), classPath);
 			
-			Unmarshaller unmarshaller = descContext.createUnmarshaller();
-			URL pluginResource = loader.getResource("/"
+			InputStream pluginResource = loader.getResourceAsStream("/"
 			        + Constants.PLUGIN_DESC_FILE);
-			PluginDescription desc = (PluginDescription) unmarshaller
-			        .unmarshal(pluginResource);
+			PluginDescription desc = new PluginDescription();
+			desc.parse(pluginResource);
 			pluginName = desc.name;
 			if (plugins.containsKey(pluginName))
 			{

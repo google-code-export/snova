@@ -6,24 +6,23 @@ package org.arch.buffer;
 import java.io.IOException;
 import java.io.InputStream;
 
-
 /**
  * @author qiyingwang
  * 
  */
 public class Buffer
 {
-
-	private static final int BUFFER_MAX_READ = 8192;
-	private static final int DEFAULT_BUFFER_SIZE = 32;
-
-	private byte[] buffer = new byte[0];
-
-	private int read_index;
-	private int write_index;
-
+	
+	private static final int	BUFFER_MAX_READ	    = 8192;
+	private static final int	DEFAULT_BUFFER_SIZE	= 32;
+	
+	private byte[]	         buffer	                = new byte[0];
+	
+	private int	             read_index;
+	private int	             write_index;
+	
 	// private int buffer_len;
-
+	
 	public static Buffer wrapReadableContent(byte[] content)
 	{
 		return wrapReadableContent(content, 0, content.length);
@@ -32,7 +31,7 @@ public class Buffer
 	public static Buffer wrapReadableContent(byte[] content, int offset, int len)
 	{
 		Buffer buf = new Buffer(content);
-		buf.write_index = len;
+		buf.write_index = offset + len;
 		buf.read_index = offset;
 		return buf;
 	}
@@ -46,62 +45,62 @@ public class Buffer
 	{
 		this(32);
 	}
-
+	
 	public Buffer(int capactity)
 	{
 		ensureWritableBytes(capactity);
 	}
-
+	
 	public int getReadIndex()
 	{
 		return read_index;
 	}
-
+	
 	public int getWriteIndex()
 	{
 		return write_index;
 	}
-
+	
 	public void setReadIndex(int idx)
 	{
 		read_index = idx;
 	}
-
+	
 	public void advanceReadIndex(int step)
 	{
 		read_index += step;
 	}
-
+	
 	public void setWriteIndex(int idx)
 	{
 		write_index = idx;
 	}
-
+	
 	public void advanceWriteIndex(int step)
 	{
 		write_index += step;
 	}
-
+	
 	public boolean readable()
 	{
 		return write_index > read_index;
 	}
-
+	
 	public boolean writeable()
 	{
 		return buffer.length > write_index;
 	}
-
+	
 	public int readableBytes()
 	{
 		return readable() ? write_index - read_index : 0;
 	}
-
+	
 	public int writeableBytes()
 	{
 		return writeable() ? buffer.length - write_index : 0;
 	}
-
+	
 	public int compact(int leastLength)
 	{
 		int writableBytes = writeableBytes();
@@ -122,7 +121,7 @@ public class Buffer
 		buffer = newSpace;
 		return total - readableBytes;
 	}
-
+	
 	public boolean ensureWritableBytes(int minWritableBytes)
 	{
 		if (writeableBytes() >= minWritableBytes)
@@ -147,27 +146,27 @@ public class Buffer
 			return true;
 		}
 	}
-
+	
 	public boolean reserve(int len)
 	{
 		return ensureWritableBytes(len);
 	}
-
+	
 	public byte[] getRawBuffer()
 	{
 		return buffer;
 	}
-
+	
 	public int capacity()
 	{
 		return buffer.length;
 	}
-
+	
 	public void clear()
 	{
 		write_index = read_index = 0;
 	}
-
+	
 	public int read(byte[] data_out, int off, int datlen)
 	{
 		if (datlen > readableBytes())
@@ -183,7 +182,7 @@ public class Buffer
 	{
 		return read(data_out, 0, data_out.length);
 	}
-
+	
 	public int write(byte[] data_in)
 	{
 		return write(data_in, 0, data_in.length);
@@ -199,10 +198,10 @@ public class Buffer
 		write_index += datlen;
 		return datlen;
 	}
-
+	
 	public int write(Buffer unit, int datlen)
 	{
-
+		
 		if (datlen > unit.readableBytes())
 		{
 			datlen = unit.readableBytes();
@@ -214,7 +213,7 @@ public class Buffer
 		}
 		return ret;
 	}
-
+	
 	public int writeByte(byte ch)
 	{
 		if (!ensureWritableBytes(1))
@@ -224,26 +223,26 @@ public class Buffer
 		buffer[write_index++] = ch;
 		return 1;
 	}
-
+	
 	public int read(Buffer unit, int datlen)
 	{
 		return unit.write(this, datlen);
 	}
-
+	
 	public byte readByte()
 	{
-		if(!readable())
+		if (!readable())
 		{
 			throw new IndexOutOfBoundsException();
 		}
-		return  buffer[read_index++];
+		return buffer[read_index++];
 	}
-
+	
 	public void skipBytes(int len)
 	{
 		advanceReadIndex(len);
 	}
-
+	
 	public void discardReadedBytes()
 	{
 		if (read_index > 0)
@@ -252,11 +251,11 @@ public class Buffer
 			{
 				int tmp = readableBytes();
 				System.arraycopy(buffer, read_index, buffer, 0, tmp);
-				//byte[] newbuf = new byte[tmp];
-				//System.arraycopy(buffer, read_index, newbuf, 0, tmp);
+				// byte[] newbuf = new byte[tmp];
+				// System.arraycopy(buffer, read_index, newbuf, 0, tmp);
 				read_index = 0;
 				write_index = tmp;
-				//buffer = newbuf;
+				// buffer = newbuf;
 			}
 			else
 			{
@@ -268,22 +267,22 @@ public class Buffer
 	public int read(InputStream is)
 	{
 		int writeCurPos = getWriteIndex();
-		while(true)
+		while (true)
 		{
 			try
-            {
-	            int len = is.read(buffer, getWriteIndex(), writeableBytes());
-	            if(len <= 0)
-	            {
-	            	break;
-	            }
-	            write_index += len;
-            }
-            catch (IOException e)
-            {
-            	
-	            break;
-            }
+			{
+				int len = is.read(buffer, getWriteIndex(), writeableBytes());
+				if (len <= 0)
+				{
+					break;
+				}
+				write_index += len;
+			}
+			catch (IOException e)
+			{
+				
+				break;
+			}
 		}
 		return getWriteIndex() - writeCurPos;
 	}
@@ -294,5 +293,5 @@ public class Buffer
 		System.arraycopy(buffer, getReadIndex(), b, 0, readableBytes());
 		return b;
 	}
-
+	
 }

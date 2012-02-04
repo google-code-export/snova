@@ -1,4 +1,4 @@
-<?xml version="1.1" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8" ?>
 
 <Form version="1.5" maxVersion="1.7" type="org.netbeans.modules.form.forminfo.JPanelFormInfo">
   <AuxValues>
@@ -18,13 +18,13 @@
       <Group type="103" groupAlignment="0" attributes="0">
           <Group type="102" alignment="0" attributes="0">
               <EmptySpace min="-2" pref="171" max="-2" attributes="0"/>
-              <Component id="applyButton" min="-2" pref="82" max="-2" attributes="0"/>
-              <EmptySpace pref="176" max="32767" attributes="0"/>
+              <Component id="applyButton" min="-2" pref="88" max="-2" attributes="0"/>
+              <EmptySpace pref="182" max="32767" attributes="0"/>
           </Group>
           <Group type="103" rootIndex="1" groupAlignment="0" attributes="0">
               <Group type="102" alignment="0" attributes="0">
                   <EmptySpace min="-2" pref="8" max="-2" attributes="0"/>
-                  <Component id="jTabbedPane1" pref="411" max="32767" attributes="0"/>
+                  <Component id="jTabbedPane1" pref="423" max="32767" attributes="0"/>
                   <EmptySpace max="-2" attributes="0"/>
               </Group>
           </Group>
@@ -33,15 +33,15 @@
     <DimensionLayout dim="1">
       <Group type="103" groupAlignment="0" attributes="0">
           <Group type="102" alignment="1" attributes="0">
-              <EmptySpace pref="368" max="32767" attributes="0"/>
+              <EmptySpace pref="391" max="32767" attributes="0"/>
               <Component id="applyButton" min="-2" max="-2" attributes="0"/>
-              <EmptySpace min="-2" pref="19" max="-2" attributes="0"/>
+              <EmptySpace min="-2" pref="18" max="-2" attributes="0"/>
           </Group>
           <Group type="103" rootIndex="1" groupAlignment="0" attributes="0">
               <Group type="102" alignment="0" attributes="0">
                   <EmptySpace max="-2" attributes="0"/>
-                  <Component id="jTabbedPane1" min="-2" pref="345" max="-2" attributes="0"/>
-                  <EmptySpace pref="55" max="32767" attributes="0"/>
+                  <Component id="jTabbedPane1" min="-2" max="-2" attributes="0"/>
+                  <EmptySpace pref="77" max="32767" attributes="0"/>
               </Group>
           </Group>
       </Group>
@@ -116,10 +116,10 @@
                                   <Component id="newAppIdButton" min="-2" pref="101" max="-2" attributes="0"/>
                                   <EmptySpace min="-2" pref="34" max="-2" attributes="0"/>
                                   <Component id="modifyAppIdButton" min="-2" pref="98" max="-2" attributes="0"/>
-                                  <EmptySpace pref="34" max="32767" attributes="0"/>
+                                  <EmptySpace pref="46" max="32767" attributes="0"/>
                                   <Component id="deleteAppIdButton" min="-2" max="-2" attributes="0"/>
                               </Group>
-                              <Component id="jScrollPane1" alignment="1" pref="354" max="32767" attributes="1"/>
+                              <Component id="jScrollPane1" alignment="1" pref="346" max="32767" attributes="1"/>
                           </Group>
                           <EmptySpace max="-2" attributes="0"/>
                       </Group>
@@ -223,11 +223,16 @@
                   <Group type="102" alignment="0" attributes="0">
                       <EmptySpace max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="0" max="-2" attributes="0">
-                          <Component id="isXMPPEnable" alignment="1" max="32767" attributes="1"/>
+                          <Group type="102" alignment="0" attributes="0">
+                              <EmptySpace min="-2" pref="14" max="-2" attributes="0"/>
+                              <Component id="jLabel8" min="-2" max="-2" attributes="0"/>
+                              <EmptySpace max="-2" attributes="0"/>
+                              <Component id="connectionModeCombox" min="-2" pref="91" max="-2" attributes="0"/>
+                          </Group>
                           <Component id="jPanel4" alignment="0" max="32767" attributes="1"/>
-                          <Component id="jPanel5" alignment="0" max="32767" attributes="1"/>
+                          <Component id="jPanel5" alignment="0" min="0" max="32767" attributes="1"/>
                       </Group>
-                      <EmptySpace pref="15" max="32767" attributes="0"/>
+                      <EmptySpace max="32767" attributes="0"/>
                   </Group>
               </Group>
             </DimensionLayout>
@@ -235,84 +240,59 @@
               <Group type="103" groupAlignment="0" attributes="0">
                   <Group type="102" alignment="0" attributes="0">
                       <EmptySpace max="-2" attributes="0"/>
-                      <Component id="isXMPPEnable" min="-2" max="-2" attributes="0"/>
+                      <Group type="103" groupAlignment="3" attributes="0">
+                          <Component id="jLabel8" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="connectionModeCombox" alignment="3" min="-2" max="-2" attributes="0"/>
+                      </Group>
                       <EmptySpace max="-2" attributes="0"/>
-                      <Component id="jPanel4" min="-2" pref="100" max="-2" attributes="0"/>
+                      <Component id="jPanel4" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace type="separate" max="-2" attributes="0"/>
+                      <Component id="jPanel5" max="32767" attributes="0"/>
                       <EmptySpace max="-2" attributes="0"/>
-                      <Component id="jPanel5" min="-2" max="-2" attributes="0"/>
-                      <EmptySpace pref="23" max="32767" attributes="0"/>
                   </Group>
               </Group>
             </DimensionLayout>
           </Layout>
           <SubComponents>
-            <Component class="javax.swing.JCheckBox" name="isXMPPEnable">
-              <Properties>
-                <Property name="text" type="java.lang.String" value="Enable XMPP"/>
-              </Properties>
-              <Events>
-                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="isXMPPEnableActionPerformed"/>
-              </Events>
-            </Component>
             <Container class="javax.swing.JPanel" name="jPanel4">
               <Properties>
                 <Property name="border" type="javax.swing.border.Border" editor="org.netbeans.modules.form.editors2.BorderEditor">
                   <Border info="org.netbeans.modules.form.compat2.border.TitledBorderInfo">
-                    <TitledBorder title="Http Proxy Connection Setting"/>
+                    <TitledBorder title="Google Proxy Setting"/>
                   </Border>
                 </Property>
               </Properties>
+              <AccessibilityProperties>
+                <Property name="AccessibleContext.accessibleName" type="java.lang.String" value="Goole Proxy Setting"/>
+              </AccessibilityProperties>
 
               <Layout>
                 <DimensionLayout dim="0">
                   <Group type="103" groupAlignment="0" attributes="0">
                       <Group type="102" alignment="0" attributes="0">
-                          <EmptySpace max="-2" attributes="0"/>
-                          <Group type="103" groupAlignment="0" max="-2" attributes="0">
-                              <Group type="102" alignment="0" attributes="0">
-                                  <Component id="jLabel1" min="-2" max="-2" attributes="0"/>
-                                  <EmptySpace type="separate" max="-2" attributes="0"/>
-                                  <Component id="localHttpProxyHostText" min="-2" pref="80" max="-2" attributes="0"/>
-                              </Group>
-                              <Component id="isHttpProxyEnable" alignment="0" min="-2" max="-2" attributes="0"/>
-                              <Group type="102" alignment="0" attributes="1">
-                                  <Component id="jLabel2" min="-2" max="-2" attributes="0"/>
-                                  <EmptySpace max="-2" attributes="0"/>
-                                  <Component id="localHttpProxyUserText" max="32767" attributes="0"/>
-                              </Group>
-                          </Group>
+                          <EmptySpace min="-2" pref="34" max="-2" attributes="0"/>
+                          <Component id="jLabel14" min="-2" max="-2" attributes="0"/>
+                          <EmptySpace min="-2" pref="1" max="-2" attributes="0"/>
+                          <Component id="proxyTypeComboBox" min="-2" max="-2" attributes="1"/>
                           <EmptySpace type="separate" max="-2" attributes="0"/>
-                          <Group type="103" groupAlignment="1" attributes="0">
-                              <Component id="jLabel3" alignment="1" min="-2" max="-2" attributes="0"/>
-                              <Component id="jLabel4" alignment="1" min="-2" max="-2" attributes="0"/>
-                          </Group>
+                          <Component id="jLabel1" min="-2" max="-2" attributes="1"/>
                           <EmptySpace max="-2" attributes="0"/>
-                          <Group type="103" groupAlignment="1" attributes="0">
-                              <Component id="localHttpProxyPassText" pref="133" max="32767" attributes="1"/>
-                              <Component id="localHttpProxyPortText" alignment="1" pref="133" max="32767" attributes="1"/>
-                          </Group>
-                          <EmptySpace max="-2" attributes="0"/>
+                          <Component id="localHttpProxyHostText" min="-2" pref="160" max="-2" attributes="1"/>
+                          <EmptySpace max="32767" attributes="0"/>
                       </Group>
                   </Group>
                 </DimensionLayout>
                 <DimensionLayout dim="1">
                   <Group type="103" groupAlignment="0" attributes="0">
                       <Group type="102" alignment="0" attributes="0">
-                          <Component id="isHttpProxyEnable" min="-2" max="-2" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
                           <Group type="103" groupAlignment="3" attributes="0">
+                              <Component id="jLabel14" alignment="3" min="-2" max="-2" attributes="0"/>
+                              <Component id="proxyTypeComboBox" alignment="3" min="-2" max="-2" attributes="0"/>
                               <Component id="jLabel1" alignment="3" min="-2" max="-2" attributes="0"/>
                               <Component id="localHttpProxyHostText" alignment="3" min="-2" max="-2" attributes="0"/>
-                              <Component id="jLabel4" alignment="3" min="-2" max="-2" attributes="0"/>
-                              <Component id="localHttpProxyPortText" alignment="3" min="-2" max="-2" attributes="0"/>
                           </Group>
-                          <EmptySpace type="unrelated" max="-2" attributes="0"/>
-                          <Group type="103" groupAlignment="3" attributes="0">
-                              <Component id="jLabel2" alignment="3" min="-2" max="-2" attributes="0"/>
-                              <Component id="localHttpProxyUserText" alignment="3" min="-2" max="-2" attributes="0"/>
-                              <Component id="jLabel3" alignment="3" min="-2" max="-2" attributes="0"/>
-                              <Component id="localHttpProxyPassText" alignment="3" min="-2" max="-2" attributes="0"/>
-                          </Group>
+                          <EmptySpace max="32767" attributes="0"/>
                       </Group>
                   </Group>
                 </DimensionLayout>
@@ -322,39 +302,29 @@
                   <Properties>
                     <Property name="text" type="java.lang.String" value="Server:"/>
                   </Properties>
+                  <AccessibilityProperties>
+                    <Property name="AccessibleContext.accessibleName" type="java.lang.String" value="Proxy:"/>
+                  </AccessibilityProperties>
                 </Component>
                 <Component class="javax.swing.JTextField" name="localHttpProxyHostText">
                 </Component>
-                <Component class="javax.swing.JCheckBox" name="isHttpProxyEnable">
+                <Component class="javax.swing.JLabel" name="jLabel14">
                   <Properties>
-                    <Property name="text" type="java.lang.String" value="Enable Http Proxy"/>
-                  </Properties>
-                  <Events>
-                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="isHttpProxyEnableActionPerformed"/>
-                  </Events>
-                </Component>
-                <Component class="javax.swing.JLabel" name="jLabel2">
-                  <Properties>
-                    <Property name="text" type="java.lang.String" value="Username:"/>
+                    <Property name="text" type="java.lang.String" value="Type:"/>
                   </Properties>
                 </Component>
-                <Component class="javax.swing.JTextField" name="localHttpProxyUserText">
-                </Component>
-                <Component class="javax.swing.JLabel" name="jLabel3">
+                <Component class="javax.swing.JComboBox" name="proxyTypeComboBox">
                   <Properties>
-                    <Property name="text" type="java.lang.String" value="Password:"/>
-                  </Properties>
-                </Component>
-                <Component class="javax.swing.JPasswordField" name="localHttpProxyPassText">
-                </Component>
-                <Component class="javax.swing.JLabel" name="jLabel4">
-                  <Properties>
-                    <Property name="text" type="java.lang.String" value="Port:"/>
-                  </Properties>
-                </Component>
-                <Component class="javax.swing.JTextField" name="localHttpProxyPortText">
-                  <Properties>
-                    <Property name="text" type="java.lang.String" value="80"/>
+                    <Property name="maximumRowCount" type="int" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
+                      <Connection code="GoolgeProxyMode.values().length" type="code"/>
+                    </Property>
+                    <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.editors2.ComboBoxModelEditor">
+                      <StringArray count="3">
+                        <StringItem index="0" value="Disable"/>
+                        <StringItem index="1" value="Override"/>
+                        <StringItem index="2" value="NextChain"/>
+                      </StringArray>
+                    </Property>
                   </Properties>
                 </Component>
               </SubComponents>
@@ -371,16 +341,19 @@
               <Layout>
                 <DimensionLayout dim="0">
                   <Group type="103" groupAlignment="0" attributes="0">
-                      <Group type="102" alignment="0" attributes="0">
+                      <Group type="102" attributes="0">
                           <EmptySpace max="-2" attributes="0"/>
                           <Group type="103" groupAlignment="0" attributes="0">
-                              <Component id="jScrollPane3" alignment="0" pref="349" max="32767" attributes="1"/>
-                              <Group type="102" alignment="0" attributes="0">
+                              <Group type="102" attributes="0">
                                   <Component id="newXmppButton" min="-2" pref="89" max="-2" attributes="0"/>
                                   <EmptySpace min="-2" pref="39" max="-2" attributes="0"/>
                                   <Component id="modifyXmppButton" min="-2" max="-2" attributes="0"/>
-                                  <EmptySpace pref="47" max="32767" attributes="0"/>
+                                  <EmptySpace max="32767" attributes="0"/>
                                   <Component id="removeXmppButton" min="-2" max="-2" attributes="0"/>
+                              </Group>
+                              <Group type="102" alignment="0" attributes="0">
+                                  <Component id="jScrollPane3" min="-2" pref="367" max="-2" attributes="1"/>
+                                  <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
                               </Group>
                           </Group>
                           <EmptySpace max="-2" attributes="0"/>
@@ -392,12 +365,12 @@
                       <Group type="102" alignment="0" attributes="0">
                           <Group type="103" groupAlignment="3" attributes="0">
                               <Component id="newXmppButton" alignment="3" min="-2" max="-2" attributes="0"/>
-                              <Component id="removeXmppButton" alignment="3" min="-2" max="-2" attributes="0"/>
                               <Component id="modifyXmppButton" alignment="3" min="-2" max="-2" attributes="0"/>
+                              <Component id="removeXmppButton" alignment="3" min="-2" max="-2" attributes="0"/>
                           </Group>
+                          <EmptySpace type="separate" max="-2" attributes="0"/>
+                          <Component id="jScrollPane3" pref="107" max="32767" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
-                          <Component id="jScrollPane3" min="-2" pref="83" max="-2" attributes="0"/>
-                          <EmptySpace pref="18" max="32767" attributes="0"/>
                       </Group>
                   </Group>
                 </DimensionLayout>
@@ -457,6 +430,25 @@
                 </Component>
               </SubComponents>
             </Container>
+            <Component class="javax.swing.JComboBox" name="connectionModeCombox">
+              <Properties>
+                <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.editors2.ComboBoxModelEditor">
+                  <StringArray count="3">
+                    <StringItem index="0" value="HTTP"/>
+                    <StringItem index="1" value="XMPP"/>
+                    <StringItem index="2" value="HTTPS"/>
+                  </StringArray>
+                </Property>
+              </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="connectionModeComboxActionPerformed"/>
+              </Events>
+            </Component>
+            <Component class="javax.swing.JLabel" name="jLabel8">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Connection Mode: "/>
+              </Properties>
+            </Component>
           </SubComponents>
         </Container>
         <Container class="javax.swing.JPanel" name="jPanel3">
@@ -472,12 +464,9 @@
             <DimensionLayout dim="0">
               <Group type="103" groupAlignment="0" attributes="0">
                   <Group type="102" alignment="0" attributes="0">
-                      <EmptySpace min="-2" pref="53" max="-2" attributes="0"/>
+                      <EmptySpace min="53" pref="53" max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="0" attributes="0">
-                          <Group type="102" alignment="0" attributes="0">
-                              <Component id="isHttpSimpleUrlEnable" min="-2" max="-2" attributes="0"/>
-                              <EmptySpace max="-2" attributes="0"/>
-                          </Group>
+                          <Component id="isHttpSimpleUrlEnable" alignment="0" pref="309" max="32767" attributes="0"/>
                           <Group type="102" alignment="0" attributes="0">
                               <Group type="103" groupAlignment="0" attributes="0">
                                   <Component id="jLabel9" min="-2" max="-2" attributes="0"/>
@@ -486,19 +475,21 @@
                                   <Component id="jLabel11" min="-2" max="-2" attributes="0"/>
                                   <Component id="jLabel13" min="-2" max="-2" attributes="0"/>
                                   <Component id="jLabel12" min="-2" max="-2" attributes="0"/>
+                                  <Component id="jLabel15" alignment="0" min="-2" max="-2" attributes="0"/>
                               </Group>
                               <EmptySpace min="-2" pref="31" max="-2" attributes="0"/>
                               <Group type="103" groupAlignment="0" attributes="0">
-                                  <Component id="compressorType" pref="55" max="32767" attributes="1"/>
-                                  <Component id="fetcherNumText" pref="55" max="32767" attributes="1"/>
-                                  <Component id="rpcTimeoutText" alignment="0" pref="55" max="32767" attributes="1"/>
-                                  <Component id="connectionPoolText" alignment="0" pref="55" max="32767" attributes="1"/>
-                                  <Component id="encrypterCombox" alignment="0" pref="55" max="32767" attributes="1"/>
-                                  <Component id="fetchLimitTextField1" alignment="0" pref="55" max="32767" attributes="1"/>
+                                  <Component id="rangeFetchRetryTextField" max="32767" attributes="1"/>
+                                  <Component id="compressorType" pref="79" max="32767" attributes="1"/>
+                                  <Component id="fetcherNumText" pref="79" max="32767" attributes="1"/>
+                                  <Component id="rpcTimeoutText" alignment="0" pref="79" max="32767" attributes="1"/>
+                                  <Component id="connectionPoolText" alignment="0" pref="79" max="32767" attributes="1"/>
+                                  <Component id="encrypterCombox" alignment="0" pref="79" max="32767" attributes="1"/>
+                                  <Component id="fetchLimitTextField1" alignment="0" pref="79" max="32767" attributes="1"/>
                               </Group>
-                              <EmptySpace min="-2" pref="63" max="-2" attributes="0"/>
                           </Group>
                       </Group>
+                      <EmptySpace min="-2" pref="63" max="-2" attributes="0"/>
                   </Group>
               </Group>
             </DimensionLayout>
@@ -522,6 +513,16 @@
                       </Group>
                       <EmptySpace type="unrelated" max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="3" attributes="0">
+                          <Component id="fetchLimitTextField1" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="jLabel13" alignment="3" min="-2" max="-2" attributes="0"/>
+                      </Group>
+                      <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                      <Group type="103" groupAlignment="3" attributes="0">
+                          <Component id="rangeFetchRetryTextField" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="jLabel15" alignment="3" min="-2" max="-2" attributes="0"/>
+                      </Group>
+                      <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                      <Group type="103" groupAlignment="3" attributes="0">
                           <Component id="compressorType" alignment="3" min="-2" max="-2" attributes="0"/>
                           <Component id="jLabel12" alignment="3" min="-2" max="-2" attributes="0"/>
                       </Group>
@@ -531,13 +532,8 @@
                           <Component id="jLabel7" alignment="3" min="-2" max="-2" attributes="0"/>
                       </Group>
                       <EmptySpace type="unrelated" max="-2" attributes="0"/>
-                      <Group type="103" groupAlignment="3" attributes="0">
-                          <Component id="fetchLimitTextField1" alignment="3" min="-2" max="-2" attributes="0"/>
-                          <Component id="jLabel13" alignment="3" min="-2" max="-2" attributes="0"/>
-                      </Group>
-                      <EmptySpace type="unrelated" max="-2" attributes="0"/>
                       <Component id="isHttpSimpleUrlEnable" min="-2" max="-2" attributes="0"/>
-                      <EmptySpace pref="87" max="32767" attributes="0"/>
+                      <EmptySpace pref="56" max="32767" attributes="0"/>
                   </Group>
               </Group>
             </DimensionLayout>
@@ -545,21 +541,18 @@
           <SubComponents>
             <Component class="javax.swing.JComboBox" name="compressorType">
               <Properties>
-                <Property name="maximumRowCount" type="int" editor="org.netbeans.modules.form.RADConnectionPropertyEditor" postCode="ArrayList&lt;String&gt; modelStrList = new ArrayList&lt;String&gt;();&#xa;        for(RegistCompressor compressor:allCompressors)&#xa;        {&#xa;        &#x9;modelStrList.add(compressor.compressor.getName());&#xa;        }">
-                  <Connection code="allCompressors.size()" type="code"/>
-                </Property>
                 <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
                   <Connection code="new javax.swing.DefaultComboBoxModel(modelStrList.toArray())" type="code"/>
                 </Property>
               </Properties>
               <AuxValues>
-                <AuxValue name="JavaCodeGenerator_InitCodePost" type="java.lang.String" value="compressorType.setSelectedItem(&quot;lzf&quot;);"/>
-                <AuxValue name="JavaCodeGenerator_InitCodePre" type="java.lang.String" value="Collection&lt;RegistCompressor&gt; allCompressors = CompressorFactory.getAllRegistCompressors();"/>
+                <AuxValue name="JavaCodeGenerator_InitCodePre" type="java.lang.String" value="compressorType.setMaximumRowCount(CompressorType.values().length);&#xd;&#xa;ArrayList&lt;String&gt; modelStrList = new ArrayList&lt;String&gt;();&#xd;&#xa;for(CompressorType ctype:CompressorType.values() )&#xd;&#xa;{&#xd;&#xa;   modelStrList.add(ctype.toString());&#xd;&#xa;}"/>
+                <AuxValue name="JavaCodeGenerator_SerializeTo" type="java.lang.String" value="GAEConfigPanel_compressorType"/>
               </AuxValues>
             </Component>
             <Component class="javax.swing.JLabel" name="jLabel9">
               <Properties>
-                <Property name="text" type="java.lang.String" value="RPC Timeout:"/>
+                <Property name="text" type="java.lang.String" value="Session Timeout:"/>
               </Properties>
             </Component>
             <Component class="javax.swing.JLabel" name="jLabel10">
@@ -574,7 +567,7 @@
             </Component>
             <Component class="javax.swing.JLabel" name="jLabel11">
               <Properties>
-                <Property name="text" type="java.lang.String" value="Fetcher Number for big file/video:"/>
+                <Property name="text" type="java.lang.String" value="Concurrent Range Fetch Worker:"/>
               </Properties>
             </Component>
             <Component class="javax.swing.JTextField" name="fetcherNumText">
@@ -594,7 +587,7 @@
             </Component>
             <Component class="javax.swing.JLabel" name="jLabel13">
               <Properties>
-                <Property name="text" type="java.lang.String" value="Fetch Limit Size:"/>
+                <Property name="text" type="java.lang.String" value="Range Fetch Limit Size:"/>
               </Properties>
             </Component>
             <Component class="javax.swing.JTextField" name="fetchLimitTextField1">
@@ -602,26 +595,35 @@
                 <Property name="text" type="java.lang.String" value="250000"/>
               </Properties>
             </Component>
-            <Component class="javax.swing.JRadioButton" name="isHttpSimpleUrlEnable">
-              <Properties>
-                <Property name="text" type="java.lang.String" value="EnableSimpleURL"/>
-              </Properties>
-            </Component>
             <Component class="javax.swing.JLabel" name="jLabel7">
               <Properties>
-                <Property name="text" type="java.lang.String" value="HTTP Encrypter:"/>
+                <Property name="text" type="java.lang.String" value="Encrypte Type:"/>
               </Properties>
             </Component>
             <Component class="javax.swing.JComboBox" name="encrypterCombox">
               <Properties>
                 <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
-                  <Connection code="new javax.swing.DefaultComboBoxModel(secModelStrList.toArray())" type="code"/>
+                  <Connection code="new javax.swing.DefaultComboBoxModel(encmodelStrList.toArray())" type="code"/>
                 </Property>
               </Properties>
               <AuxValues>
-                <AuxValue name="JavaCodeGenerator_InitCodePost" type="java.lang.String" value="encrypterCombox.setSelectedItem(&quot;se1&quot;);"/>
-                <AuxValue name="JavaCodeGenerator_InitCodePre" type="java.lang.String" value="Collection&lt;RegistSecurityService&gt; allSecServs = SecurityServiceFactory.getAllRegistSecurityServices();&#xa;encrypterCombox.setMaximumRowCount(allSecServs.size());&#xa;ArrayList&lt;String&gt; secModelStrList = new ArrayList&lt;String&gt;();&#xa;        for(RegistSecurityService sec:allSecServs)&#xa;        {&#xa;        &#x9;secModelStrList.add(sec.service.getName());&#xa;        }"/>
+                <AuxValue name="JavaCodeGenerator_InitCodePre" type="java.lang.String" value="encrypterCombox.setMaximumRowCount(EncryptType.values().length);&#xd;&#xa;ArrayList&lt;String&gt; encmodelStrList = new ArrayList&lt;String&gt;();&#xd;&#xa;for(EncryptType ctype:EncryptType.values() )&#xd;&#xa;{&#xd;&#xa;   encmodelStrList.add(ctype.toString());&#xd;&#xa;}"/>
               </AuxValues>
+            </Component>
+            <Component class="javax.swing.JCheckBox" name="isHttpSimpleUrlEnable">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="EnableSimpleURL"/>
+              </Properties>
+            </Component>
+            <Component class="javax.swing.JTextField" name="rangeFetchRetryTextField">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="1"/>
+              </Properties>
+            </Component>
+            <Component class="javax.swing.JLabel" name="jLabel15">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Range Fetch Retry:"/>
+              </Properties>
             </Component>
           </SubComponents>
         </Container>
@@ -657,7 +659,7 @@
                           </Group>
                           <Group type="102" alignment="0" attributes="0">
                               <EmptySpace max="-2" attributes="0"/>
-                              <Component id="jScrollPane2" pref="386" max="32767" attributes="1"/>
+                              <Component id="jScrollPane2" pref="398" max="32767" attributes="1"/>
                           </Group>
                       </Group>
                       <EmptySpace max="-2" attributes="0"/>
@@ -677,7 +679,7 @@
                       <EmptySpace type="separate" max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="3" attributes="0">
                           <Component id="unshareButton" alignment="3" min="-2" pref="25" max="-2" attributes="0"/>
-                          <Component id="shareAppIdButton" alignment="3" pref="23" max="32767" attributes="1"/>
+                          <Component id="shareAppIdButton" alignment="3" max="32767" attributes="1"/>
                       </Group>
                       <EmptySpace type="unrelated" max="-2" attributes="0"/>
                       <Component id="jScrollPane2" min="-2" pref="222" max="-2" attributes="0"/>

@@ -51,7 +51,6 @@ public class ProxySession
 	
 	private Integer	                           sessionID;
 	private Channel	                           localHTTPChannel;
-	private HTTPRequestEvent	               lastProxyEvent;
 	private ProxySessionStatus	               status	            = ProxySessionStatus.INITED;
 	
 	private ChannelFuture	                   writeFuture;
@@ -121,6 +120,12 @@ public class ProxySession
 					        .remove(waitingChunkSequence);
 					if (null == chunk)
 					{
+						if(seqChunkTable.size() >= 500)
+						{
+							logger.error("#Close channel since too many(500) waiting chunks before chunk:" + waitingChunkSequence + " received.");
+							seqChunkTable.clear();
+							localHTTPChannel.close();
+						}
 						return;
 					}
 					waitingChunkSequence++;
@@ -328,21 +333,21 @@ public class ProxySession
 				synchronized (seqChunkTable)
 				{
 					seqChunkTable.put(chunk.sequence, chunk);
-					if (writeFuture != null && !writeFuture.isDone())
+				}
+				if (writeFuture != null && !writeFuture.isDone())
+				{
+					if (logger.isDebugEnabled())
 					{
-						if (logger.isDebugEnabled())
-						{
-							logger.debug("Add content in ready table:"
-							        + seqChunkTable.size());
-						}
-						// localHTTPChannel.write(content);
-						writeFuture.addListener(seqFinishListener);
+						logger.debug("Add content in ready table:"
+						        + seqChunkTable.size());
 					}
-					else
-					{
-						completeSequenceChunk();
-						// writeFuture = localHTTPChannel.write(content);
-					}
+					// localHTTPChannel.write(content);
+					writeFuture.addListener(seqFinishListener);
+				}
+				else
+				{
+					completeSequenceChunk();
+					// writeFuture = localHTTPChannel.write(content);
 				}
 			}
 			else
@@ -432,7 +437,6 @@ public class ProxySession
 			status = ProxySessionStatus.WAITING_RESPONSE;
 			// isRequestSent = true;
 			getClientConnection(event).send(event);
-			lastProxyEvent = event;
 			
 			if (logger.isDebugEnabled())
 			{
@@ -526,6 +530,7 @@ public class ProxySession
 		}
 		status = ProxySessionStatus.SESSION_COMPLETED;
 		ProxySessionManager.getInstance().removeSession(this);
+		clearStatus();
 	}
 	
 	public ProxySessionStatus routine()

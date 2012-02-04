@@ -9,7 +9,7 @@ package org.snova.gae.common;
  */
 public interface GAEConstants
 {
-	public static final String CLIENT_CONF_NAME = "gae-client.xml";
+	public static final String CLIENT_CONF_NAME = "gae-client.conf";
 	public static final String SERVER_CONF_NAME = "gae-server.xml";
 	public static final String HTTP_INVOKE_PATH = "/invoke";
 	public static final String BACKEND_INSTANCE_NAME = "worker";

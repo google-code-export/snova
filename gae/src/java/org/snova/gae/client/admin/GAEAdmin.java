@@ -121,8 +121,8 @@ public class GAEAdmin implements Runnable
 			auth.user = user.trim();
 			auth.passwd = passwd.trim();
 			GAEClientConfiguration.getInstance().setGAEServerAuths(Arrays.asList(auth));
-			GAEClientConfiguration.getInstance().setCompressorType(CompressorType.NONE);
-			GAEClientConfiguration.getInstance().setEncrypterType(EncryptType.NONE);
+			GAEClientConfiguration.getInstance().setCompressor(CompressorType.NONE);
+			GAEClientConfiguration.getInstance().setEncrypter(EncryptType.NONE);
 			
 			if(!GAE.initProxyConnections(Arrays.asList(auth)))
 			{

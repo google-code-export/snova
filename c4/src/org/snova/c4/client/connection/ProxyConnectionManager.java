@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.c4.client.config.C4ClientConfiguration;
 import org.snova.c4.client.config.C4ClientConfiguration.C4ServerAuth;
+import org.snova.c4.client.connection.v2.HTTPProxyConnectionV2;
 import org.snova.framework.util.SharedObjectHelper;
 
 /**
@@ -47,7 +48,8 @@ public class ProxyConnectionManager
 			ProxyConnection conn = getClientConnectionByAuth(auth);
 			if (null == conn)
 			{
-				logger.error("Failed to auth connetion for domain:" + auth.domain);
+				logger.error("Failed to auth connetion for domain:"
+				        + auth.domain);
 				auths.remove(auth);
 			}
 		}
@@ -59,8 +61,8 @@ public class ProxyConnectionManager
 		if (logger.isInfoEnabled())
 		{
 			int size = auths.size();
-			//logger.info("Success to connect " + size + " GAE server"
-			//        + (size > 1 ? "s" : ""));
+			// logger.info("Success to connect " + size + " GAE server"
+			// + (size > 1 ? "s" : ""));
 			SharedObjectHelper.getTrace().info(
 			        "Success to found " + size + " c4 server"
 			                + (size > 1 ? "s" : ""));
@@ -109,20 +111,29 @@ public class ProxyConnectionManager
 			return connlist.get(0);
 		}
 		
-		switch (C4ClientConfiguration.getInstance().getConnectionModeType())
+		switch (C4ClientConfiguration.getInstance().getConnectionMode())
 		{
 			case HTTP:
 			{
-				connection = new HTTPProxyConnection(auth);
+				if (!C4ClientConfiguration.getInstance().isServerPullEnable())
+				{
+					if (C4ClientConfiguration.getInstance()
+					        .isDualConnectionEnable())
+					{
+						connection = new DualHTTPProxyConnection(auth);
+					}
+					else
+					{
+						connection = new HTTPProxyConnection(auth);
+					}
+				}
+				else
+				{
+					connection = new HTTPProxyConnectionV2(auth);
+				}
 				addProxyConnection(connlist, connection);
 				break;
 			}
-			case RSOCKET:
-			{
-				connection = new RawProxyConnection(auth);
-				addProxyConnection(connlist, connection);
-				break;
-			}	
 			default:
 			{
 				break;
@@ -139,16 +150,16 @@ public class ProxyConnectionManager
 	
 	public ProxyConnection getClientConnection(HTTPRequestEvent event)
 	{
-		String appid = null != event ? C4ClientConfiguration.getInstance()
-		        .getBindingAppId(event.getHeader("Host")) : null;
+		String domain = null != event ? C4ClientConfiguration.getInstance()
+		        .getBindingDomain(event.getHeader("Host")) : null;
 		C4ServerAuth auth = null;
-		if (null == appid)
+		if (null == domain)
 		{
 			auth = seletor.select();
 		}
 		else
 		{
-			auth = C4ClientConfiguration.getInstance().getC4ServerAuth(appid);
+			auth = C4ClientConfiguration.getInstance().getC4ServerAuth(domain);
 		}
 		return getClientConnectionByAuth(auth);
 	}

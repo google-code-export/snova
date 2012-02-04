@@ -21,6 +21,8 @@ import org.arch.event.http.HTTPConnectionEvent;
 import org.arch.event.http.HTTPEventContants;
 import org.arch.event.http.HTTPRequestEvent;
 import org.arch.event.http.HTTPResponseEvent;
+import org.arch.event.misc.CompressEventV2;
+import org.arch.event.misc.CompressorType;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
@@ -56,17 +58,17 @@ public class DirectSession extends Session
 	private Map<Integer, SequentialChunkEvent>	                    seqChunkTable	              = new HashMap<Integer, SequentialChunkEvent>();
 	private int	                                                    waitingChunkSequence;
 	private AtomicInteger	                                        writeSequence	              = new AtomicInteger(
-			0);
+	                                                                                                      0);
 	
-	public DirectSession()
+	public DirectSession(SessionManager sm)
 	{
-		
+		super(sm);
 	}
 	
 	public static void releaseExternalConnections()
 	{
 		for (Queue<ChannelFuture> conns : externalHostsToChannelFutures
-				.values())
+		        .values())
 		{
 			for (ChannelFuture future : conns)
 			{
@@ -88,7 +90,7 @@ public class DirectSession extends Session
 		// if (logger.isDebugEnabled())
 		{
 			logger.info("Session[" + getID() + "] closed a connection to "
-					+ addr);
+			        + addr);
 		}
 		// channelTable.remove(ch.getId());
 	}
@@ -96,7 +98,7 @@ public class DirectSession extends Session
 	protected void closeRemote()
 	{
 		if (null != currentChannelFuture
-				&& currentChannelFuture.getChannel().isConnected())
+		        && currentChannelFuture.getChannel().isConnected())
 		{
 			if (isHttps)
 			{
@@ -105,8 +107,8 @@ public class DirectSession extends Session
 			else
 			{
 				DirectRemoteChannelResponseHandler handler = currentChannelFuture
-						.getChannel().getPipeline()
-						.get(DirectRemoteChannelResponseHandler.class);
+				        .getChannel().getPipeline()
+				        .get(DirectRemoteChannelResponseHandler.class);
 				if (handler.unanwsered)
 				{
 					currentChannelFuture.getChannel().close();
@@ -118,24 +120,23 @@ public class DirectSession extends Session
 	private void closeLocalChannel()
 	{
 		HTTPConnectionEvent ev = new HTTPConnectionEvent(
-				HTTPConnectionEvent.CLOSED);
+		        HTTPConnectionEvent.CLOSED);
 		ev.setHash(getID());
-		EventService.getInstance().offer(ev);
-		SessionManager.getInstance().removeSession(this);
+		EventService.getInstance(sessionManager.getUserToken()).offer(ev, null);
+		sessionManager.removeSession(this);
 	}
 	
-	private void transactionCompelete()
+	private void transactionCompelete(Channel ch)
 	{
 		writeSequence.set(0);
 		TransactionCompleteEvent ev = new TransactionCompleteEvent();
 		ev.setHash(getID());
-		EventService.getInstance().offer(ev);
+		EventService.getInstance(sessionManager.getUserToken()).offer(ev, ch);
 	}
 	
 	@Override
 	public boolean routine()
 	{
-		
 		return true;
 	}
 	
@@ -145,17 +146,17 @@ public class DirectSession extends Session
 	}
 	
 	protected ChannelFuture onRemoteConnected(ChannelFuture future,
-			HTTPRequestEvent req)
+	        HTTPRequestEvent req)
 	{
-		if (logger.isDebugEnabled())
+		//if (logger.isInfoEnabled())
 		{
-			logger.debug("Session[" + getID() + "] onRemoteConnected with URL:"
-					+ req.method + " " + req.url);
+			logger.info("Session[" + getID() + "] onRemoteConnected with Host:"
+			        + req.getHeader("Host"));
 		}
 		if (!future.isSuccess())
 		{
 			logger.error("Session[" + getID()
-					+ "] close local connection since connect failed.");
+			        + "] close local connection since connect failed.");
 			closeLocalChannel();
 			return future;
 		}
@@ -167,7 +168,8 @@ public class DirectSession extends Session
 			response.addHeader("Connection", "Keep-Alive");
 			response.addHeader("Proxy-Connection", "Keep-Alive");
 			future.getChannel().getPipeline().remove("decoder");
-			EventService.getInstance().offer(response);
+			EventService.getInstance(sessionManager.getUserToken()).offer(
+			        response, future.getChannel());
 			return future;
 		}
 		else
@@ -176,12 +178,12 @@ public class DirectSession extends Session
 			if (logger.isDebugEnabled())
 			{
 				logger.debug("Direct session[" + getID() + "] send request:\n"
-						+ msg.toString(Charset.forName("UTF-8")));
+				        + msg.toString(Charset.forName("UTF-8")));
 			}
 			// unansweredRequestCount.incrementAndGet();
 			DirectRemoteChannelResponseHandler handler = future.getChannel()
-					.getPipeline()
-					.get(DirectRemoteChannelResponseHandler.class);
+			        .getPipeline()
+			        .get(DirectRemoteChannelResponseHandler.class);
 			handler.unanwsered = true;
 			return future.getChannel().write(msg);
 		}
@@ -193,7 +195,7 @@ public class DirectSession extends Session
 		synchronized (externalHostsToChannelFutures)
 		{
 			Queue<ChannelFuture> futures = externalHostsToChannelFutures
-					.get(getRemoteAddressFromRequestEvent(req));
+			        .get(getRemoteAddressFromRequestEvent(req));
 			if (futures != null)
 			{
 				do
@@ -205,7 +207,7 @@ public class DirectSession extends Session
 					ChannelFuture cf = futures.remove();
 					
 					if (cf != null && cf.isSuccess()
-							&& !cf.getChannel().isConnected())
+					        && !cf.getChannel().isConnected())
 					{
 						// In this case, the future successfully connected at
 						// one
@@ -225,7 +227,7 @@ public class DirectSession extends Session
 			future = newRemoteChannelFuture(req);
 		}
 		DirectRemoteChannelResponseHandler handler = future.getChannel()
-				.getPipeline().get(DirectRemoteChannelResponseHandler.class);
+		        .getPipeline().get(DirectRemoteChannelResponseHandler.class);
 		handler.relaySession = this;
 		currentChannelFuture = future;
 		waitingChunkSequence = 0;
@@ -234,12 +236,12 @@ public class DirectSession extends Session
 	}
 	
 	protected static void onChannelAvailable(
-			final SimpleSocketAddress hostAndPortKey, final ChannelFuture cf)
+	        final SimpleSocketAddress hostAndPortKey, final ChannelFuture cf)
 	{
 		synchronized (externalHostsToChannelFutures)
 		{
 			Queue<ChannelFuture> futures = externalHostsToChannelFutures
-					.get(hostAndPortKey);
+			        .get(hostAndPortKey);
 			
 			if (futures == null)
 			{
@@ -260,16 +262,16 @@ public class DirectSession extends Session
 		pipeline.addLast("handler", handler);
 		
 		SocketChannel channel = getClientSocketChannelFactory().newChannel(
-				pipeline);
+		        pipeline);
 		channel.getConfig().setOption("connectTimeoutMillis", 40 * 1000);
 		SimpleSocketAddress addr = getRemoteAddress(req);
 		// if (logger.isDebugEnabled())
 		{
 			logger.info("Session[" + getID() + "] connect remote address "
-					+ addr);
+			        + addr);
 		}
 		ChannelFuture future = channel.connect(new InetSocketAddress(addr.host,
-				addr.port));
+		        addr.port));
 		handler.remoteChannelFuture = future;
 		return future;
 	}
@@ -291,9 +293,9 @@ public class DirectSession extends Session
 			if (currentChannelFuture.isSuccess())
 			{
 				logger.error("####Session["
-						+ getID()
-						+ "] current remote connection already closed, while chunk size:"
-						+ buf.readableBytes());
+				        + getID()
+				        + "] current remote connection already closed, while chunk size:"
+				        + buf.readableBytes());
 				closeLocalChannel();
 			}
 			else
@@ -301,8 +303,8 @@ public class DirectSession extends Session
 				currentChannelFuture.addListener(new ChannelFutureListener()
 				{
 					public void operationComplete(final ChannelFuture future)
-							throws Exception
-							{
+					        throws Exception
+					{
 						if (future.isSuccess())
 						{
 							future.getChannel().write(buf);
@@ -312,7 +314,7 @@ public class DirectSession extends Session
 							logger.error("Remote connection closed.");
 							closeLocalChannel();
 						}
-							}
+					}
 				});
 			}
 		}
@@ -339,10 +341,10 @@ public class DirectSession extends Session
 					{
 						@Override
 						public void operationComplete(ChannelFuture cf)
-								throws Exception
-								{
+						        throws Exception
+						{
 							onRemoteConnected(cf, req);
-								}
+						}
 					});
 				}
 				break;
@@ -355,12 +357,12 @@ public class DirectSession extends Session
 				{
 					seqChunkTable.put(sequnce.sequence, sequnce);
 					SequentialChunkEvent chunk = seqChunkTable
-							.remove(waitingChunkSequence);
+					        .remove(waitingChunkSequence);
 					while (null != chunk)
 					{
 						waitingChunkSequence++;
 						ChannelBuffer buf = ChannelBuffers
-								.wrappedBuffer(chunk.content);
+						        .wrappedBuffer(chunk.content);
 						if (null == sent)
 						{
 							sent = buf;
@@ -387,24 +389,26 @@ public class DirectSession extends Session
 			}
 			case HTTPEventContants.HTTP_CONNECTION_EVENT_TYPE:
 			{
+				logger.info("Session[" + event.getHash()
+				        + "] handle connection event.");
 				HTTPConnectionEvent ev = (HTTPConnectionEvent) event;
 				if (ev.status == HTTPConnectionEvent.CLOSED)
 				{
 					if (null != currentChannelFuture
-							&& !currentChannelFuture.isDone())
+					        && !currentChannelFuture.isDone())
 					{
 						currentChannelFuture
-						.addListener(new ChannelFutureListener()
-						{
-							
-							@Override
-							public void operationComplete(
-									ChannelFuture future)
-											throws Exception
-											{
-								closeRemote();
-											}
-						});
+						        .addListener(new ChannelFutureListener()
+						        {
+							        
+							        @Override
+							        public void operationComplete(
+							                ChannelFuture future)
+							                throws Exception
+							        {
+								        closeRemote();
+							        }
+						        });
 					}
 					else
 					{
@@ -422,20 +426,29 @@ public class DirectSession extends Session
 		}
 	}
 	
-	private void writeChunk(ChannelBuffer buf)
+	private  synchronized void writeChunk(ChannelBuffer buf, Channel ch)
 	{
 		SequentialChunkEvent ev = new SequentialChunkEvent();
 		ev.setHash(getID());
 		ev.sequence = writeSequence.getAndIncrement();
 		ev.content = new byte[buf.readableBytes()];
 		buf.readBytes(ev.content);
-		EventService.getInstance().offer(ev);
+		if(ev.content.length > 512)
+		{
+			CompressEventV2 wrap = new CompressEventV2(CompressorType.QUICKLZ, ev);
+			wrap.setHash(ev.getHash());
+			EventService.getInstance(sessionManager.getUserToken()).offer(wrap, ch);
+		}
+		else
+		{
+			EventService.getInstance(sessionManager.getUserToken()).offer(ev, ch);
+		}
 	}
 	
 	boolean isTransferEncodingChunked(HttpMessage m)
 	{
 		List<String> chunked = m
-				.getHeaders(HttpHeaders.Names.TRANSFER_ENCODING);
+		        .getHeaders(HttpHeaders.Names.TRANSFER_ENCODING);
 		if (chunked.isEmpty())
 		{
 			return false;
@@ -451,14 +464,14 @@ public class DirectSession extends Session
 		return false;
 	}
 	
-	private void writeLocal(Object obj)
+	private void writeLocal(Object obj, Channel ch)
 	{
 		if (obj instanceof HttpResponse)
 		{
 			HttpResponse res = (HttpResponse) obj;
 			chunked = isTransferEncodingChunked(res);
 			ChannelBuffer buf = buildResponseBuffer(res);
-			writeChunk(buf);
+			writeChunk(buf, ch);
 		}
 		else if (obj instanceof HttpChunk)
 		{
@@ -480,13 +493,13 @@ public class DirectSession extends Session
 						try
 						{
 							for (Map.Entry<String, String> h : ((HttpChunkTrailer) chunk)
-									.getHeaders())
+							        .getHeaders())
 							{
 								trailer.writeBytes(h.getKey().getBytes("ASCII"));
 								trailer.writeByte(':');
 								trailer.writeByte(' ');
 								trailer.writeBytes(h.getValue().getBytes(
-										"ASCII"));
+								        "ASCII"));
 								trailer.writeByte('\r');
 								trailer.writeByte('\n');
 							}
@@ -502,7 +515,7 @@ public class DirectSession extends Session
 					else
 					{
 						sent = ChannelBuffers.copiedBuffer("0\r\n\r\n",
-								CharsetUtil.US_ASCII);
+						        CharsetUtil.US_ASCII);
 					}
 				}
 				else
@@ -511,11 +524,11 @@ public class DirectSession extends Session
 					int contentLength = content.readableBytes();
 					
 					sent = wrappedBuffer(
-							copiedBuffer(Integer.toHexString(contentLength),
-									CharsetUtil.US_ASCII),
-									wrappedBuffer("\r\n".getBytes()), content.slice(
-											content.readerIndex(), contentLength),
-											wrappedBuffer("\r\n".getBytes()));
+					        copiedBuffer(Integer.toHexString(contentLength),
+					                CharsetUtil.US_ASCII),
+					        wrappedBuffer("\r\n".getBytes()), content.slice(
+					                content.readerIndex(), contentLength),
+					        wrappedBuffer("\r\n".getBytes()));
 				}
 			}
 			else
@@ -531,22 +544,22 @@ public class DirectSession extends Session
 			}
 			if (null != sent)
 			{
-				writeChunk(sent);
+				writeChunk(sent, ch);
 			}
 			else
 			{
-				writeChunk(ChannelBuffers.EMPTY_BUFFER);
+				writeChunk(ChannelBuffers.EMPTY_BUFFER, ch);
 			}
 		}
 		else if (obj instanceof ChannelBuffer)
 		{
 			ChannelBuffer buf = (ChannelBuffer) obj;
-			writeChunk(buf);
+			writeChunk(buf, ch);
 		}
 	}
 	
 	static class DirectRemoteChannelResponseHandler extends
-	SimpleChannelUpstreamHandler
+	        SimpleChannelUpstreamHandler
 	{
 		private SimpleSocketAddress	remoteAddress;
 		private ChannelFuture		remoteChannelFuture;
@@ -566,7 +579,7 @@ public class DirectSession extends Session
 				return false;
 			}
 			final String te = res
-					.getHeader(HttpHeaders.Names.TRANSFER_ENCODING);
+			        .getHeader(HttpHeaders.Names.TRANSFER_ENCODING);
 			if (te != null && te.equalsIgnoreCase(HttpHeaders.Values.CHUNKED))
 			{
 				return false;
@@ -576,8 +589,8 @@ public class DirectSession extends Session
 		
 		@Override
 		public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e)
-				throws Exception
-				{
+		        throws Exception
+		{
 			
 			relaySession.closeRemote(ctx.getChannel(), remoteAddress);
 			if (isHttps)
@@ -591,23 +604,27 @@ public class DirectSession extends Session
 					relaySession.closeLocalChannel();
 				}
 			}
-				}
+		}
 		
 		@Override
 		public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
-				throws Exception
-				{
-			logger.error(
-					"Session["
-							+ relaySession.getID()
-							+ "] exceptionCaught in DirectRemoteChannelResponseHandler for "
-							+ remoteAddress, e.getCause());
-				}
+		        throws Exception
+		{
+			if (null != relaySession)
+			{
+				logger.error(
+				        "Session["
+				                + relaySession.getID()
+				                + "] exceptionCaught in DirectRemoteChannelResponseHandler for "
+				                + remoteAddress, e.getCause());
+			}
+			
+		}
 		
 		@Override
 		public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
-				throws Exception
-				{
+		        throws Exception
+		{
 			Object obj = e.getMessage();
 			boolean writeEndBuffer = false;
 			Object messageToWrite = null;
@@ -616,11 +633,11 @@ public class DirectSession extends Session
 				if (logger.isDebugEnabled())
 				{
 					logger.debug("Session[" + relaySession.getID()
-							+ "] received direct HTTP response:" + obj);
+					        + "] received direct HTTP response:" + obj);
 				}
 				HttpResponse response = (HttpResponse) obj;
 				String te = response
-						.getHeader(HttpHeaders.Names.TRANSFER_ENCODING);
+				        .getHeader(HttpHeaders.Names.TRANSFER_ENCODING);
 				if (null != te)
 				{
 					te = te.trim();
@@ -646,7 +663,7 @@ public class DirectSession extends Session
 					if (logger.isDebugEnabled())
 					{
 						logger.debug("Session[" + relaySession.getID()
-								+ "] received direct last HTTP chunk.");
+						        + "] received direct last HTTP chunk.");
 					}
 					// onChannelAvailable(remoteAddress, remoteChannelFuture);
 					writeEndBuffer = true;
@@ -660,24 +677,25 @@ public class DirectSession extends Session
 			else if (obj instanceof ChannelBuffer)
 			{
 				ChannelBuffer buf = (ChannelBuffer) obj;
-				relaySession.writeLocal(buf);
+				relaySession.writeLocal(buf, ctx.getChannel());
 				return;
 			}
 			else
 			{
 				logger.error("Unexpected message type:"
-						+ obj.getClass().getName());
+				        + obj.getClass().getName());
 				return;
 			}
 			if (null != messageToWrite)
 			{
-				relaySession.writeLocal(messageToWrite);
+				relaySession.writeLocal(messageToWrite, ctx.getChannel());
 				if (writeEndBuffer)
 				{
 					unanwsered = false;
 					// relaySession.unansweredRequestCount.decrementAndGet();
-					relaySession.writeLocal(ChannelBuffers.EMPTY_BUFFER);
-					relaySession.transactionCompelete();
+					relaySession.writeLocal(ChannelBuffers.EMPTY_BUFFER,
+					        ctx.getChannel());
+					relaySession.transactionCompelete(ctx.getChannel());
 					if (keepAlive)
 					{
 						// relaySession.waitingResponse.decrementAndGet();
@@ -686,7 +704,7 @@ public class DirectSession extends Session
 					else
 					{
 						relaySession.closeRemote(ctx.getChannel(),
-								remoteAddress);
+						        remoteAddress);
 					}
 					if (closeEndsResponseBody)
 					{
@@ -694,7 +712,7 @@ public class DirectSession extends Session
 					}
 				}
 			}
-				}
+		}
 	}
 	
 }
