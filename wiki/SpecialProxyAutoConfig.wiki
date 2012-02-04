@@ -2,7 +2,7 @@
 #labels Featured
 
 = 简介 =
-  * 由于基于GAE/Heroku的proxy有一些固有的限制（如1m限制， DELETE with body等）或者其他一些proxy实现也有一些具体限制,在这些限制情况下无法完成proxy功能；因此需要一个自动选择proxy机制来简化用户频繁切换proxy的动作
+  * 由于基于GAE的proxy有一些固有的限制（如1m限制， DELETE with body等）或者其他一些proxy实现也有一些具体限制,在这些限制情况下无法完成proxy功能；因此需要一个自动选择proxy机制来简化用户频繁切换proxy的动作
   * 大部分情况下，用户可以用PAC脚本来配置选择合适的proxy；但PAC有自身的一些限制：
     ** 只能匹配URL选择，致使无法完美匹配某些受限proxy的受限条件；
     ** 一般情况下，有些受限proxy实现限制请求类型（如限制DELETE/TRACE请求），或者限制上传大小等等，这些都是PAC无法表达的
@@ -46,10 +46,12 @@
   * 按照下一节修改配置/脚本后，启动snova即生效
 
 = 配置&脚本 =
-  * 首先启用SPAC需要修改配置文件`<snova>/conf/snova.xml`
+  * 首先启用SPAC需要修改配置文件`<snova>/conf/snova.conf`
     {{{
-      <!--修改Proxy实现为SPAC， 默认为GAE-->
-       <ProxyEventHandler>SPAC</ProxyEventHandler>
+      [Framework]
+      .........
+      ##Can choose in plugins, default is GAE
+      ProxyService=SPAC
     }}}
   * 其次修改脚本文件spac.td, spac.td位于spac插件目录下
     ** 第一步定义需要的第三方proxy，需要在spac.td的开头定义
