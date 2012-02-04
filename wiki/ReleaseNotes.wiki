@@ -4,6 +4,11 @@
 _You can download the latest version of the Snova [http://code.google.com/p/snova/downloads/list here]
 
 Snova - Release Notes
+===Version 0.12.0204 - (2012.01.21--2012.02.04)===
+ * [C4]：性能优化：增加HTTP连接模拟全双工通信机制的实现，提高性能；需要重新部署server
+ * [GAE]：GUI优化——提高启动速度；优化体验
+ * [ALL]：所有配置文件改为纯text格式，支持修改后自动载入
+
 ===Version 0.12.0120 - (2012.01.08--2012.01.20)===
  * 新的plugin: C4, 代替原来的Heroku，支持更多的PaaS平台`Heroku/CloudFoundry/OpenShift/Jelastic`
  * `[GAE]`:Range fetch时增加错误retry机制
