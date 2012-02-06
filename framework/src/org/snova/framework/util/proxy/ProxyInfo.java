@@ -30,7 +30,7 @@ public class ProxyInfo
 			port = 80;
 			line = line.substring("http://".length());
 		}
-		else if (line.startsWith("http://"))
+		else if (line.startsWith("https://"))
 		{
 			type = ProxyType.HTTPS;
 			port = 443;
