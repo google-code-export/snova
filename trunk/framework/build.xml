@@ -36,7 +36,7 @@
 
 
 	<target name="compile" depends="prepare">
-		<javac debug="on" destdir="${classes}">
+		<javac debug="on" destdir="${classes}" target="1.5" source="1.5">
 			<src path="${srcroot}" />
 			<classpath>
 				<fileset dir="${lib}">
