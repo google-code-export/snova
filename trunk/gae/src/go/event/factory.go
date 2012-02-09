@@ -16,8 +16,8 @@ type EventRegisterValue struct {
 
 var RegistedEventTable map[uint64]EventRegisterValue = make(map[uint64]EventRegisterValue)
 
-func getEventHandler(ev Event)(EventHandler){
-    var typeVer uint64
+func getEventHandler(ev Event) EventHandler {
+	var typeVer uint64
 	typeVer = uint64(ev.GetType())<<32 + uint64(ev.GetVersion())
 	handler, ok := RegistedEventTable[typeVer]
 	if ok {
@@ -35,7 +35,7 @@ func ParseEvent(buffer *bytes.Buffer) (bool, Event, string) {
 	typeVer = uint64(header.Type)<<32 + uint64(header.Version)
 	value, ok := RegistedEventTable[typeVer]
 	if !ok {
-		return false, nil, "failed to find register event:" + strconv.Itoa64(int64(header.Type))
+		return false, nil, "failed to find register event:" + strconv.FormatInt(int64(header.Type), 10)
 	}
 	var event Event
 	event = value.creator(header.Type, header.Version)
@@ -69,9 +69,9 @@ func CreateEvent(Type uint32, Version uint32) Event {
 	case AUTH_REQUEST_EVENT_TYPE:
 		return new(AuthRequestEvent)
 	case USER_OPERATION_EVENT_TYPE:
-		return new (UserOperationEvent)
+		return new(UserOperationEvent)
 	case GROUP_OPERATION_EVENT_TYPE:
-		return new (GroupOperationEvent)
+		return new(GroupOperationEvent)
 	case USER_LIST_REQUEST_EVENT_TYPE:
 		return new(ListUserRequestEvent)
 	case GROUOP_LIST_REQUEST_EVENT_TYPE:
@@ -81,9 +81,9 @@ func CreateEvent(Type uint32, Version uint32) Event {
 	case REQUEST_SHARED_APPID_EVENT_TYPE:
 		return new(RequestAppIDEvent)
 	case SHARE_APPID_EVENT_TYPE:
-	    return new(ShareAppIDEvent)
+		return new(ShareAppIDEvent)
 	case SERVER_CONFIG_EVENT_TYPE:
-	    return new(ServerConfigEvent)
+		return new(ServerConfigEvent)
 	}
 	return nil
 }
@@ -105,15 +105,15 @@ func RegisterEventHandler(ev Event, handler EventHandler) (ok bool, err string) 
 	return true, ""
 }
 
-func DiaptchEvent(ev Event){
-   handler := getEventHandler(ev)
-   if nil != handler{
-      var header EventHeader
-      header.Type = ev.GetType()
-      header.Version = ev.GetVersion()
-      header.Hash = ev.GetHash()
-      handler.OnEvent(&header, ev)
-   }
+func DiaptchEvent(ev Event) {
+	handler := getEventHandler(ev)
+	if nil != handler {
+		var header EventHeader
+		header.Type = ev.GetType()
+		header.Version = ev.GetVersion()
+		header.Hash = ev.GetHash()
+		handler.OnEvent(&header, ev)
+	}
 }
 
 func EncodeEvent(buffer *bytes.Buffer, ev Event) bool {
@@ -126,25 +126,23 @@ func DecodeEvent(buffer *bytes.Buffer) (bool, Event, string) {
 	return ParseEvent(buffer)
 }
 
-func EncodeEventWithTags(buffer *bytes.Buffer, ev Event, tags *EventHeaderTags)bool{
-   tags.Encode(buffer)
-   return EncodeEvent(buffer, ev)
+func EncodeEventWithTags(buffer *bytes.Buffer, ev Event, tags *EventHeaderTags) bool {
+	tags.Encode(buffer)
+	return EncodeEvent(buffer, ev)
 }
 
 func InitEvents(handler EventHandler) {
-    RegisterEventHandler(new (HTTPRequestEvent), handler)
-    RegisterEventHandler(new (SegmentEvent),handler)
-    RegisterEventHandler(new (EncryptEvent),handler)
-    RegisterEventHandler(new (CompressEvent),handler)
-    RegisterEventHandler(new (AuthRequestEvent),handler)
-    RegisterEventHandler(new (UserOperationEvent),handler)
-    RegisterEventHandler(new (GroupOperationEvent),handler)
-    RegisterEventHandler(new (ListGroupRequestEvent),handler)
-    RegisterEventHandler(new (ListUserRequestEvent),handler)
-    RegisterEventHandler(new (BlackListOperationEvent),handler)
-    RegisterEventHandler(new (ServerConfigEvent),handler)
-	RegisterEventHandler(new (RequestAppIDEvent),handler)
-	RegisterEventHandler(new (ShareAppIDEvent),handler)
+	RegisterEventHandler(new(HTTPRequestEvent), handler)
+	RegisterEventHandler(new(SegmentEvent), handler)
+	RegisterEventHandler(new(EncryptEvent), handler)
+	RegisterEventHandler(new(CompressEvent), handler)
+	RegisterEventHandler(new(AuthRequestEvent), handler)
+	RegisterEventHandler(new(UserOperationEvent), handler)
+	RegisterEventHandler(new(GroupOperationEvent), handler)
+	RegisterEventHandler(new(ListGroupRequestEvent), handler)
+	RegisterEventHandler(new(ListUserRequestEvent), handler)
+	RegisterEventHandler(new(BlackListOperationEvent), handler)
+	RegisterEventHandler(new(ServerConfigEvent), handler)
+	RegisterEventHandler(new(RequestAppIDEvent), handler)
+	RegisterEventHandler(new(ShareAppIDEvent), handler)
 }
-
-

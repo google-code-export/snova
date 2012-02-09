@@ -7,7 +7,7 @@ import (
 	"snappy"
 	"se"
 	//"fmt"
-	vector "container/vector"
+	//vector "container/vector"
 )
 
 const (
@@ -254,15 +254,16 @@ type NameValuePair struct{
 }
 
 type HTTPMessageEvent struct {
-	Headers vector.Vector
+	//Headers vector.Vector
+	Headers []*NameValuePair
 	Content bytes.Buffer
 }
 
 func (msg *HTTPMessageEvent) getHeaderEntry(name string) *NameValuePair {
-	slen := msg.Headers.Len()
+	slen := len(msg.Headers)
 	for i := 0; i < slen; i++ {
-		header, ok := msg.Headers.At(i).(*NameValuePair)
-		if ok {
+		header := msg.Headers[i]
+		if header.Name == name {
 			return header
 		}
 	}
@@ -277,7 +278,8 @@ func (msg *HTTPMessageEvent) SetHeader(name, value string) {
 	    pair := new(NameValuePair)
 		pair.Name = name
 		pair.Value = value
-		msg.Headers.Push(pair)
+		//msg.Headers.Push(pair)
+		msg.Headers = append(msg.Headers, pair)
 	}
 }
 
@@ -285,7 +287,7 @@ func (msg *HTTPMessageEvent) AddHeader(name, value string) {
 	pair := new(NameValuePair)
 	pair.Name = name
 	pair.Value = value
-	msg.Headers.Push(pair)
+	msg.Headers = append(msg.Headers, pair)
 }
 
 func (msg *HTTPMessageEvent) GetHeader(name string) string {
@@ -297,14 +299,12 @@ func (msg *HTTPMessageEvent) GetHeader(name string) string {
 }
 
 func (msg *HTTPMessageEvent) DoEncode(buffer *bytes.Buffer) bool {
-	var slen int = msg.Headers.Len()
+	var slen int = len(msg.Headers)
 	codec.WriteUvarint(buffer, uint64(slen))
 	for i := 0; i < slen; i++ {
-		header, ok := (msg.Headers.At(i)).(*NameValuePair)
-		if ok {
-			codec.WriteVarString(buffer, header.Name)
-			codec.WriteVarString(buffer, header.Value)
-		}
+		header:= msg.Headers[i]
+		codec.WriteVarString(buffer, header.Name)
+	    codec.WriteVarString(buffer, header.Value)
 	}
 	b := msg.Content.Bytes()
 	codec.WriteVarBytes(buffer, b)
@@ -325,10 +325,10 @@ func (msg *HTTPMessageEvent) DoDecode(buffer *bytes.Buffer) bool {
 		if !ok {
 			return false
 		}
-		 pair := new(NameValuePair)
+		pair := new(NameValuePair)
 		pair.Name = headerName
 		pair.Value = headerValue
-		msg.Headers.Push(pair)
+		msg.Headers = append(msg.Headers, pair)
 	}
 	b, ok := codec.ReadVarBytes(buffer)
 	if !ok {

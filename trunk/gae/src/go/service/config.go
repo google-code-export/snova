@@ -29,27 +29,27 @@ func toPropertyList() datastore.PropertyList {
 	var ret = make(datastore.PropertyList, 0, 6)
 	ret = append(ret, datastore.Property{
 		Name:  "RetryFetchCount",
-		Value: strconv.Itoa64(int64(ServerConfig.RetryFetchCount)),
+		Value: strconv.FormatInt(int64(ServerConfig.RetryFetchCount), 10),
 	})
 	ret = append(ret, datastore.Property{
 		Name:  "RangeFetchLimit",
-		Value: strconv.Itoa64(int64(ServerConfig.RangeFetchLimit)),
+		Value: strconv.FormatInt(int64(ServerConfig.RangeFetchLimit), 10),
 	})
 	ret = append(ret, datastore.Property{
 		Name:  "MaxXMPPDataPackageSize",
-		Value: strconv.Itoa64(int64(ServerConfig.MaxXMPPDataPackageSize)),
+		Value: strconv.FormatInt(int64(ServerConfig.MaxXMPPDataPackageSize), 10),
 	})
 	ret = append(ret, datastore.Property{
 		Name:  "CompressType",
-		Value: strconv.Itoa64(int64(ServerConfig.CompressType)),
+		Value: strconv.FormatInt(int64(ServerConfig.CompressType), 10),
 	})
 	ret = append(ret, datastore.Property{
 		Name:  "EncryptType",
-		Value: strconv.Itoa64(int64(ServerConfig.EncryptType)),
+		Value: strconv.FormatInt(int64(ServerConfig.EncryptType), 10),
 	})
 	ret = append(ret, datastore.Property{
 		Name:  "IsMaster",
-		Value: strconv.Itoa64(int64(ServerConfig.IsMaster)),
+		Value: strconv.FormatInt(int64(ServerConfig.IsMaster), 10),
 	})
 	var tmp string
 	for key, _ := range ServerConfig.CompressFilter {
@@ -64,30 +64,30 @@ func toPropertyList() datastore.PropertyList {
 }
 
 func fromPropertyList(item datastore.PropertyList) {
-	for _,v := range item {
+	for _, v := range item {
 		switch v.Name {
 		case "RetryFetchCount":
-			tmp, _ := strconv.Atoui64(v.Value.(string))
+			tmp, _ := strconv.ParseUint(v.Value.(string), 10, 64)
 			ServerConfig.RetryFetchCount = uint32(tmp)
 		case "RangeFetchLimit":
-			tmp, _ := strconv.Atoui64(v.Value.(string))
-			ServerConfig.RangeFetchLimit= uint32(tmp)
+			tmp, _ := strconv.ParseUint(v.Value.(string), 10, 64)
+			ServerConfig.RangeFetchLimit = uint32(tmp)
 		case "MaxXMPPDataPackageSize":
-			tmp, _ := strconv.Atoui64(v.Value.(string))
+			tmp, _ := strconv.ParseUint(v.Value.(string), 10, 64)
 			ServerConfig.MaxXMPPDataPackageSize = uint32(tmp)
 		case "CompressType":
-			tmp, _ := strconv.Atoui64(v.Value.(string))
+			tmp, _ := strconv.ParseUint(v.Value.(string), 10, 64)
 			ServerConfig.CompressType = uint32(tmp)
 		case "EncryptType":
-			tmp, _ := strconv.Atoui64(v.Value.(string))
+			tmp, _ := strconv.ParseUint(v.Value.(string), 10, 64)
 			ServerConfig.EncryptType = uint32(tmp)
 		case "IsMaster":
-			tmp, _ := strconv.Atoui64(v.Value.(string))
+			tmp, _ := strconv.ParseUint(v.Value.(string), 10, 64)
 			ServerConfig.IsMaster = uint8(tmp)
 		case "CompressFilter":
 			str := v.Value.(string)
 			ss := strings.Split(str, ";")
-			for _,s := range ss {
+			for _, s := range ss {
 				s = strings.TrimSpace(s)
 				if len(s) > 0 {
 					ServerConfig.CompressFilter[s] = s
@@ -104,8 +104,8 @@ func SaveServerConfig(ctx appengine.Context) {
 	if err != nil {
 		return
 	}
-	if ServerConfig.IsMaster == 1{
-	   InitMasterService(ctx)
+	if ServerConfig.IsMaster == 1 {
+		InitMasterService(ctx)
 	}
 }
 
@@ -119,7 +119,7 @@ func LoadServerConfig(ctx appengine.Context) {
 	var item datastore.PropertyList
 	key := datastore.NewKey(ctx, "ServerConfig", "", 1, nil)
 	if err := datastore.Get(ctx, key, &item); err != nil {
-	    SaveServerConfig(ctx)
+		SaveServerConfig(ctx)
 		return
 	}
 	fromPropertyList(item)
@@ -132,23 +132,23 @@ func LoadServerConfig(ctx appengine.Context) {
 	//memcache.Set(ctx, memitem)
 }
 
-func HandlerConfigEvent(ctx appengine.Context,ev *event.ServerConfigEvent)event.Event{
-   //ctx.Infof("Operation is  :%d",  ev.Operation)
-   switch ev.Operation{
-      case event.GET_CONFIG_REQ:
-	     res := new(event.ServerConfigEvent)
-		 res.Operation = event.GET_CONFIG_RES
-		 res.Cfg = ServerConfig
-		 return res
-	  case  event.SET_CONFIG_REQ:
-	     if nil != ev.Cfg{
-		    ServerConfig = ev.Cfg
+func HandlerConfigEvent(ctx appengine.Context, ev *event.ServerConfigEvent) event.Event {
+	//ctx.Infof("Operation is  :%d",  ev.Operation)
+	switch ev.Operation {
+	case event.GET_CONFIG_REQ:
+		res := new(event.ServerConfigEvent)
+		res.Operation = event.GET_CONFIG_RES
+		res.Cfg = ServerConfig
+		return res
+	case event.SET_CONFIG_REQ:
+		if nil != ev.Cfg {
+			ServerConfig = ev.Cfg
 			SaveServerConfig(ctx)
-		 }
-	     res := new(event.ServerConfigEvent)
-		 res.Operation = event.SET_CONFIG_RES
-		 res.Cfg = ServerConfig
-	     return res
-   }
-   return nil
+		}
+		res := new(event.ServerConfigEvent)
+		res.Operation = event.SET_CONFIG_RES
+		res.Cfg = ServerConfig
+		return res
+	}
+	return nil
 }

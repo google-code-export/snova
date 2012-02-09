@@ -6,6 +6,7 @@
 	<property name='warlib' value='${root}/war/WEB-INF/lib' />
 	<property name='serverclass' value='${root}/war/WEB-INF/classes' />
 	<property name="srcroot" value="${root}/src/java" />
+	<property name="gosrcroot" value="${root}/src/go" />
 	<property name="gosrc" value="${root}/src/go" />
 	<property name="releasedir" value="${root}/release" />
 	<property name="clientclasses" value="${root}/build" />
@@ -20,6 +21,7 @@
 	<property name="release" value="release" />
 	<property name="version" value="0.12.0204" />
 	<property name="versionfile" value="org/snova/gae/common/GAEPluginVersion.java" />
+	<property name="goversionfile" value="misc/version.go" />
 	<property name="release_dir_name" value="gae" />
 	<property name="project_name" value="snova-gae" />
 
@@ -29,12 +31,14 @@
 		<mkdir dir="${clientclasses}" />
 		<mkdir dir="${distroot}" />
 		<copy todir="${warlib}" file="${root}/../framework/lib/arch.jar" />
-		
-		<echo message="package org.snova.gae.common;
+
+		<echo message="package org.snova.gae.common;${line.separator}
 			public class GAEPluginVersion
-			{
-			   public static final String value = &quot;${version}&quot;;
+			{${line.separator}
+			   public static final String value = &quot;${version}&quot;;${line.separator}
 			}" file="${srcroot}/${versionfile}" />
+		<echo message="package misc ${line.separator} ${line.separator}const Version = &quot;${version}&quot;" 
+			file="${gosrcroot}/${goversionfile}" />
 	</target>
 
 	<target name="compile-server" depends="prepare">
@@ -98,16 +102,16 @@
 				<exclude name="**/log4j.properties" />
 			</fileset>
 		</copy>
-		
+
 		<copy todir="${releaseserverdir}">
 			<fileset dir="${deploy}" />
 		</copy>
-		
+
 		<copy todir="${goreleasedir}">
 			<fileset dir="${gosrc}" />
 		</copy>
-		<zip destfile="${project_name}-jserver-${version}.zip" basedir="${releasedir}" includes="${project_name}-jserver-${version}/**"/>
-		<zip destfile="${project_name}-gserver-${version}.zip" basedir="${releasedir}" includes="${project_name}-gserver-${version}/**"/>
+		<zip destfile="${project_name}-jserver-${version}.zip" basedir="${releasedir}" includes="${project_name}-jserver-${version}/**" />
+		<zip destfile="${project_name}-gserver-${version}.zip" basedir="${releasedir}" includes="${project_name}-gserver-${version}/**" />
 		<delete dir="${releasedir}" />
 	</target>
 
