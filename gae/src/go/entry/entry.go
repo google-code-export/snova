@@ -1,20 +1,21 @@
 package entry
 
 import (
-	"fmt"
-	"http"
-	"bytes"
-	"encoding/base64"
-	"strconv"
 	"appengine"
 	"appengine/user"
 	"appengine/xmpp"
+	"bytes"
+	"encoding/base64"
 	"event"
-	"service"
+	"fmt"
+	"misc"
 	"handler"
+	"net/http"
+	"service"
+	"strconv"
 )
 
-const Version = "0.11.1111"
+//const Version = "0.12.0220"
 
 var serverInited bool = false
 
@@ -27,7 +28,8 @@ func init() {
 	http.HandleFunc("/_ah/start", BackendInit)
 	//warmup request is no available in GO runtime now
 	http.HandleFunc("/_ah/warmup", InitGAEServer)
-	xmpp.RegisterChatHandler(XMPPEventDispatch)
+	//xmpp.RegisterChatHandler(XMPPEventDispatch)
+	xmpp.Handle(XMPPEventDispatch)
 	//http.HandleFunc("/_ah/xmpp/message/chat/", XMPPEventDispatch)
 }
 
@@ -35,8 +37,8 @@ func initGAEProxyServer(ctx appengine.Context) {
 	if !serverInited {
 		service.LoadServerConfig(ctx)
 		service.CheckDefaultAccount(ctx)
-		if service.ServerConfig.IsMaster == 1{
-		   service.InitMasterService(ctx)
+		if service.ServerConfig.IsMaster == 1 {
+			service.InitMasterService(ctx)
 		}
 		ctx.Infof("InitGAEServer Invoked!")
 		serverInited = true
@@ -93,21 +95,21 @@ func AdminEntry(w http.ResponseWriter, r *http.Request) {
 	if u == nil {
 		url, err := user.LoginURL(c, r.URL.String())
 		if err != nil {
-			http.Error(w, err.String(), http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 		w.Header().Set("Location", url)
 		w.WriteHeader(http.StatusFound)
 		return
 	}
-	if !user.IsAdmin(c){
-	    url,_ := user.LogoutURL(c, "/admin")
-	   fmt.Fprintf(w, signoutFrom, Version,u.String(), url)
-	   return
+	if !user.IsAdmin(c) {
+		url, _ := user.LogoutURL(c, "/admin")
+		fmt.Fprintf(w, signoutFrom, misc.Version, u.String(), url)
+		return
 	}
-	url,_ := user.LogoutURL(c, "/")
+	url, _ := user.LogoutURL(c, "/")
 	root := service.GetUserWithName(c, "root")
-	fmt.Fprintf(w, adminFrom, Version, root.Passwd, url)
+	fmt.Fprintf(w, adminFrom, misc.Version, root.Passwd, url)
 }
 
 const indexForm = `
@@ -132,11 +134,11 @@ const indexForm = `
 
 func IndexEntry(w http.ResponseWriter, r *http.Request) {
 	//ctx := appengine.NewContext(r)
-	fmt.Fprintf(w, indexForm, Version, Version)
+	fmt.Fprintf(w, indexForm, misc.Version, misc.Version)
 }
 
 func BackendInit(w http.ResponseWriter, r *http.Request) {
-   w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusOK)
 }
 
 type HTTPEventSendService struct {
@@ -173,14 +175,14 @@ func (serv *XMPPEventSendService) Send(buf *bytes.Buffer) {
 	msg.Type = "chat"
 	retryCount := service.ServerConfig.RetryFetchCount
 	for retryCount > 0 {
-	   err := msg.Send(serv.ctx)
-	   if nil == err{
-	      return
-	   }
-	   retryCount--
-	   serv.ctx.Errorf("Failed to send xmpp(%d:%d bytes) for reason:%s", len(body),buf.Len(),err.String())
+		err := msg.Send(serv.ctx)
+		if nil == err {
+			return
+		}
+		retryCount--
+		serv.ctx.Errorf("Failed to send xmpp(%d:%d bytes) for reason:%s", len(body), buf.Len(), err.Error())
 	}
-	
+
 }
 
 func XMPPEventDispatch(ctx appengine.Context, m *xmpp.Message) {
@@ -225,7 +227,6 @@ func HTTPEventDispatch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx.Errorf("Failed to parse HTTP event:" + cause)
-	fmt.Fprintf(w, "Failed to parse HTTP event:" + cause)
+	fmt.Fprintf(w, "Failed to parse HTTP event:"+cause)
 	//w.Write(buf.Bytes())
 }
-

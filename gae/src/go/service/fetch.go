@@ -4,9 +4,9 @@ import (
 	"appengine"
 	"appengine/urlfetch"
 	"event"
-	"strconv"
-	"http"
 	"fmt"
+	"net/http"
+	"strconv"
 )
 
 func buildHTTPRequest(ev *event.HTTPRequestEvent) *http.Request {
@@ -14,12 +14,10 @@ func buildHTTPRequest(ev *event.HTTPRequestEvent) *http.Request {
 	if err != nil {
 		return nil
 	}
-	var slen int = ev.Headers.Len()
+	var slen int = len(ev.Headers)
 	for i := 0; i < slen; i++ {
-		header, ok := ev.Headers.At(i).(*event.NameValuePair)
-		if ok {
-			req.Header.Add(header.Name, header.Value)
-		}
+		header := ev.Headers[i]
+		req.Header.Add(header.Name, header.Value)
 	}
 	return req
 }
@@ -50,36 +48,36 @@ func fillErrorResponse(ev *event.HTTPResponseEvent, cause string) {
 
 func Fetch(context appengine.Context, ev *event.HTTPRequestEvent) event.Event {
 	errorResponse := new(event.HTTPResponseEvent)
-	if ServerConfig.IsMaster == 1{
-	    fillErrorResponse(errorResponse, "Proxy service is no enable in snova master node.")
-		return errorResponse 
+	if ServerConfig.IsMaster == 1 {
+		fillErrorResponse(errorResponse, "Proxy service is no enable in snova master node.")
+		return errorResponse
 	}
 	req := buildHTTPRequest(ev)
-	
+
 	if req == nil {
 		errorResponse.Status = 400
 		fillErrorResponse(errorResponse, "Invalid fetch url:"+ev.Url)
 		return errorResponse
 	}
-	t := &urlfetch.Transport{context, 10.0, true}
+	t := &urlfetch.Transport{context, 0, true}
 	retryCount := ServerConfig.RetryFetchCount
 	for retryCount > 0 {
 		resp, err := t.RoundTrip(req)
 		if err == nil {
 			res := buildHTTPResponseEvent(resp)
-			if res.Status == 302{
-			   rangeHeader :=  req.Header.Get("Range")
-			   if len(rangeHeader) > 0{
-			      res.AddHeader("X-Range", rangeHeader)
-			   }
+			if res.Status == 302 {
+				rangeHeader := req.Header.Get("Range")
+				if len(rangeHeader) > 0 {
+					res.AddHeader("X-Range", rangeHeader)
+				}
 			}
 			return res
 		}
-		context.Errorf("Failed to fetch URL[%s] for reason:%s", ev.Url, err.String())
+		context.Errorf("Failed to fetch URL[%s] for reason:%s", ev.Url, err.Error())
 		retryCount--
 		if req.Header.Get("Range") == "" {
 			rangeLimit := ServerConfig.RangeFetchLimit
-			req.Header.Set("Range", strconv.Itoa64(int64(rangeLimit-1)))
+			req.Header.Set("Range", strconv.FormatInt(int64(rangeLimit-1), 10))
 		}
 	}
 	errorResponse.Status = 408

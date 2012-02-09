@@ -4,7 +4,7 @@ import (
 	"appengine"
 	"appengine/capability"
 	"event"
-	"rand"
+	"math/rand"
 	"time"
 )
 
@@ -13,7 +13,7 @@ const SEED = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz~!@#
 
 func generateRandomString(n int) string {
 	s := ""
-	src := rand.NewSource(time.Nanoseconds())
+	src := rand.NewSource(time.Now().UnixNano())
 	rnd := rand.New(src)
 	for i := 0; i < n; i++ {
 		index := rnd.Intn(len(SEED))
@@ -34,7 +34,7 @@ func Auth(ctx appengine.Context, ev *event.AuthRequestEvent) event.Event {
 	user := GetUserWithName(ctx, ev.User)
 	res := new(event.AuthResponseEvent)
 	res.Appid = ev.Appid
-	if nil != user {
+	if nil != user || ev.Passwd == user.Passwd {
 		res.Token = user.AuthToken
 	} else {
 		res.Error = "Invalid user/passwd."
@@ -42,11 +42,11 @@ func Auth(ctx appengine.Context, ev *event.AuthRequestEvent) event.Event {
 	return res
 }
 
-func assertRootAuth(user *event.User)string{
-    if user.Email != "root"{
-        return "You have no authorization for this operation!"
-    }
-    return ""
+func assertRootAuth(user *event.User) string {
+	if user.Email != "root" {
+		return "You have no authorization for this operation!"
+	}
+	return ""
 }
 
 func HandlerUserEvent(ctx appengine.Context, ev *event.UserOperationEvent) event.Event {
@@ -54,129 +54,129 @@ func HandlerUserEvent(ctx appengine.Context, ev *event.UserOperationEvent) event
 	resev := new(event.AdminResponseEvent)
 	tags := ((ev.GetAttachement().([]interface{}))[0]).(*event.EventHeaderTags)
 	opruser := GetUserWithToken(ctx, tags.Token)
-	if nil == opruser{
-	  resev.ErrorCause="Invalid user token" 
-	  return resev
+	if nil == opruser {
+		resev.ErrorCause = "Invalid user token"
+		return resev
 	}
 	switch ev.Operation {
 	case event.OPERATION_ADD:
-	   res = createUser(ctx, opruser, ev.User.Email, ev.User.Group)
+		res = createUser(ctx, opruser, ev.User.Email, ev.User.Group)
 	case event.OPERATION_DELETE:
-	   res = deleteUser(ctx, opruser, ev.User.Email)
+		res = deleteUser(ctx, opruser, ev.User.Email)
 	case event.OPERATION_MODIFY:
-	    res = modifyUser(ctx, opruser, ev.User.Email, ev.User.Passwd)
+		res = modifyUser(ctx, opruser, ev.User.Email, ev.User.Passwd)
 	}
-	resev.Response="Success"
-	resev.ErrorCause=res
-	return  resev
+	resev.Response = "Success"
+	resev.ErrorCause = res
+	return resev
 }
 
 func HandlerUserListEvent(ctx appengine.Context, ev *event.ListUserRequestEvent) event.Event {
-    var res string
+	var res string
 	tags := ((ev.GetAttachement().([]interface{}))[0]).(*event.EventHeaderTags)
 	opruser := GetUserWithToken(ctx, tags.Token)
-	if nil == opruser{
-	  resev := new(event.AdminResponseEvent)
-	  resev.ErrorCause="Invalid user token" 
-	  return resev
+	if nil == opruser {
+		resev := new(event.AdminResponseEvent)
+		resev.ErrorCause = "Invalid user token"
+		return resev
 	}
 	res = assertRootAuth(opruser)
-	if len(res) > 0{
-	   resev := new(event.AdminResponseEvent)
-	   resev.ErrorCause=res
-	   return resev
+	if len(res) > 0 {
+		resev := new(event.AdminResponseEvent)
+		resev.ErrorCause = res
+		return resev
 	}
 	users := GetAllUsers(ctx)
 	resev := new(event.ListUserResponseEvent)
 	resev.Users = users
-	return  resev
+	return resev
 }
 
 func HandlerGroupEvent(ctx appengine.Context, ev *event.GroupOperationEvent) event.Event {
-    var res string
+	var res string
 	resev := new(event.AdminResponseEvent)
 	tags := ((ev.GetAttachement().([]interface{}))[0]).(*event.EventHeaderTags)
 	opruser := GetUserWithToken(ctx, tags.Token)
-	if nil == opruser{
-	  resev.ErrorCause="Invalid user token" 
-	  return resev
+	if nil == opruser {
+		resev.ErrorCause = "Invalid user token"
+		return resev
 	}
 	switch ev.Operation {
 	case event.OPERATION_ADD:
-	   res = createGroup(ctx,opruser, ev.Group.Name)
+		res = createGroup(ctx, opruser, ev.Group.Name)
 	case event.OPERATION_DELETE:
-	   res = deleteGroup(ctx,opruser, ev.Group.Name)
+		res = deleteGroup(ctx, opruser, ev.Group.Name)
 	}
-	resev.Response="Success"
-	resev.ErrorCause=res
-	return  resev
+	resev.Response = "Success"
+	resev.ErrorCause = res
+	return resev
 }
 
 func HandlerGroupListEvent(ctx appengine.Context, ev *event.ListGroupRequestEvent) event.Event {
-    var res string
+	var res string
 	tags := ((ev.GetAttachement().([]interface{}))[0]).(*event.EventHeaderTags)
 	opruser := GetUserWithToken(ctx, tags.Token)
-	if nil == opruser{
-	  resev := new(event.AdminResponseEvent)
-	  resev.ErrorCause="Invalid user token" 
-	  return resev
+	if nil == opruser {
+		resev := new(event.AdminResponseEvent)
+		resev.ErrorCause = "Invalid user token"
+		return resev
 	}
 	res = assertRootAuth(opruser)
-	if len(res) > 0{
-	   resev := new(event.AdminResponseEvent)
-	   resev.ErrorCause=res
-	   return resev
+	if len(res) > 0 {
+		resev := new(event.AdminResponseEvent)
+		resev.ErrorCause = res
+		return resev
 	}
 	groups := GetAllGroups(ctx)
 	resev := new(event.ListGroupResponseEvent)
 	resev.Groups = groups
-	return  resev
+	return resev
 }
 
 func HandlerBalcklistEvent(ctx appengine.Context, ev *event.BlackListOperationEvent) event.Event {
-    var res string
+	var res string
 	tags := ((ev.GetAttachement().([]interface{}))[0]).(*event.EventHeaderTags)
 	opruser := GetUserWithToken(ctx, tags.Token)
-	if nil == opruser{
-	  resev := new(event.AdminResponseEvent)
-	  resev.ErrorCause="Invalid user token" 
-	  return resev
+	if nil == opruser {
+		resev := new(event.AdminResponseEvent)
+		resev.ErrorCause = "Invalid user token"
+		return resev
 	}
 	res = assertRootAuth(opruser)
-	if len(res) > 0{
-	   resev := new(event.AdminResponseEvent)
-	   resev.ErrorCause=res
-	   return resev
+	if len(res) > 0 {
+		resev := new(event.AdminResponseEvent)
+		resev.ErrorCause = res
+		return resev
 	}
 	user := GetUserWithName(ctx, ev.User)
 	var group *event.Group
 	var blacklist map[string]string
-	if nil != user{
-	   blacklist = user.BlackList
-	}else{
-	   group = GetGroup(ctx, ev.Group)
-	   if nil != group{
-	      blacklist = group.BlackList
-	   }else{
-	       resev := new(event.AdminResponseEvent)
-	      resev.ErrorCause="Invalid user/group for blaclist operation"
-	      return resev
-	   }
+	if nil != user {
+		blacklist = user.BlackList
+	} else {
+		group = GetGroup(ctx, ev.Group)
+		if nil != group {
+			blacklist = group.BlackList
+		} else {
+			resev := new(event.AdminResponseEvent)
+			resev.ErrorCause = "Invalid user/group for blaclist operation"
+			return resev
+		}
 	}
-	switch ev.Operation{
-	   case event.BLACKLIST_ADD:
-	      blacklist[ev.Host] = ev.Host
-	   case event.BLACKLIST_DELETE:
-	      blacklist[ev.Host] = "", false
+	switch ev.Operation {
+	case event.BLACKLIST_ADD:
+		blacklist[ev.Host] = ev.Host
+	case event.BLACKLIST_DELETE:
+		delete(blacklist, ev.Host)
 	}
-	if nil != user{
-	   SaveUser(ctx, user)
-	}else{
-	   SaveGroup(ctx, group)
+	if nil != user {
+		SaveUser(ctx, user)
+	} else {
+		SaveGroup(ctx, group)
 	}
 	resev := new(event.AdminResponseEvent)
-	resev.Response="Success"
-	return  resev
+	resev.Response = "Success"
+	return resev
 }
 
 func CheckDefaultAccount(ctx appengine.Context) {
@@ -190,82 +190,82 @@ func CheckDefaultAccount(ctx appengine.Context) {
 	CreateUserIfNotExist(ctx, "anonymouse", "anonymouse")
 }
 
-func deleteUser(ctx appengine.Context, opr *event.User, email string) string{
-    var res string
+func deleteUser(ctx appengine.Context, opr *event.User, email string) string {
+	var res string
 	res = assertRootAuth(opr)
-	if len(res) == 0{
-	  user := GetUserWithName(ctx, email)
-	  if nil == user{
-	     return "User not found!"
-	  }
-	  DeleteUser(ctx,user)
+	if len(res) == 0 {
+		user := GetUserWithName(ctx, email)
+		if nil == user {
+			return "User not found!"
+		}
+		DeleteUser(ctx, user)
 	}
 	return res
 }
 
-func modifyUser(ctx appengine.Context, opr *event.User, email string, passwd string) string{
-    var res string
+func modifyUser(ctx appengine.Context, opr *event.User, email string, passwd string) string {
+	var res string
 	res = assertRootAuth(opr)
-	if len(res) == 0{
-	  user := GetUserWithName(ctx, email)
-	  if nil == user{
-	     return "User not found!"
-	  }
-	  if len(passwd) ==0{
-	     return "New password can't be empty!"
-	  }
-	  user.Passwd = passwd
-	  SaveUser(ctx,user)
+	if len(res) == 0 {
+		user := GetUserWithName(ctx, email)
+		if nil == user {
+			return "User not found!"
+		}
+		if len(passwd) == 0 {
+			return "New password can't be empty!"
+		}
+		user.Passwd = passwd
+		SaveUser(ctx, user)
 	}
 	return res
 }
 
-func createUser(ctx appengine.Context, opr *event.User, email string, groupName string) string{
-    var res string
+func createUser(ctx appengine.Context, opr *event.User, email string, groupName string) string {
+	var res string
 	res = assertRootAuth(opr)
-	if len(res) == 0{
-	  group := GetGroup(ctx, groupName)    
-	  if nil == group{
-	     return "Group not found!"
-	  }
-	  user := GetUserWithName(ctx, email)
-	  if nil != user{
-	     return "User already exist!"
-	  }
-	  user = new(event.User)
-	  user.Email = email
-	  user.Group = groupName
-	  user.Passwd = generateRandomString(8)
-	  user.AuthToken = generateAuthToken(ctx)
-	  SaveUser(ctx, user)
+	if len(res) == 0 {
+		group := GetGroup(ctx, groupName)
+		if nil == group {
+			return "Group not found!"
+		}
+		user := GetUserWithName(ctx, email)
+		if nil != user {
+			return "User already exist!"
+		}
+		user = new(event.User)
+		user.Email = email
+		user.Group = groupName
+		user.Passwd = generateRandomString(8)
+		user.AuthToken = generateAuthToken(ctx)
+		SaveUser(ctx, user)
 	}
 	return res
 }
 
-func createGroup(ctx appengine.Context, opr *event.User, groupName string)string{
-     var res string
-	 res = assertRootAuth(opr)
-	if len(res) == 0{
-	  group := GetGroup(ctx, groupName)    
-	  if nil != group{
-	     return "Group already exist!"
-	  }
-	  group = new(event.Group)
-	  group.Name = groupName
-	  SaveGroup(ctx, group)
+func createGroup(ctx appengine.Context, opr *event.User, groupName string) string {
+	var res string
+	res = assertRootAuth(opr)
+	if len(res) == 0 {
+		group := GetGroup(ctx, groupName)
+		if nil != group {
+			return "Group already exist!"
+		}
+		group = new(event.Group)
+		group.Name = groupName
+		SaveGroup(ctx, group)
 	}
 	return res
 }
 
-func deleteGroup(ctx appengine.Context, opr *event.User,groupName string)string{
-     var res string
+func deleteGroup(ctx appengine.Context, opr *event.User, groupName string) string {
+	var res string
 	res = assertRootAuth(opr)
-	if len(res) == 0{
-	  group := GetGroup(ctx, groupName)
-	  if nil == group{
-	     return "Group not found!"
-	  }
-	  DeleteGroup(ctx,group)
+	if len(res) == 0 {
+		group := GetGroup(ctx, groupName)
+		if nil == group {
+			return "Group not found!"
+		}
+		DeleteGroup(ctx, group)
 	}
 	return res
 }

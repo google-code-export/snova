@@ -117,7 +117,7 @@ func SaveUser(ctx appengine.Context, user *event.User) {
 	key := datastore.NewKey(ctx, "ProxyUser", user.Email, 0, nil)
 	_, err := datastore.Put(ctx, key, &props)
 	if err != nil {
-		ctx.Errorf("Failed to put user:%s data in datastore:%s", user.Email, err.String())
+		ctx.Errorf("Failed to put user:%s data in datastore:%s", user.Email, err.Error())
 		return
 	}
 	//var buf bytes.Buffer
@@ -161,7 +161,7 @@ func GetUserWithName(ctx appengine.Context, name string) *event.User {
 	var item datastore.PropertyList
 	key := datastore.NewKey(ctx, "ProxyUser", name, 0, nil)
 	if err := datastore.Get(ctx, key, &item); err != nil {
-		ctx.Errorf("Failed to get user:%s data in datastore:%s", name, err.String())
+		ctx.Errorf("Failed to get user:%s data in datastore:%s", name, err.Error())
 		return nil
 	}
 	user = PropertyList2User(item)
@@ -193,7 +193,7 @@ func GetUserWithToken(ctx appengine.Context, token string) *event.User {
 			break
 		}
 		if err != nil {
-			ctx.Errorf("Failed to get user:%s data in datastore:%s", token, err.String())
+			ctx.Errorf("Failed to get user:%s data in datastore:%s", token, err.Error())
 			return nil
 		}
 		user = PropertyList2User(x)
@@ -212,7 +212,7 @@ func GetAllUsers(ctx appengine.Context) []*event.User {
 			break
 		}
 		if err != nil {
-			ctx.Errorf("Failed to get all user data in datastore:%s", err.String())
+			ctx.Errorf("Failed to get all user data in datastore:%s", err.Error())
 			break
 		}
 		user := PropertyList2User(x)
@@ -226,7 +226,7 @@ func SaveGroup(ctx appengine.Context, grp *event.Group) {
 	key := datastore.NewKey(ctx, "ProxyGroup", grp.Name, 0, nil)
 	_, err := datastore.Put(ctx, key, &props)
 	if err != nil {
-		ctx.Errorf("Failed to put group:%s data in datastore:%s", grp.Name, err.String())
+		ctx.Errorf("Failed to put group:%s data in datastore:%s", grp.Name, err.Error())
 		return
 	}
 	//var buf bytes.Buffer
@@ -256,7 +256,7 @@ func GetGroup(ctx appengine.Context, name string) *event.Group {
 	var item datastore.PropertyList
 	key := datastore.NewKey(ctx, "ProxyGroup", name, 0, nil)
 	if err := datastore.Get(ctx, key, &item); err != nil {
-		ctx.Errorf("Failed to get group:%s data in datastore:%s", name, err.String())
+		ctx.Errorf("Failed to get group:%s data in datastore:%s", name, err.Error())
 		return nil
 	}
 	group = PropertyList2Group(item)
@@ -280,7 +280,7 @@ func GetAllGroups(ctx appengine.Context) []*event.Group {
 			break
 		}
 		if err != nil {
-			ctx.Errorf("Failed to get all user data in datastore:%s", err.String())
+			ctx.Errorf("Failed to get all user data in datastore:%s", err.Error())
 			break
 		}
 		group := PropertyList2Group(x)
@@ -294,8 +294,8 @@ func DeleteUser(ctx appengine.Context, user *event.User) {
 	datastore.Delete(ctx, key)
 	key1 := USER_CACHE_KEY_PREFIX + user.Email
 	key2 := USER_CACHE_KEY_PREFIX + user.AuthToken
-	UserTable[key1] = nil, false
-	UserTable[key2] = nil, false
+	delete(UserTable, key1)
+	delete(UserTable, key2)
 	//memcache.Delete(ctx, key1)
 	//memcache.Delete(ctx, key2)
 }
@@ -304,7 +304,7 @@ func DeleteGroup(ctx appengine.Context, group *event.Group) {
 	key := datastore.NewKey(ctx, "ProxyGroup", group.Name, 0, nil)
 	datastore.Delete(ctx, key)
 	key1 := GROUP_CACHE_KEY_PREFIX + group.Name
-	GroupTable[key1] = nil, false
+	delete(GroupTable, key1)
 	//memcache.Delete(ctx, key1)
 }
 
