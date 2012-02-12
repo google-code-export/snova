@@ -16,8 +16,7 @@
     {{{
       rhc-create-domain -n <domainName> -l <yourId> -p <yourPassword>  创建主域名， 部署新应用是这一步可不执行
       rhc-create-app -a <appName> -t jbossas-7.0 -p <yourPassword>  创建app
-      cd <appName>
-      mv ../snova-c4-server-[version].war <appName>/deployments/ROOT.war
+      mv snova-c4-server-[version].war deployments/ROOT.war
       git rm -r src pom.xml
       git commit –m “delete”
       git push                         以上三步重新部署同一个app时可不执行
