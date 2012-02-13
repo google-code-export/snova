@@ -165,7 +165,7 @@ public class C4ClientConfiguration implements ReloadableConfiguration
 	
 	public static enum ConnectionMode
 	{
-		HTTP;
+		HTTP, RSOCKET;
 	}
 	
 	public static class C4ServerAuth
