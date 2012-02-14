@@ -14,6 +14,7 @@ import org.arch.buffer.Buffer;
 import org.arch.buffer.BufferHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.snova.c4.common.C4Constants;
 import org.snova.c4.server.service.EventService;
 import org.snova.c4.server.service.TimeoutService;
 
@@ -23,13 +24,13 @@ import org.snova.c4.server.service.TimeoutService;
  */
 public class HTTPPushInvokeServlet extends HttpServlet
 {
-	protected Logger	logger	= LoggerFactory.getLogger(getClass());
-	
+	protected Logger logger = LoggerFactory.getLogger(getClass());
+
 	@Override
 	protected void doPost(HttpServletRequest req, HttpServletResponse resp)
 	        throws ServletException, IOException
 	{
-		String userToken = req.getHeader("UserToken");
+		String userToken = req.getHeader(C4Constants.USER_TOKEN_HEADER);
 		if (null == userToken)
 		{
 			userToken = "";
@@ -72,22 +73,25 @@ public class HTTPPushInvokeServlet extends HttpServlet
 					{
 						break;
 					}
-					if(size == content.readableBytes())
+					if (size == content.readableBytes())
 					{
-						EventService.getInstance(userToken).dispatchEvent(content);
+						EventService.getInstance(userToken).dispatchEvent(
+						        content);
 						content.clear();
 					}
 					else
 					{
-						System.out.println("##############" + content.readableBytes() + "--" + size);
+						System.out.println("##############"
+						        + content.readableBytes() + "--" + size);
 					}
 				}
 				else
 				{
 					break;
 				}
-				
-			} while (true);
+
+			}
+			while (true);
 		}
 		catch (Exception e)
 		{

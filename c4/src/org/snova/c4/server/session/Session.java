@@ -32,10 +32,15 @@ public abstract class Session
 	{
 		if (null == factory)
 		{
-			ExecutorService workerExecutor = Executors.newFixedThreadPool(25);
+			ExecutorService workerExecutor =SharedObjectHelper.getGlobalThreadPool();
+			if(null == workerExecutor)
+			{
+				 workerExecutor = Executors.newFixedThreadPool(25);
+				 SharedObjectHelper.setGlobalThreadPool(workerExecutor);
+			}
 			//ThreadPoolExecutor workerExecutor = new OrderedMemoryAwareThreadPoolExecutor(
 			//        25, 0, 0);
-			SharedObjectHelper.setGlobalThreadPool(workerExecutor);
+			
 			factory = new NioClientSocketChannelFactory(workerExecutor,
 			        workerExecutor);
 		}
