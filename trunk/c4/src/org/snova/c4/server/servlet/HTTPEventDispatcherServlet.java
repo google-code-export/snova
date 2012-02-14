@@ -19,6 +19,7 @@ import org.arch.event.Event;
 import org.arch.event.EventDispatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.snova.c4.common.C4Constants;
 import org.snova.c4.common.event.EventRestNotify;
 import org.snova.c4.server.service.EventService;
 import org.snova.c4.server.service.TimeoutService;
@@ -76,7 +77,7 @@ public class HTTPEventDispatcherServlet extends HttpServlet
 	protected void doPost(HttpServletRequest req, final HttpServletResponse resp)
 	        throws ServletException, IOException
 	{
-		String userToken = req.getHeader("UserToken");
+		String userToken = req.getHeader(C4Constants.USER_TOKEN_HEADER);
 		if (null == userToken)
 		{
 			userToken = "";

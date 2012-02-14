@@ -56,6 +56,7 @@ public class C4Events
 			registerEventHandler(EventRestNotify.class, handler);
 			registerEventHandler(SequentialChunkEvent.class, handler);
 			registerEventHandler(TransactionCompleteEvent.class, handler);
+			registerEventHandler(RSocketAcceptedEvent.class, handler);
 			if (isServer)
 			{
 				EventDispatcher.getSingletonInstance().register(

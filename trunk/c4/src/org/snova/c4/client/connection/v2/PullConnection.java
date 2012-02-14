@@ -15,6 +15,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.c4.client.config.C4ClientConfiguration;
 import org.snova.c4.client.config.C4ClientConfiguration.C4ServerAuth;
+import org.snova.c4.client.connection.util.ConnectionHelper;
+import org.snova.c4.common.C4Constants;
 import org.snova.framework.util.proxy.ProxyInfo;
 
 /**
@@ -62,7 +64,7 @@ class PullConnection extends HTTPPersistentConnection
 					        "Basic " + encode);
 				}
 			}
-			request.setHeader("UserToken", getUserToken());
+			request.setHeader(C4Constants.USER_TOKEN_HEADER, ConnectionHelper.getUserToken());
 			request.setHeader("TransactionTime",C4ClientConfiguration.getInstance().getPullTransactionTime());
 			request.setHeader(HttpHeaders.Names.USER_AGENT,
 			        C4ClientConfiguration.getInstance().getUserAgent());

@@ -13,6 +13,7 @@ import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.eclipse.jetty.util.thread.ThreadPool;
 import org.snova.c4.server.servlet.HTTPEventDispatcherServlet;
 import org.snova.c4.server.servlet.IndexServlet;
+import org.snova.c4.server.servlet.RSocketHeartBeatServlet;
 import org.snova.c4.server.servlet.v2.HTTPPullInvokeServlet;
 import org.snova.c4.server.servlet.v2.HTTPPushInvokeServlet;
 
@@ -43,6 +44,7 @@ public class LauncherServer
 		context.addServlet(new ServletHolder(new HTTPEventDispatcherServlet()), "/invoke");
 		context.addServlet(new ServletHolder(new HTTPPushInvokeServlet()), "/invoke/push");
 		context.addServlet(new ServletHolder(new HTTPPullInvokeServlet()), "/invoke/pull");
+		context.addServlet(new ServletHolder(new RSocketHeartBeatServlet()), "/rsocket");
 		QueuedThreadPool pool = new QueuedThreadPool(30);
 		pool.setMaxIdleTimeMs(30000);
 		//server.setConnectors(arg0)

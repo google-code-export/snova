@@ -12,6 +12,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.arch.buffer.Buffer;
 import org.arch.buffer.BufferHelper;
+import org.snova.c4.common.C4Constants;
 import org.snova.c4.common.event.EventRestNotify;
 import org.snova.c4.server.service.EventService;
 import org.snova.c4.server.service.TimeoutService;
@@ -30,7 +31,7 @@ public class HTTPPullInvokeServlet extends HttpServlet
 	protected void doPost(HttpServletRequest req, HttpServletResponse resp)
 	        throws ServletException, IOException
 	{
-		String userToken = req.getHeader("UserToken");
+		String userToken = req.getHeader(C4Constants.USER_TOKEN_HEADER);
 		if(null == userToken)
 		{
 			userToken = "";

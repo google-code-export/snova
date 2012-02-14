@@ -50,9 +50,7 @@ import org.snova.framework.util.proxy.ProxyInfo;
 public class HTTPProxyConnection extends ProxyConnection
 {
 	protected Logger	                      logger	          = LoggerFactory
-	                                                                      .getLogger(getClass());
-	private static ClientSocketChannelFactory	factory;
-	
+	                                                                      .getLogger(getClass());	
 	// private AtomicBoolean waitingResponse = new AtomicBoolean(
 	// false);
 	private ChannelFuture	                  clientChannelFuture	= null;
@@ -123,21 +121,7 @@ public class HTTPProxyConnection extends ProxyConnection
 		pipeline.addLast("encoder", new HttpRequestEncoder());
 		responseHandler = new HttpResponseHandler();
 		pipeline.addLast("handler", responseHandler);
-		if (null == factory)
-		{
-			if (null == SharedObjectHelper.getGlobalThreadPool())
-			{
-				ThreadPoolExecutor workerExecutor = new OrderedMemoryAwareThreadPoolExecutor(
-				        20, 0, 0);
-				SharedObjectHelper.setGlobalThreadPool(workerExecutor);
-				
-			}
-			factory = new NioClientSocketChannelFactory(
-			        SharedObjectHelper.getGlobalThreadPool(),
-			        SharedObjectHelper.getGlobalThreadPool());
-			
-		}
-		SocketChannel channel = factory.newChannel(pipeline);
+		SocketChannel channel = getClientSocketChannelFactory().newChannel(pipeline);
 		String connectHost = auth.domain;
 		int connectPort = auth.port;
 		C4ClientConfiguration cfg = C4ClientConfiguration.getInstance();

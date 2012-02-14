@@ -6,6 +6,7 @@ package org.snova.c4.client.connection;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.arch.buffer.Buffer;
@@ -21,6 +22,9 @@ import org.arch.event.misc.CompressEvent;
 import org.arch.event.misc.CompressEventV2;
 import org.arch.event.misc.EncryptEvent;
 import org.arch.event.misc.EncryptEventV2;
+import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
+import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
+import org.jboss.netty.handler.execution.OrderedMemoryAwareThreadPoolExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.c4.client.config.C4ClientConfiguration;
@@ -43,6 +47,7 @@ public abstract class ProxyConnection
 	protected static C4ClientConfiguration	cfg	             = C4ClientConfiguration
 	                                                                 .getInstance();
 	// private LinkedList<Event> queuedEvents = new LinkedList<Event>();
+	protected static ClientSocketChannelFactory	clientChannelFactory;
 	protected C4ServerAuth	               auth	             = null;
 	// private String authToken = null;
 	// private AtomicInteger authTokenLock = new AtomicInteger(0);
@@ -52,6 +57,26 @@ public abstract class ProxyConnection
 	private LinkedList<Event>	           queuedEvents	     = new LinkedList<Event>();
 	
 	protected ProxyConnectionStateListner	stateListener;
+	
+	
+	protected static ClientSocketChannelFactory getClientSocketChannelFactory()
+	{
+		if (null == clientChannelFactory)
+		{
+			if (null == SharedObjectHelper.getGlobalThreadPool())
+			{
+				ThreadPoolExecutor workerExecutor = new OrderedMemoryAwareThreadPoolExecutor(
+				        20, 0, 0);
+				SharedObjectHelper.setGlobalThreadPool(workerExecutor);
+				
+			}
+			clientChannelFactory = new NioClientSocketChannelFactory(
+			        SharedObjectHelper.getGlobalThreadPool(),
+			        SharedObjectHelper.getGlobalThreadPool());
+			
+		}
+		return clientChannelFactory;
+	}
 	
 	public ProxyConnectionStateListner getStateListener()
 	{
@@ -74,6 +99,11 @@ public abstract class ProxyConnection
 	protected ProxyConnection(C4ServerAuth auth)
 	{
 		this.auth = auth;
+	}
+	
+	public C4ServerAuth getC4ServerAuth()
+	{
+		return auth;
 	}
 	
 	protected abstract boolean doSend(Buffer msgbuffer);
@@ -202,7 +232,7 @@ public abstract class ProxyConnection
 		return send(Arrays.asList(event));
 	}
 	
-	private void handleRecvEvent(Event ev)
+	protected void handleRecvEvent(Event ev)
 	{
 		if (null == ev)
 		{

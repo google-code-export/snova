@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.c4.client.config.C4ClientConfiguration;
 import org.snova.c4.client.config.C4ClientConfiguration.C4ServerAuth;
+import org.snova.c4.client.connection.util.ConnectionHelper;
 import org.snova.c4.common.event.EventRestRequest;
 import org.snova.framework.util.SharedObjectHelper;
 import org.snova.framework.util.proxy.ProxyInfo;
@@ -111,7 +112,7 @@ class PushConnection extends HTTPPersistentConnection
 			}
 			request.setHeader(HttpHeaders.Names.CONTENT_TRANSFER_ENCODING,
 			        HttpHeaders.Values.BINARY);
-			request.setHeader("UserToken", getUserToken());
+			request.setHeader("UserToken", ConnectionHelper.getUserToken());
 			request.setHeader(HttpHeaders.Names.USER_AGENT,
 			        C4ClientConfiguration.getInstance().getUserAgent());
 			request.setHeader(HttpHeaders.Names.CONTENT_TYPE,

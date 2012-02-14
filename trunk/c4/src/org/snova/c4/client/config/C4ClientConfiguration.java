@@ -36,10 +36,10 @@ import org.snova.framework.util.proxy.ProxyInfo;
  */
 public class C4ClientConfiguration implements ReloadableConfiguration
 {
-	protected static Logger	             logger	     = LoggerFactory
-	                                                         .getLogger(C4ClientConfiguration.class);
-	private static C4ClientConfiguration	instance	= new C4ClientConfiguration();
-	
+	protected static Logger logger = LoggerFactory
+	        .getLogger(C4ClientConfiguration.class);
+	private static C4ClientConfiguration instance = new C4ClientConfiguration();
+
 	private static File getConfigFile()
 	{
 		URL url = C4ClientConfiguration.class.getResource("/"
@@ -55,33 +55,36 @@ public class C4ClientConfiguration implements ReloadableConfiguration
 		}
 		return new File(conf);
 	}
-	
+
 	private C4ClientConfiguration()
 	{
 		loadConfig();
 		ReloadableConfigurationMonitor.getInstance().registerConfigFile(this);
 	}
-	
-	private static final String	C4_TAG	                  = "C4";
-	private static final String	WORKER_NODE_NAME	      = "WorkerNode";
-	private static final String	CLIENT_TAG	              = "Client";
-	private static final String	CONNECTION_MODE_NAME	  = "ConnectionMode";
-	private static final String	SESSION_IDLE_TIMEOUT_NAME	= "SessionIdleTimeout";
-	private static final String	SIMPLE_URL_ENABLE_NAME	  = "SimpleURLEnable";
-	private static final String	COMPRESSOR_NAME	          = "Compressor";
-	private static final String	ENCRYPTER_NAME	          = "Encrypter";
-	private static final String	HEARTBEAT_PERIOD_NAME	  = "HeartBeatPeriod";
-	private static final String	HTTP_REQUEST_TIMEOUT_NAME	= "HTTPRequestTimeout";
-	private static final String	PULL_TRANSACTION_NAME	  = "PullTransactionTime";
-	private static final String	CLIENT_PULL_ENABLE_NAME	  = "ClientPullEnable";
-	private static final String	SERVER_PULL_ENABLE_NAME	  = "ServerPullEnable";
-	private static final String	USER_AGENT_NAME	          = "UserAgent";
-	private static final String	DUAL_CONN_ENABLE_NAME	  = "DualConnectionEnable";
-	private static final String	MIN_WRITE_PERIOD	      = "MinWritePeriod";
-	private static final String	CONN_POOL_SIZE_NAME	      = "ConnectionPoolSize";
-	
-	private static final String	APPID_BINDING_TAG	      = "DomainBinding";
-	
+
+	private static final String C4_TAG = "C4";
+	private static final String WORKER_NODE_NAME = "WorkerNode";
+	private static final String CLIENT_TAG = "Client";
+	private static final String RSERVER_TAG = "RServer";
+	private static final String CONNECTION_MODE_NAME = "ConnectionMode";
+	private static final String SESSION_IDLE_TIMEOUT_NAME = "SessionIdleTimeout";
+	private static final String SIMPLE_URL_ENABLE_NAME = "SimpleURLEnable";
+	private static final String COMPRESSOR_NAME = "Compressor";
+	private static final String ENCRYPTER_NAME = "Encrypter";
+	private static final String HEARTBEAT_PERIOD_NAME = "HeartBeatPeriod";
+	private static final String HTTP_REQUEST_TIMEOUT_NAME = "HTTPRequestTimeout";
+	private static final String PULL_TRANSACTION_NAME = "PullTransactionTime";
+	private static final String CLIENT_PULL_ENABLE_NAME = "ClientPullEnable";
+	private static final String SERVER_PULL_ENABLE_NAME = "ServerPullEnable";
+	private static final String USER_AGENT_NAME = "UserAgent";
+	private static final String DUAL_CONN_ENABLE_NAME = "DualConnectionEnable";
+	private static final String MIN_WRITE_PERIOD = "MinWritePeriod";
+	private static final String CONN_POOL_SIZE_NAME = "ConnectionPoolSize";
+	private static final String RSERVER_PORT_NAME = "Port";
+	private static final String RSERVER_EXTERNAL_IP_NAME = "ExternalIP";
+
+	private static final String APPID_BINDING_TAG = "DomainBinding";
+
 	private void loadConfig()
 	{
 		try
@@ -110,7 +113,7 @@ public class C4ClientConfiguration implements ReloadableConfiguration
 					}
 				}
 			}
-			
+
 			connectionMode = ConnectionMode.valueOf(props.getProperty(
 			        CLIENT_TAG, CONNECTION_MODE_NAME, "HTTP"));
 			sessionTimeout = props.getIntProperty(CLIENT_TAG,
@@ -139,9 +142,11 @@ public class C4ClientConfiguration implements ReloadableConfiguration
 			        500);
 			connectionPoolSize = props.getIntProperty(CLIENT_TAG,
 			        CONN_POOL_SIZE_NAME, 2);
+			rServerPort = props.getIntProperty(RSERVER_TAG, RSERVER_PORT_NAME, rServerPort);
 			httpProxyUserAgent = props.getProperty(CLIENT_TAG, USER_AGENT_NAME,
 			        "Snova-C4 V" + C4PluginVersion.value);
-			
+			externalIP = props.getProperty(CLIENT_TAG, RSERVER_EXTERNAL_IP_NAME);
+
 			ps = props.getProperties(APPID_BINDING_TAG);
 			if (null != ps)
 			{
@@ -155,29 +160,53 @@ public class C4ClientConfiguration implements ReloadableConfiguration
 					appIdBindings.add(binding);
 				}
 			}
-			
+
 		}
 		catch (Exception e)
 		{
 			logger.error("Failed to load gae-client config file!", e);
 		}
 	}
-	
+
 	public static enum ConnectionMode
 	{
 		HTTP, RSOCKET;
 	}
-	
+
 	public static class C4ServerAuth
 	{
-		public String	domain;
-		public int		port	= 80;
-		
+		public String domain;
+		public int port = 80;
+
 		public void init()
 		{
-			
 		}
-		
+
+		@Override
+		public int hashCode()
+		{
+			return domain.hashCode() + port;
+		}
+
+		@Override
+		public boolean equals(Object anObject)
+		{
+			if (this == anObject)
+			{
+				return true;
+			}
+			if (anObject instanceof C4ServerAuth)
+			{
+				C4ServerAuth anotherString = (C4ServerAuth) anObject;
+				if (anotherString.domain.equals(domain)
+				        && anotherString.port == port)
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+
 		public boolean parse(String line)
 		{
 			if (null == line || line.trim().isEmpty())
@@ -200,192 +229,192 @@ public class C4ClientConfiguration implements ReloadableConfiguration
 			init();
 			return true;
 		}
-		
+
 		public String toString()
 		{
 			return domain + (port == 80 ? "" : ":" + port);
 		}
 	}
-	
-	private List<C4ServerAuth>	serverAuths	= new LinkedList<C4ServerAuth>();
-	
+
+	private List<C4ServerAuth> serverAuths = new LinkedList<C4ServerAuth>();
+
 	public void setC4ServerAuths(List<C4ServerAuth> serverAuths)
 	{
 		this.serverAuths = serverAuths;
 	}
-	
+
 	public List<C4ServerAuth> getC4ServerAuths()
 	{
 		return serverAuths;
 	}
-	
-	private ConnectionMode	connectionMode	= ConnectionMode.HTTP;
-	
+
+	private ConnectionMode connectionMode = ConnectionMode.HTTP;
+
 	public ConnectionMode getConnectionMode()
 	{
 		return connectionMode;
 	}
-	
+
 	public void setConnectionMode(ConnectionMode mode)
 	{
 		connectionMode = mode;
 	}
-	
-	private int	connectionPoolSize	= 1;
-	
+
+	private int connectionPoolSize = 1;
+
 	public int getConnectionPoolSize()
 	{
 		return connectionPoolSize;
 	}
-	
+
 	public void setConnectionPoolSize(int size)
 	{
 		connectionPoolSize = size;
 	}
-	
-	private int	sessionTimeout	= 50000;
-	
+
+	private int sessionTimeout = 50000;
+
 	public void setSessionIdleTimeout(int sessionTimeout)
 	{
 		this.sessionTimeout = sessionTimeout;
 	}
-	
+
 	public int getSessionIdleTimeout()
 	{
 		return sessionTimeout;
 	}
-	
-	private int	minWritePeriod	= 500;
-	
+
+	private int minWritePeriod = 500;
+
 	public int getMinWritePeriod()
 	{
 		return minWritePeriod;
 	}
-	
+
 	public void setMinWritePeriod(int v)
 	{
 		minWritePeriod = v;
 	}
-	
-	private boolean	clientPullEnable	= true;
-	
+
+	private boolean clientPullEnable = true;
+
 	public void setClientPullEnable(boolean v)
 	{
 		this.clientPullEnable = v;
 	}
-	
+
 	public boolean isClientPullEnable()
 	{
 		return clientPullEnable;
 	}
-	
-	private boolean	serverPullEnable	= true;
-	
+
+	private boolean serverPullEnable = true;
+
 	public void setServerPullEnable(boolean v)
 	{
 		this.serverPullEnable = v;
 	}
-	
+
 	public boolean isServerPullEnable()
 	{
 		return serverPullEnable;
 	}
-	
-	private boolean	dualConnectionEnable	= true;
-	
+
+	private boolean dualConnectionEnable = true;
+
 	public void setDualConnectionEnable(boolean v)
 	{
 		this.dualConnectionEnable = v;
 	}
-	
+
 	public boolean isDualConnectionEnable()
 	{
 		return dualConnectionEnable;
 	}
-	
-	private int	pullTransactionTime	= 25000;
-	
+
+	private int pullTransactionTime = 25000;
+
 	public void setPullTransactionTime(int v)
 	{
 		this.pullTransactionTime = v;
 	}
-	
+
 	public int getPullTransactionTime()
 	{
 		return pullTransactionTime;
 	}
-	
-	private CompressorType	compressor;
-	
+
+	private CompressorType compressor;
+
 	public CompressorType getCompressor()
 	{
 		return compressor;
 	}
-	
+
 	public void setCompressor(CompressorType type)
 	{
 		compressor = type;
 	}
-	
-	private EncryptType	encrypter;
-	
+
+	private EncryptType encrypter;
+
 	public EncryptType getEncrypter()
 	{
 		return encrypter;
 	}
-	
+
 	public void setEncrypter(EncryptType type)
 	{
 		this.encrypter = type;
 	}
-	
-	private boolean	simpleURLEnable;
-	
+
+	private boolean simpleURLEnable;
+
 	public void setSimpleURLEnable(boolean simpleURLEnable)
 	{
 		this.simpleURLEnable = simpleURLEnable;
 	}
-	
+
 	public boolean isSimpleURLEnable()
 	{
 		return simpleURLEnable;
 	}
-	
-	private int	heartBeatPeriod	= 2000;
-	
+
+	private int heartBeatPeriod = 2000;
+
 	public void setheartBeatPeriod(int heartBeatPeriod)
 	{
 		this.heartBeatPeriod = heartBeatPeriod;
 	}
-	
+
 	public int getHeartBeatPeriod()
 	{
 		return heartBeatPeriod;
 	}
-	
-	private int	httpRequestTimeout	= 30000;
-	
+
+	private int httpRequestTimeout = 30000;
+
 	public void setHTTPRequestTimeout(int timeout)
 	{
 		this.httpRequestTimeout = timeout;
 	}
-	
+
 	public int getHTTPRequestTimeout()
 	{
 		return httpRequestTimeout;
 	}
-	
+
 	public void init() throws Exception
 	{
 	}
-	
-	private List<AppIdBinding>	appIdBindings	= new LinkedList<C4ClientConfiguration.AppIdBinding>();
-	
+
+	private List<AppIdBinding> appIdBindings = new LinkedList<C4ClientConfiguration.AppIdBinding>();
+
 	static class AppIdBinding
 	{
-		String		 appid;
-		List<String>	sites	= new LinkedList<String>();
-		
+		String appid;
+		List<String> sites = new LinkedList<String>();
+
 		void parse(String appid, String line)
 		{
 			this.appid = appid;
@@ -398,7 +427,7 @@ public class C4ClientConfiguration implements ReloadableConfiguration
 				}
 			}
 		}
-		
+
 		void putToIniProperties(IniProperties props)
 		{
 			StringBuilder buffer = new StringBuilder();
@@ -409,7 +438,7 @@ public class C4ClientConfiguration implements ReloadableConfiguration
 			props.setProperty(APPID_BINDING_TAG, appid, buffer.toString());
 		}
 	}
-	
+
 	public C4ServerAuth getC4ServerAuth(String domain)
 	{
 		for (C4ServerAuth auth : serverAuths)
@@ -421,7 +450,7 @@ public class C4ClientConfiguration implements ReloadableConfiguration
 		}
 		return null;
 	}
-	
+
 	public String getBindingDomain(String host)
 	{
 		if (null != appIdBindings)
@@ -439,24 +468,46 @@ public class C4ClientConfiguration implements ReloadableConfiguration
 		}
 		return null;
 	}
-	
-	private String	httpProxyUserAgent;
-	
+
+	private String httpProxyUserAgent;
+
 	public String getUserAgent()
 	{
 		return httpProxyUserAgent;
 	}
-	
+
 	public void setUserAgent(String v)
 	{
 		httpProxyUserAgent = v;
 	}
 	
+	private String externalIP;
+
+	public String getExternalIP()
+	{
+		return externalIP;
+	}
+
+	public void setExternalIP(String ip)
+	{
+		externalIP = ip;
+	}
+	
+	private int rServerPort = 48101;
+	public int getRServerPort()
+	{
+		return rServerPort;
+	}
+	public void setRServerPort(int port)
+	{
+		rServerPort = port;
+	}
+
 	public static C4ClientConfiguration getInstance()
 	{
 		return instance;
 	}
-	
+
 	public void save() throws Exception
 	{
 		try
@@ -471,7 +522,7 @@ public class C4ClientConfiguration implements ReloadableConfiguration
 				        auth.toString());
 				i++;
 			}
-			
+
 			props.setProperty(CLIENT_TAG, CONNECTION_MODE_NAME,
 			        connectionMode.toString());
 			props.setIntProperty(CLIENT_TAG, SESSION_IDLE_TIMEOUT_NAME,
@@ -497,6 +548,11 @@ public class C4ClientConfiguration implements ReloadableConfiguration
 			props.setProperty(CLIENT_TAG, ENCRYPTER_NAME, encrypter.toString());
 			props.setProperty(CLIENT_TAG, USER_AGENT_NAME, httpProxyUserAgent);
 			props.setIntProperty(CLIENT_TAG, MIN_WRITE_PERIOD, minWritePeriod);
+			props.setIntProperty(RSERVER_TAG, RSERVER_PORT_NAME, rServerPort);
+			if(null != externalIP)
+			{
+				props.setProperty(RSERVER_TAG, RSERVER_EXTERNAL_IP_NAME, externalIP);
+			}
 			for (AppIdBinding binding : appIdBindings)
 			{
 				binding.putToIniProperties(props);
@@ -508,22 +564,21 @@ public class C4ClientConfiguration implements ReloadableConfiguration
 			throw e;
 		}
 	}
-	
+
 	public ProxyInfo getLocalProxy()
 	{
 		return DesktopFrameworkConfiguration.getInstance().getLocalProxy();
 	}
-	
+
 	@Override
 	public void reload()
 	{
 		loadConfig();
 	}
-	
+
 	@Override
 	public File getConfigurationFile()
 	{
 		return getConfigFile();
 	}
-	
 }

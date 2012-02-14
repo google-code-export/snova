@@ -111,34 +111,9 @@ public class EventService
 		{
 			this.notify();
 		}
+		RSocketService.eventNotify(userToken);
 	}
 	
-	// public void offer(Event ev, Channel ch)
-	// {
-	// synchronized (reponseEventQueue)
-	// {
-	// reponseEventQueue.add(ev);
-	// if (reponseEventQueue.size() > MAX_EVENT_QUEUE_SIZE)
-	// {
-	// if (null != ch)
-	// {
-	// waitingChannels.add(ch);
-	// NioSocketChannelConfig cfg = (NioSocketChannelConfig) ch
-	// .getConfig();
-	// // cfg.setPerformancePreferences(connectionTime, latency,
-	// // bandwidth)
-	// // ch.setReadable(false);
-	// //
-	// }
-	// }
-	// }
-	// logger.info("Offer one event while queue size:"
-	// + reponseEventQueue.size());
-	// synchronized (this)
-	// {
-	// this.notify();
-	// }
-	// }
 	
 	public void removeSessionQueue(int sessionID)
 	{
