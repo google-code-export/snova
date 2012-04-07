@@ -48,13 +48,14 @@ public abstract class ProxyConnection
 	private LinkedList<Event>	            queuedEvents	  = new LinkedList<Event>();
 	protected GAEServerAuth	                auth	          = null;
 	private String	                        authToken	      = null;
-	private AtomicInteger	                        authTokenLock	  = new AtomicInteger(0);
+	private AtomicInteger	                authTokenLock	  = new AtomicInteger(
+	                                                                  0);
 	private Set<Integer>	                relevantSessions	= new HashSet<Integer>();
 	private EventHandler	                outSessionHandler	= null;
-	private Event retryEvent;
-	private boolean waitingResponse;
-	private int retryCount;
-	private int retryLimit;
+	private Event	                        retryEvent;
+	private boolean	                        waitingResponse;
+	private int	                            retryCount;
+	private int	                            retryLimit;
 	
 	protected ProxyConnection(GAEServerAuth auth)
 	{
@@ -78,28 +79,32 @@ public abstract class ProxyConnection
 	
 	protected void closeRelevantSessions(HttpResponse res)
 	{
-		for (Integer sessionID : relevantSessions)
+		synchronized (relevantSessions)
 		{
-			ProxySession session = ProxySessionManager.getInstance()
-			        .getProxySession(sessionID);
-			if (null != session
-			        && session.getStatus().equals(
-			                ProxySessionStatus.WAITING_NORMAL_RESPONSE))
+			for (Integer sessionID : relevantSessions)
 			{
-				session.close(res);
+				ProxySession session = ProxySessionManager.getInstance()
+				        .getProxySession(sessionID);
+				if (null != session
+				        && session.getStatus().equals(
+				                ProxySessionStatus.WAITING_NORMAL_RESPONSE))
+				{
+					session.close(res);
+				}
 			}
+			relevantSessions.clear();
 		}
-		relevantSessions.clear();
+		
 	}
 	
 	public void close()
 	{
-		if(waitingResponse && null != retryEvent)
+		if (waitingResponse && null != retryEvent)
 		{
 			waitingResponse = false;
-			if(retryCount < retryLimit)
+			if (retryCount < retryLimit)
 			{
-				if(logger.isDebugEnabled())
+				if (logger.isDebugEnabled())
 				{
 					logger.debug("Retry proxy request.");
 				}
@@ -139,7 +144,7 @@ public abstract class ProxyConnection
 		{
 			try
 			{
-				if(authTokenLock.get() == 0)
+				if (authTokenLock.get() == 0)
 				{
 					authTokenLock.wait(60 * 1000); // 1min
 				}
@@ -150,7 +155,7 @@ public abstract class ProxyConnection
 				return AuthRequestEvent.AUTH_FAIELD;
 			}
 		}
-		if(authToken != null && !authToken.isEmpty())
+		if (authToken != null && !authToken.isEmpty())
 		{
 			return AuthRequestEvent.AUTH_SUCCESS;
 		}
@@ -159,7 +164,7 @@ public abstract class ProxyConnection
 	
 	public int getAuthResultCode()
 	{
-		return  authTokenLock.get();
+		return authTokenLock.get();
 	}
 	
 	public String getAuthToken()
@@ -202,10 +207,12 @@ public abstract class ProxyConnection
 		outSessionHandler = handler;
 		return send(event);
 	}
+	
 	public boolean send(Event event)
 	{
 		return send(event, false, -1);
 	}
+	
 	public boolean send(Event event, boolean retryEnable, int retryCount)
 	{
 		Pair<Channel, Integer> attach = (Pair<Channel, Integer>) event
@@ -219,9 +226,9 @@ public abstract class ProxyConnection
 				logger.debug(event.toString());
 			}
 			synchronized (queuedEvents)
-            {
+			{
 				queuedEvents.add(event);
-            }
+			}
 			
 			return true;
 		}
@@ -240,7 +247,7 @@ public abstract class ProxyConnection
 		{
 			attach = new Pair<Channel, Integer>(null, -1);
 		}
-		if(retryEnable)
+		if (retryEnable)
 		{
 			retryEvent = event;
 			waitingResponse = true;
@@ -258,7 +265,10 @@ public abstract class ProxyConnection
 		comress.setHash(attach.second);
 		EncryptEvent enc = new EncryptEvent(cfg.getEncrypter(), comress);
 		enc.setHash(attach.second);
-		relevantSessions.add(attach.second);
+		synchronized (relevantSessions)
+        {
+			relevantSessions.add(attach.second);
+        }
 		Buffer msgbuffer = GAEEventHelper.encodeEvent(tags, enc);
 		if (msgbuffer.readableBytes() > getMaxDataPackageSize())
 		{
@@ -284,7 +294,11 @@ public abstract class ProxyConnection
 			return;
 		}
 		waitingResponse = false;
-		relevantSessions.remove(ev.getHash());
+		synchronized (relevantSessions)
+        {
+			relevantSessions.remove(ev.getHash());
+        }
+		
 		int type;
 		type = Event.getTypeVersion(ev.getClass()).type;
 		if (logger.isDebugEnabled())
@@ -312,9 +326,10 @@ public abstract class ProxyConnection
 			case Event.RESERVED_SEGMENT_EVENT_TYPE:
 			{
 				EventSegment segment = (EventSegment) ev;
-				if(logger.isDebugEnabled())
+				if (logger.isDebugEnabled())
 				{
-					logger.debug("Recv a segment event[" + segment.sequence + ":" + segment.total + "]");
+					logger.debug("Recv a segment event[" + segment.sequence
+					        + ":" + segment.total + "]");
 				}
 				Buffer evntContent = GAEEventHelper.mergeEventSegment(segment,
 				        null);
@@ -390,7 +405,7 @@ public abstract class ProxyConnection
 		handleRecvEvent(ev);
 		Event queuedEvent = null;
 		synchronized (queuedEvents)
-        {
+		{
 			if (!queuedEvents.isEmpty())
 			{
 				if (isReady())
@@ -398,8 +413,8 @@ public abstract class ProxyConnection
 					queuedEvent = queuedEvents.removeFirst();
 				}
 			}
-        }
-		if(null != queuedEvent)
+		}
+		if (null != queuedEvent)
 		{
 			send(queuedEvent);
 		}

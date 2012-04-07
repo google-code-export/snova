@@ -80,6 +80,8 @@ func CreateEvent(Type uint32, Version uint32) Event {
 		return new(BlackListOperationEvent)
 	case REQUEST_SHARED_APPID_EVENT_TYPE:
 		return new(RequestAppIDEvent)
+	case REQUEST_ALL_SHARED_APPID_EVENT_TYPE:
+		return new(RequestAllAppIDEvent)
 	case SHARE_APPID_EVENT_TYPE:
 		return new(ShareAppIDEvent)
 	case SERVER_CONFIG_EVENT_TYPE:
@@ -145,4 +147,5 @@ func InitEvents(handler EventHandler) {
 	RegisterEventHandler(new(ServerConfigEvent), handler)
 	RegisterEventHandler(new(RequestAppIDEvent), handler)
 	RegisterEventHandler(new(ShareAppIDEvent), handler)
+	RegisterEventHandler(new(RequestAllAppIDEvent), handler)
 }

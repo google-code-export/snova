@@ -33,6 +33,7 @@ const (
 	REQUEST_SHARED_APPID_EVENT_TYPE        = 2017
 	REQUEST_SHARED_APPID_RESULT_EVENT_TYPE = 2018
 	SHARE_APPID_EVENT_TYPE                 = 2019
+	REQUEST_ALL_SHARED_APPID_EVENT_TYPE                 = 2021
 )
 
 const (
@@ -908,6 +909,25 @@ func (ev *RequestAppIDEvent) GetType() uint32 {
 	return REQUEST_SHARED_APPID_EVENT_TYPE
 }
 func (ev *RequestAppIDEvent) GetVersion() uint32 {
+	return 1
+}
+
+type RequestAllAppIDEvent struct{
+	HashField
+	Attachement
+}
+
+func (ev *RequestAllAppIDEvent) Encode(buffer *bytes.Buffer) bool {
+	return true
+}
+func (ev *RequestAllAppIDEvent) Decode(buffer *bytes.Buffer) bool {
+	return true
+}
+
+func (ev *RequestAllAppIDEvent) GetType() uint32 {
+	return REQUEST_ALL_SHARED_APPID_EVENT_TYPE
+}
+func (ev *RequestAllAppIDEvent) GetVersion() uint32 {
 	return 1
 }
 

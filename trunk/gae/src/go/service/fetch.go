@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 func buildHTTPRequest(ev *event.HTTPRequestEvent) *http.Request {
@@ -59,7 +60,12 @@ func Fetch(context appengine.Context, ev *event.HTTPRequestEvent) event.Event {
 		fillErrorResponse(errorResponse, "Invalid fetch url:"+ev.Url)
 		return errorResponse
 	}
-	t := &urlfetch.Transport{context, 0, true}
+	var t urlfetch.Transport
+	t.Context = context
+	t.Deadline,_ = time.ParseDuration("10s")
+	t.AllowInvalidServerCertificate = true
+	//t := &transport
+	//t := &urlfetch.Transport{context, 0, true}
 	retryCount := ServerConfig.RetryFetchCount
 	for retryCount > 0 {
 		resp, err := t.RoundTrip(req)
