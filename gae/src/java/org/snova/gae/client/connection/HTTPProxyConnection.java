@@ -263,7 +263,7 @@ public class HTTPProxyConnection extends ProxyConnection
 				SharedObjectHelper.setGlobalThreadPool(workerExecutor);
 
 			}
-			if (NetworkHelper.isIPV6Address(address.getHost()))
+			if (NetworkHelper.isIPV6Address(HostsHelper.getMappingHost(address.getHost())))
 			{
 				factory = new OioClientSocketChannelFactory(
 				        SharedObjectHelper.getGlobalThreadPool());

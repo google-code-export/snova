@@ -7,6 +7,7 @@ import (
 	//vector "container/vector"
 	"event"
 	"math/rand"
+	"misc"
 )
 
 type AppIDItem struct {
@@ -118,7 +119,8 @@ func unShareAppID(ctx appengine.Context, appid, email string) event.Event {
 		resev.ErrorCause = "This appid is not shared before!"
 		return resev
 	}
-	if item.Email != email {
+	
+	if item.Email != email && item.Email != misc.MasterAdminEmail{
 		resev.ErrorCause = "The input email address is not equal the share email address."
 		return resev
 	}
@@ -126,7 +128,11 @@ func unShareAppID(ctx appengine.Context, appid, email string) event.Event {
 	item.AppID = appid
 	item.Email = email
 	deleteSharedAppItem(ctx, item)
-	sendMail(ctx, email, "Unsharing AppID:"+appid+"!", "Your appid:"+appid+" is unshared from snova master.")
+	email_content := "Your appid:"+appid+" is unshared from snova master."
+	if item.Email == misc.MasterAdminEmail{
+	   email_content = email_content + "\nWe noticied that your shared appid:" + appid + " is not a valid Snova Server AppID."
+	}
+	sendMail(ctx, email, "Unshared AppID:"+appid+"!", email_content)
 	resev.Response = "Success"
 	return resev
 }
@@ -166,6 +172,20 @@ func RetrieveAppIds(ctx appengine.Context) event.Event {
 		res.AppIDs = make([]string, 1)
 		item := sharedAppIdItems[index]
 		res.AppIDs[0] = item.AppID
+		return res
+	}
+	resev := new(event.AdminResponseEvent)
+	resev.ErrorCause = "No shared appid."
+	return resev
+}
+
+func RetrieveAllAppIds(ctx appengine.Context) event.Event {
+	if len(sharedAppIdItems) > 0 {
+		res := new(event.RequestAppIDResponseEvent)
+		res.AppIDs = make([]string, len(sharedAppIdItems))
+		for i := 0; i < len(sharedAppIdItems); i++{
+		   res.AppIDs[i] = sharedAppIdItems[i].AppID
+		}
 		return res
 	}
 	resev := new(event.AdminResponseEvent)

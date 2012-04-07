@@ -57,6 +57,8 @@ func (dispatcher *DispatchEventHandler) handleRecvEvent(ctx appengine.Context, h
 		res = service.HandleShareEvent(ctx,ev.(*event.ShareAppIDEvent))
 	case event.REQUEST_SHARED_APPID_EVENT_TYPE:
 		res = service.RetrieveAppIds(ctx)
+	case event.REQUEST_ALL_SHARED_APPID_EVENT_TYPE:
+	    res = service.RetrieveAllAppIds(ctx)
 	}
 	return res
 }
