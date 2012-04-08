@@ -1,5 +1,17 @@
 snova-gae Changelog
 ===================
+Changes in version 1.0.0(2012.02.26)
+-------------------------------------------
+
+** Features
+   * Reload modified config file automatically
+   
+** Improvement
+   * 
+      
+** Task
+   * NA
+
 Changes in version 0.12.0120
 -------------------------------------------
 Initial version

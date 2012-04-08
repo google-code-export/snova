@@ -60,7 +60,12 @@ public class RSocketHandler extends SimpleChannelUpstreamHandler
 				Event ev = EventDispatcher.getSingletonInstance().parse(content);
 				if(ev instanceof RSocketAcceptedEvent)
 				{
+					
 					RSocketAcceptedEvent rev = (RSocketAcceptedEvent) ev;
+					if(logger.isDebugEnabled())
+					{
+						logger.debug("Recv connection from " + rev.domain + ":" + rev.port);
+					}
 					C4ServerAuth auth = new C4ServerAuth();
 					auth.domain = rev.domain;
 					auth.port = rev.port;

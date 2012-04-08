@@ -40,8 +40,12 @@ public class GFWListService implements Runnable
 	private GFWListService()
 	{
 		loaGFWListFile();
-		SharedObjectHelper.getGlobalTimer().scheduleAtFixedRate(this, 10, 7200,
-		        TimeUnit.SECONDS);
+		if(SpacConfig.getInstance().isGFWListSubscribed())
+		{
+			SharedObjectHelper.getGlobalTimer().scheduleAtFixedRate(this, 10, 7200,
+			        TimeUnit.SECONDS);
+		}
+
 	}
 	
 	public boolean _isBlockedByGFW(String url)

@@ -4,6 +4,7 @@
 package org.snova.c4.server.service;
 
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -68,7 +69,7 @@ public class RSocketService
 		SocketChannel channel = getClientSocketChannelFactory().newChannel(
 		        pipeline);
 		channel.getConfig().setOption("connectTimeoutMillis", 40 * 1000);
-
+		System.out.println("########Connect " + addr);
 		ChannelFuture future = channel.connect(addr);
 		return future;
 	}
@@ -80,12 +81,13 @@ public class RSocketService
 		String host = ss[0];
 		int port = Integer.parseInt(ss[1]);
 		final InetSocketAddress address = new InetSocketAddress(host, port);
+		//System.out.println("########" + token);
 		Channel ch = remoteChannelTable.get(token);
-		if(!ch.getRemoteAddress().equals(address))
-		{
-			closeRsocketChannel(token);
-			ch = null;
-		}
+//		if(null !=ch && !ch.getRemoteAddress().equals(address))
+//		{
+//			closeRsocketChannel(token);
+//     		ch = null;
+//		}
 		if (null == ch)
 		{
 			final RSocketAcceptedEvent ev = new RSocketAcceptedEvent();
@@ -123,6 +125,7 @@ public class RSocketService
 
 	private static void closeRsocketChannel(String token)
 	{
+		
 		Channel channel = remoteChannelTable.remove(token);
 		
 		if (null != channel && channel.isConnected())

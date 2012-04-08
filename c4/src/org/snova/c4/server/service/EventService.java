@@ -103,6 +103,7 @@ public class EventService
 				ch.setReadable(false);
 				suspendChannels.put(ev.getHash(), ch);
 			}
+			
 			logger.info("Session[" + ev.getHash()
 			        + "] offer one event to queue while size="
 			        + sessionQueueSize);
@@ -186,11 +187,6 @@ public class EventService
 			logger.error("Failed to find registry type&version for class:"
 			        + event.getClass().getName());
 		}
-		// if(ts - fetchHandler.getPingTime() > fetchHandler.getSelectWaitTime()
-		// * 5)
-		// {
-		// logger.error("IO thread may be blocked!");
-		// }
 		int type = tv.type;
 		EventHeader header = new EventHeader();
 		header.hash = event.getHash();

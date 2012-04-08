@@ -19,7 +19,6 @@ import javax.swing.ImageIcon;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
-import javax.swing.Popup;
 
 import org.arch.common.Pair;
 import org.arch.event.EventDispatcher;
@@ -66,6 +65,7 @@ public class SysTray
 				MainFrame.class.getResource("/images/flag-16.png"));
 		final TrayIcon trayIcon = new TrayIcon(icon.getImage(),
 		        Constants.PROJECT_NAME);
+
 		trayIcon.addActionListener(new ActionListener()
 		{
 			public void actionPerformed(ActionEvent e)
@@ -165,5 +165,6 @@ public class SysTray
 				}
 			}
 		});
+		
 	}
 }

@@ -1,8 +1,18 @@
 Snova Changelog
 ===================
+Changes in version 1.0.0(2012.02.26)
+-------------------------------------------
+** Features
+   * 
+   
+** Improvement
+   * 
+      
+** Task
+   * NA
+
 Changes in version 0.12.0204
 -------------------------------------------
-
 ** Features
    * Change config file format from XML to plain text
    * Reload modified config file automatically
@@ -16,7 +26,6 @@ Changes in version 0.12.0204
 
 Changes in version 0.12.0120
 -------------------------------------------
-
 ** Features
    * New Plugin:C4, support PaaS services Heroku/Cloundfoundry/Openshift/Jelastic
    * Remove heroku plugin
@@ -30,7 +39,6 @@ Changes in version 0.12.0120
    
 Changes in version 0.12.0107(2012.01.07)
 -------------------------------------------
-
 ** Features
    * NA
    
