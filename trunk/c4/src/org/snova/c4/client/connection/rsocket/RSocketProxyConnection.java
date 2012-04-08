@@ -80,7 +80,7 @@ public class RSocketProxyConnection extends ProxyConnection implements Runnable
 
 	private void init()
 	{
-		if (null != rserver)
+		if (null == rserver)
 		{
 			rserver = getServerFactory().newChannel(Channels.pipeline());
 			rserver.getConfig().setPipelineFactory(new ChannelPipelineFactory()
@@ -145,7 +145,7 @@ public class RSocketProxyConnection extends ProxyConnection implements Runnable
 				urlstr = urlstr + ":" + auth.port;
 			}
 			urlstr = urlstr + "/rsocket";
-			URL url = new URL("urlstr");
+			URL url = new URL(urlstr);
 			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 			conn.setRequestProperty(C4Constants.USER_TOKEN_HEADER,
 			        ConnectionHelper.getUserToken());

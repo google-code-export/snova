@@ -1,8 +1,18 @@
 snova-c4 Changelog
 ===================
+Changes in version 1.0.0(2012.02.26)
+-------------------------------------------
+** Features
+   * 
+   
+** Improvement
+   * 
+      
+** Task
+   * NA
+   
 Changes in version 0.12.0204
 -------------------------------------------
-
 ** Features
    * snova-c4 server side support more than one snova-c4 clients
    * Reload modified config file automatically

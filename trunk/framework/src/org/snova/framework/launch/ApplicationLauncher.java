@@ -54,7 +54,6 @@ public class ApplicationLauncher
 	public static void initLoggerConfig() throws IOException
 	{
 		System.setProperty("java.util.logging.config.class", JDKLoggingConfig.class.getName());
-		//System.setProperty("java.util.logging.config.file", loggingCfgFile);
 	}
 
 	public static void main(String[] args) throws IOException
@@ -71,7 +70,6 @@ public class ApplicationLauncher
 		else if(args[0].equals("gui"))
 		{
 			MainFrame.main(null);
-		}
-		
+		}	
 	}
 }

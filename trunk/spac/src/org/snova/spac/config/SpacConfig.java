@@ -99,6 +99,26 @@ public class SpacConfig implements ReloadableConfiguration
 		return false;
 	}
 	
+	public boolean isHostsSubscribed()
+	{
+		String s = props.getProperty("Hosts", "Subscribe");
+		if (null != s)
+		{
+			return s.equalsIgnoreCase("true");
+		}
+		return false;
+	}
+	
+	public boolean isGFWListSubscribed()
+	{
+		String s = props.getProperty("GFWList", "Subscribe");
+		if (null != s)
+		{
+			return s.equalsIgnoreCase("true");
+		}
+		return false;
+	}
+	
 	@Override
 	public void reload()
 	{

@@ -1,5 +1,17 @@
 snova-spac Changelog
 ===================
+Changes in version 1.0.0(2012.02.26)
+-------------------------------------------
+
+** Features
+   * 
+   
+** Improvement
+   * 
+      
+** Task
+   * NA
+
 Changes in version 0.12.0204
 -------------------------------------------
 
@@ -8,7 +20,6 @@ Changes in version 0.12.0204
    
 ** Improvement
    * 
-
       
 ** Task
    * NA

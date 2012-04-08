@@ -145,7 +145,7 @@ public class C4ClientConfiguration implements ReloadableConfiguration
 			rServerPort = props.getIntProperty(RSERVER_TAG, RSERVER_PORT_NAME, rServerPort);
 			httpProxyUserAgent = props.getProperty(CLIENT_TAG, USER_AGENT_NAME,
 			        "Snova-C4 V" + C4PluginVersion.value);
-			externalIP = props.getProperty(CLIENT_TAG, RSERVER_EXTERNAL_IP_NAME);
+			externalIP = props.getProperty(RSERVER_TAG, RSERVER_EXTERNAL_IP_NAME);
 
 			ps = props.getProperties(APPID_BINDING_TAG);
 			if (null != ps)
