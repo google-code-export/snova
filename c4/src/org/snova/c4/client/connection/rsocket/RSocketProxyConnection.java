@@ -7,6 +7,7 @@ import static org.jboss.netty.channel.Channels.pipeline;
 
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.net.URL;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,17 +40,17 @@ import org.snova.framework.util.SharedObjectHelper;
  */
 public class RSocketProxyConnection extends ProxyConnection implements Runnable
 {
-	protected static NioServerSocketChannelFactory serverFactory = null;
-	protected static ServerSocketChannel rserver = null;
-	protected static Map<C4ServerAuth, RSocketProxyConnection> rSocketProxyConnectionTable = new ConcurrentHashMap<C4ServerAuth, RSocketProxyConnection>();
-	protected ListSelector<Channel> acceptedRemoteChannels = new ListSelector<Channel>();
-
+	protected static NioServerSocketChannelFactory	           serverFactory	            = null;
+	protected static ServerSocketChannel	                   rserver	                    = null;
+	protected static Map<C4ServerAuth, RSocketProxyConnection>	rSocketProxyConnectionTable	= new ConcurrentHashMap<C4ServerAuth, RSocketProxyConnection>();
+	protected ListSelector<Channel>	                           acceptedRemoteChannels	    = new ListSelector<Channel>();
+	
 	public RSocketProxyConnection(C4ServerAuth auth)
 	{
 		super(auth);
 		init();
 	}
-
+	
 	static RSocketProxyConnection saveRConnection(C4ServerAuth auth,
 	        Channel channel)
 	{
@@ -57,17 +58,17 @@ public class RSocketProxyConnection extends ProxyConnection implements Runnable
 		conn.acceptedRemoteChannels.add(channel);
 		return conn;
 	}
-
+	
 	void closeRConnection(Channel ch)
 	{
 		acceptedRemoteChannels.remove(ch);
 	}
-
+	
 	void handleEvent(Event ev)
 	{
 		handleRecvEvent(ev);
 	}
-
+	
 	protected static NioServerSocketChannelFactory getServerFactory()
 	{
 		if (null == serverFactory)
@@ -78,7 +79,7 @@ public class RSocketProxyConnection extends ProxyConnection implements Runnable
 		}
 		return serverFactory;
 	}
-
+	
 	private void init()
 	{
 		if (null == rserver)
@@ -119,7 +120,7 @@ public class RSocketProxyConnection extends ProxyConnection implements Runnable
 			}
 		}, 1, 1, TimeUnit.SECONDS);
 	}
-
+	
 	@Override
 	protected boolean doSend(Buffer msgbuffer)
 	{
@@ -133,66 +134,67 @@ public class RSocketProxyConnection extends ProxyConnection implements Runnable
 		acceptedRemoteChannels.select().write(msg);
 		return true;
 	}
-
+	
 	@Override
 	protected int getMaxDataPackageSize()
 	{
 		return -1;
 	}
-
+	
 	@Override
 	public boolean isReady()
 	{
 		return acceptedRemoteChannels.size() > 0;
 	}
-
+	
 	private void heartBeat()
 	{
 		try
 		{
-			String urlstr = "http://" + auth.domain;
-			if (auth.port != 80)
-			{
-				urlstr = urlstr + ":" + auth.port;
-			}
-			urlstr = urlstr + "/rsocket";
-			URL url = new URL(urlstr);
-			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-			conn.setRequestProperty(C4Constants.USER_TOKEN_HEADER,
-			        ConnectionHelper.getUserToken());
+			Socket client = new Socket(auth.domain, auth.port);
 			String extenral = C4ClientConfiguration.getInstance()
 			        .getExternalIP();
 			if (null == extenral)
 			{
 				extenral = GeneralNetworkHelper.getPublicIP();
 			}
-			conn.setRequestProperty(C4Constants.LOCAL_RSERVER_ADDR_HEADER,
-			        extenral
-			                + ":"
+			StringBuilder buffer = new StringBuilder();
+			buffer.append("GET /rsocket HTTP/1.1\r\n");
+			buffer.append("HOST: ").append(auth.domain).append("\r\n");
+			buffer.append(C4Constants.USER_TOKEN_HEADER).append(": ")
+			        .append(ConnectionHelper.getUserToken()).append("\r\n");
+			buffer.append(C4Constants.LOCAL_RSERVER_ADDR_HEADER)
+			        .append(": ")
+			        .append(extenral
+			                + "_"
 			                + C4ClientConfiguration.getInstance()
 			                        .getRServerPort()
-			                + ":"
+			                + "_"
 			                + C4ClientConfiguration.getInstance()
-			                        .getConnectionPoolSize());
-			conn.setRequestMethod("POST");
-			conn.connect();
-			int responseCode = conn.getResponseCode();
-			if (responseCode != 200)
+			                        .getConnectionPoolSize()).append("\r\n");
+			buffer.append("Connection: close\r\n");
+			buffer.append("Content-Length: 0\r\n\r\n");
+			logger.info(buffer.toString());
+			client.getOutputStream().write(buffer.toString().getBytes());
+			byte[] resbuf = new byte[1024];
+			int len = client.getInputStream().read(resbuf);
+			if (len > 0)
 			{
-				logger.error("RSocket heart beat request request failed with response code:"
-				        + responseCode);
+				logger.info("RSocket heart beat request request failed with response:"
+				        + new String(resbuf, 0, len));
 			}
+			
 		}
 		catch (Exception e)
 		{
 			logger.error("Failed to get remote hosts file.", e);
 		}
 	}
-
+	
 	@Override
 	public void run()
 	{
 		heartBeat();
 	}
-
+	
 }

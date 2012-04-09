@@ -18,9 +18,10 @@ http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
 		<servlet-name>ClientPush</servlet-name>
 		<servlet-class>org.snova.c4.server.servlet.v2.HTTPPushInvokeServlet</servlet-class>
 	</servlet>
+	
 	<servlet>
 		<servlet-name>RSocket</servlet-name>
-		<servlet-class>org.snova.c4.server.servlet.v2.RSocketHeartBeatServlet</servlet-class>
+		<servlet-class>org.snova.c4.server.servlet.RSocketHeartBeatServlet</servlet-class>
 	</servlet>
 
 	<servlet>

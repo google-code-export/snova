@@ -24,12 +24,19 @@ public class RSocketHeartBeatServlet extends HttpServlet
 	protected Logger	logger	= LoggerFactory.getLogger(getClass());
 	
 	@Override
-	protected void doPost(HttpServletRequest req, HttpServletResponse resp)
+	protected void doGet(HttpServletRequest req, HttpServletResponse resp)
 	        throws ServletException, IOException
 	{
 		String auth = req.getHeader("Host");
 		String remote = req.getHeader(C4Constants.LOCAL_RSERVER_ADDR_HEADER);
-		RSocketService.routine(auth, remote, req.getHeader(C4Constants.USER_TOKEN_HEADER));
+		if(null != remote)
+		{
+			RSocketService.routine(auth, remote, req.getHeader(C4Constants.USER_TOKEN_HEADER));
+		}
 		resp.setStatus(200);
+		if(null == remote)
+		{
+			resp.getOutputStream().println("#####Debug request received.");
+		}
 	}
 }

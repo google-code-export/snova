@@ -82,7 +82,7 @@ public class RSocketService
 	public static void routine(String auth, String remote, final String token)
 	{
 		TimeoutService.touch(token);
-		String[] ss = remote.split(":");
+		String[] ss = remote.split("_");
 		String host = ss[0];
 		int port = Integer.parseInt(ss[1]);
 		int connSize = Integer.parseInt(ss[2]);
@@ -99,7 +99,12 @@ public class RSocketService
 			final RSocketAcceptedEvent ev = new RSocketAcceptedEvent();
 			String[] sss = auth.split(":");
 			ev.domain = sss[0];
-			ev.port = Integer.parseInt(sss[1]);
+			ev.port = 80;
+			if(sss.length > 1)
+			{
+				ev.port = Integer.parseInt(sss[1]);
+			}
+			
 			ChannelFuture future = newRemoteChannelFuture(address, token);
 			future.addListener(new ChannelFutureListener()
 			{
