@@ -4,13 +4,13 @@
 package org.snova.c4.server.service;
 
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.arch.buffer.Buffer;
+import org.arch.util.ListSelector;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
@@ -38,8 +38,13 @@ import org.snova.framework.util.SharedObjectHelper;
 public class RSocketService
 {
 	private static ClientSocketChannelFactory factory;
-	private static Map<String, Channel> remoteChannelTable = new ConcurrentHashMap<String, Channel>();
-
+	private static Map<String, ListSelector<Channel>> remoteChannelTable = new ConcurrentHashMap<String, ListSelector<Channel>>();
+	
+	public static void closeConnections(String token)
+	{
+		remoteChannelTable.remove(token);
+	}
+	
 	protected static ClientSocketChannelFactory getClientSocketChannelFactory()
 	{
 		if (null == factory)
@@ -80,26 +85,22 @@ public class RSocketService
 		String[] ss = remote.split(":");
 		String host = ss[0];
 		int port = Integer.parseInt(ss[1]);
+		int connSize = Integer.parseInt(ss[2]);
 		final InetSocketAddress address = new InetSocketAddress(host, port);
-		//System.out.println("########" + token);
-		Channel ch = remoteChannelTable.get(token);
-//		if(null !=ch && !ch.getRemoteAddress().equals(address))
-//		{
-//			closeRsocketChannel(token);
-//     		ch = null;
-//		}
-		if (null == ch)
+		ListSelector<Channel> selector = remoteChannelTable.get(token);
+		if (null == selector)
+		{
+			selector = new ListSelector<Channel>();
+			remoteChannelTable.put(token, selector);
+		}
+		final ListSelector<Channel> tmp = selector;
+		for (int i = selector.size(); i < connSize; i++)
 		{
 			final RSocketAcceptedEvent ev = new RSocketAcceptedEvent();
 			String[] sss = auth.split(":");
 			ev.domain = sss[0];
-			if (sss.length > 1)
-			{
-				ev.port = Integer.parseInt(sss[1]);
-			}
-
+			ev.port = Integer.parseInt(sss[1]);
 			ChannelFuture future = newRemoteChannelFuture(address, token);
-			remoteChannelTable.put(token, future.getChannel());
 			future.addListener(new ChannelFutureListener()
 			{
 				@Override
@@ -107,6 +108,7 @@ public class RSocketService
 				{
 					if (f.isSuccess())
 					{
+						tmp.add(f.getChannel());
 						Buffer content = new Buffer(16);
 						ev.encode(content);
 						ChannelBuffer msg = ChannelBuffers.wrappedBuffer(
@@ -116,35 +118,37 @@ public class RSocketService
 					}
 					else
 					{
-						closeRsocketChannel(token);
+						closeRsocketChannel(token, f.getChannel());
 					}
 				}
 			});
 		}
 	}
 
-	private static void closeRsocketChannel(String token)
+	private static void closeRsocketChannel(String token, Channel ch)
 	{
-		
-		Channel channel = remoteChannelTable.remove(token);
-		
-		if (null != channel && channel.isConnected())
+		ListSelector<Channel> selector = remoteChannelTable.get(token);
+		if (null != ch && ch.isConnected())
 		{
-			channel.close();
+			ch.close();
+			if (null != selector)
+			{
+				selector.remove(ch);
+			}
 		}
 	}
 
 	public static void eventNotify(String token)
 	{
-		Channel channel = remoteChannelTable.get(token);
-		if (null != channel)
+		ListSelector<Channel> selector = remoteChannelTable.get(token);
+		if (null != selector && selector.size() > 0)
 		{
 			Buffer tmp = new Buffer(1024);
 			EventService.getInstance(token).extractEventResponses(tmp, 8192);
 			ChannelBuffer message = ChannelBuffers
 			        .wrappedBuffer(tmp.getRawBuffer(), tmp.getReadIndex(),
 			                tmp.readableBytes());
-			channel.write(message);
+			selector.select().write(message);
 		}
 	}
 
@@ -158,12 +162,12 @@ public class RSocketService
 			this.addr = addr;
 			this.userToken = userToken;
 		}
-		
+
 		@Override
 		public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e)
 		        throws Exception
 		{
-			closeRsocketChannel(userToken);
+			closeRsocketChannel(userToken, ctx.getChannel());
 		}
 
 		@Override
@@ -177,14 +181,18 @@ public class RSocketService
 		public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
 		        throws Exception
 		{
+			TimeoutService.touch(userToken);
 			Object msg = e.getMessage();
 			if (msg instanceof ChannelBuffer)
 			{
 				ChannelBuffer buf = (ChannelBuffer) msg;
-				byte[] raw = new byte[buf.readableBytes()];
-				buf.readBytes(raw);
-				Buffer content = Buffer.wrapReadableContent(raw);
-				EventService.getInstance(userToken).dispatchEvent(content);
+				if(buf.readable())
+				{
+					byte[] raw = new byte[buf.readableBytes()];
+					buf.readBytes(raw);
+					Buffer content = Buffer.wrapReadableContent(raw);
+					EventService.getInstance(userToken).dispatchEvent(content);
+				}
 			}
 			else
 			{

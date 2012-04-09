@@ -14,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.arch.buffer.Buffer;
 import org.arch.event.Event;
+import org.arch.util.ListSelector;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
@@ -41,7 +42,7 @@ public class RSocketProxyConnection extends ProxyConnection implements Runnable
 	protected static NioServerSocketChannelFactory serverFactory = null;
 	protected static ServerSocketChannel rserver = null;
 	protected static Map<C4ServerAuth, RSocketProxyConnection> rSocketProxyConnectionTable = new ConcurrentHashMap<C4ServerAuth, RSocketProxyConnection>();
-	protected Channel acceptedRemoteChannel;
+	protected ListSelector<Channel> acceptedRemoteChannels = new ListSelector<Channel>();
 
 	public RSocketProxyConnection(C4ServerAuth auth)
 	{
@@ -53,13 +54,13 @@ public class RSocketProxyConnection extends ProxyConnection implements Runnable
 	        Channel channel)
 	{
 		RSocketProxyConnection conn = rSocketProxyConnectionTable.get(auth);
-		conn.acceptedRemoteChannel = channel;
+		conn.acceptedRemoteChannels.add(channel);
 		return conn;
 	}
 
-	void closeRConnection()
+	void closeRConnection(Channel ch)
 	{
-		acceptedRemoteChannel = null;
+		acceptedRemoteChannels.remove(ch);
 	}
 
 	void handleEvent(Event ev)
@@ -103,9 +104,20 @@ public class RSocketProxyConnection extends ProxyConnection implements Runnable
 		}
 		rSocketProxyConnectionTable.put(auth, this);
 		heartBeat();
-		int period = C4ClientConfiguration.getInstance().getHeartBeatPeriod();
+		int period = C4ClientConfiguration.getInstance().getHeartBeatPeriod() * 30;
 		SharedObjectHelper.getGlobalTimer().scheduleAtFixedRate(this, period,
 		        period, TimeUnit.MILLISECONDS);
+		SharedObjectHelper.getGlobalTimer().scheduleAtFixedRate(new Runnable()
+		{
+			public void run()
+			{
+				for (int i = 0; i < acceptedRemoteChannels.size(); i++)
+				{
+					acceptedRemoteChannels.select().write(
+					        ChannelBuffers.EMPTY_BUFFER);
+				}
+			}
+		}, 1, 1, TimeUnit.SECONDS);
 	}
 
 	@Override
@@ -118,7 +130,7 @@ public class RSocketProxyConnection extends ProxyConnection implements Runnable
 		ChannelBuffer msg = ChannelBuffers.wrappedBuffer(
 		        msgbuffer.getRawBuffer(), msgbuffer.getReadIndex(),
 		        msgbuffer.readableBytes());
-		acceptedRemoteChannel.write(msg);
+		acceptedRemoteChannels.select().write(msg);
 		return true;
 	}
 
@@ -131,8 +143,7 @@ public class RSocketProxyConnection extends ProxyConnection implements Runnable
 	@Override
 	public boolean isReady()
 	{
-		return null != acceptedRemoteChannel
-		        && acceptedRemoteChannel.isConnected();
+		return acceptedRemoteChannels.size() > 0;
 	}
 
 	private void heartBeat()
@@ -159,7 +170,10 @@ public class RSocketProxyConnection extends ProxyConnection implements Runnable
 			        extenral
 			                + ":"
 			                + C4ClientConfiguration.getInstance()
-			                        .getRServerPort());
+			                        .getRServerPort()
+			                + ":"
+			                + C4ClientConfiguration.getInstance()
+			                        .getConnectionPoolSize());
 			conn.setRequestMethod("POST");
 			conn.connect();
 			int responseCode = conn.getResponseCode();
@@ -180,4 +194,5 @@ public class RSocketProxyConnection extends ProxyConnection implements Runnable
 	{
 		heartBeat();
 	}
+
 }

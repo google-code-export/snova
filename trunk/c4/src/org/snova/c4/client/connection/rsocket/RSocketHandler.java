@@ -25,7 +25,6 @@ public class RSocketHandler extends SimpleChannelUpstreamHandler
 {
 	protected static Logger	               logger	         = LoggerFactory
             .getLogger(RSocketHandler.class);
-	//private C4ServerAuth auth;
 	private RSocketProxyConnection conn;
 	@Override
 	public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e)
@@ -33,7 +32,7 @@ public class RSocketHandler extends SimpleChannelUpstreamHandler
 	{
 		if(null != conn)
 		{
-			conn.closeRConnection();
+			conn.closeRConnection(ctx.getChannel());
 		}
 	}
 
@@ -60,7 +59,6 @@ public class RSocketHandler extends SimpleChannelUpstreamHandler
 				Event ev = EventDispatcher.getSingletonInstance().parse(content);
 				if(ev instanceof RSocketAcceptedEvent)
 				{
-					
 					RSocketAcceptedEvent rev = (RSocketAcceptedEvent) ev;
 					if(logger.isDebugEnabled())
 					{
