@@ -24,6 +24,7 @@
 	<target name="prepare">
 		<mkdir dir="${clientclasses}" />
 		<mkdir dir="${distroot}" />
+		<mkdir dir="${warclasses}" />
 		<echo message="package org.snova.c4.common;
 			public class C4PluginVersion
 			{
@@ -54,6 +55,7 @@
 	</target>
 
 	<target name="compile-server" depends="prepare">
+		
 		<javac debug="on" destdir="${warclasses}">
 			<src path="${srcroot}" />
 			<exclude name="org/snova/c4/client/**/*" />

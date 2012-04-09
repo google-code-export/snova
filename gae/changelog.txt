@@ -1,6 +1,18 @@
 snova-gae Changelog
 ===================
-Changes in version 1.0.0(2012.02.26)
+Changes in version 0.13.0(2012.04.09)
+-------------------------------------------
+
+** Features
+   * 
+   
+** Improvement
+   * 
+      
+** Task
+   * NA
+
+Changes in version 0.12.0204(2012.02.26)
 -------------------------------------------
 
 ** Features

@@ -4,7 +4,7 @@
  *
  * Description: ApplicationLauncher.java 
  *
- * @author yinqiwen [ 2011-11-27 | обнГ09:50:22 ]
+ * @author yinqiwen [ 2011-11-27 | PM09:50:22 ]
  *
  */
 package org.snova.framework.launch;

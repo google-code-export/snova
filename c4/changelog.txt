@@ -1,6 +1,6 @@
 snova-c4 Changelog
 ===================
-Changes in version 1.0.0(2012.02.26)
+Changes in version 0.13.0(2012.04.09)
 -------------------------------------------
 ** Features
    * 

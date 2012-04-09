@@ -539,5 +539,4 @@ public class HTTPProxyConnection extends ProxyConnection
 			}
 		}
 	}
-
 }
