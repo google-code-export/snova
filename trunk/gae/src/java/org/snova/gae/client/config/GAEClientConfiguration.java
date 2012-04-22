@@ -559,7 +559,7 @@ public class GAEClientConfiguration implements ReloadableConfiguration
 			String v = buffer.toString();
 			if (!v.isEmpty())
 			{
-				props.setProperty(APPID_BINDING_TAG, MATCH_SITES_NAME,
+				props.setProperty(INJECT_RANGE_TAG, MATCH_SITES_NAME,
 				        buffer.toString());
 			}
 
@@ -571,7 +571,7 @@ public class GAEClientConfiguration implements ReloadableConfiguration
 			v = buffer.toString();
 			if (!v.isEmpty())
 			{
-				props.setProperty(APPID_BINDING_TAG, MATCH_END_URLS_NAME,
+				props.setProperty(INJECT_RANGE_TAG, MATCH_END_URLS_NAME,
 				        buffer.toString());
 			}
 

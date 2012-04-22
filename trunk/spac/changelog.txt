@@ -1,6 +1,6 @@
 snova-spac Changelog
 ===================
-Changes in version 0.13.0(2012.04.09)
+Changes in version 0.13.0(2012.04.22)
 -------------------------------------------
 
 ** Features

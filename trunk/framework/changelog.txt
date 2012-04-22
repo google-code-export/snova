@@ -6,7 +6,7 @@ Changes in version 0.13.0(2012.04.09)
    * 
    
 ** Improvement
-   * 
+   * Upgrade plugins to 0.13.0
       
 ** Task
    * NA
