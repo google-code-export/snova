@@ -227,6 +227,10 @@ public class ProxyConnectionManager
 		{
 			auth = GAEClientConfiguration.getInstance().getGAEServerAuth(appid);
 		}
+		if(null == auth)
+		{
+			logger.error("#######Failed to select appid while selector");
+		}
 		return getClientConnectionByAuth(auth);
 	}
 	
