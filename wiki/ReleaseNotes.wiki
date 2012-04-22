@@ -4,6 +4,10 @@
 _You can download the latest version of the Snova [http://code.google.com/p/snova/downloads/list here]
 
 Snova - Release Notes
+===Version 0.13.0 - (2012.04.22)===
+ * `[C4]`：[试验性]增加RSocket模式，增强C4模式通信的实时性
+ * `[GAE]`：GUI修改配置文件bug
+
 ===Version 0.12.0204 - (2012.01.21--2012.02.04)===
  * `[C4]`：性能优化：增加HTTP连接模拟全双工通信机制的实现，提高性能；需要重新部署server
  * `[GAE]`：GUI优化——提高启动速度；优化体验
