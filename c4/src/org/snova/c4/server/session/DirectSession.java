@@ -625,6 +625,11 @@ public class DirectSession extends Session
 		public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
 		        throws Exception
 		{
+			if(relaySession.sessionManager.getSession(relaySession.getID()) != relaySession)
+			{
+				ctx.getChannel().close();
+				return;
+			}
 			Object obj = e.getMessage();
 			boolean writeEndBuffer = false;
 			Object messageToWrite = null;
@@ -686,6 +691,7 @@ public class DirectSession extends Session
 				        + obj.getClass().getName());
 				return;
 			}
+
 			if (null != messageToWrite)
 			{
 				relaySession.writeLocal(messageToWrite, ctx.getChannel());

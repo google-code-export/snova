@@ -103,10 +103,13 @@ public class EventService
 				ch.setReadable(false);
 				suspendChannels.put(ev.getHash(), ch);
 			}
-			
-			logger.info("Session[" + ev.getHash()
-			        + "] offer one event to queue while size="
-			        + sessionQueueSize);
+			if(logger.isDebugEnabled())
+			{
+				logger.debug("Session[" + ev.getHash()
+				        + "] offer one event to queue while size="
+				        + sessionQueueSize);
+			}
+
 		}
 		synchronized (this)
 		{
