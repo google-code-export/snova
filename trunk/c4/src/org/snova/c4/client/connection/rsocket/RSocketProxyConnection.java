@@ -180,7 +180,7 @@ public class RSocketProxyConnection extends ProxyConnection implements Runnable
 			int len = client.getInputStream().read(resbuf);
 			if (len > 0)
 			{
-				logger.info("RSocket heart beat request request failed with response:"
+				logger.info("RSocket heart beat request  with response:"
 				        + new String(resbuf, 0, len));
 			}
 			

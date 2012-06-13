@@ -135,11 +135,11 @@ public class RSocketService
 		ListSelector<Channel> selector = remoteChannelTable.get(token);
 		if (null != ch && ch.isConnected())
 		{
-			ch.close();
-			if (null != selector)
-			{
-				selector.remove(ch);
-			}
+			ch.close();	
+		}
+		if (null != selector)
+		{
+			selector.remove(ch);
 		}
 	}
 
@@ -172,6 +172,7 @@ public class RSocketService
 		public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e)
 		        throws Exception
 		{
+			System.out.println("########closed connection for  " + userToken);
 			closeRsocketChannel(userToken, ctx.getChannel());
 		}
 
@@ -179,6 +180,7 @@ public class RSocketService
 		public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
 		        throws Exception
 		{
+			e.getCause().printStackTrace();
 			// super.exceptionCaught(ctx, e);
 		}
 
