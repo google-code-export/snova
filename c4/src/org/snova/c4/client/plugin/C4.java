@@ -31,6 +31,7 @@ public class C4 implements Plugin
 		{
 			GatewayDiscover gatewayDiscover = new GatewayDiscover();
 			gatewayDiscover.discover();
+			
 			GatewayDevice activeGW = gatewayDiscover.getValidGateway();
 			PortMappingEntry portMapping = new PortMappingEntry();
 			int port = C4ClientConfiguration.getInstance().getRServerPort();
@@ -50,17 +51,10 @@ public class C4 implements Plugin
 				        .getLocalAddress().getHostAddress(), "TCP", "Snova-C4"))
 				{
 					logger.info("Mapping SUCCESSFUL");
-					// Thread.sleep(1000*WAIT_TIME);
-					//
-					// if (activeGW.deletePortMapping(SAMPLE_PORT,"TCP")==true)
-					// AddLogline("Port mapping removed, test SUCCESSFUL");
-					// else
-					// AddLogline("Port mapping removal FAILED");
 				}
 			}
+			C4ClientConfiguration.getInstance().setExternalIP(activeGW.getExternalIPAddress());
 		}
-		
-		// logger.error("Port mapping not supported now.");
 	}
 	
 	@Override

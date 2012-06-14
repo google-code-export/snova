@@ -47,6 +47,7 @@ func User2PropertyList(user *event.User) datastore.PropertyList {
 
 func PropertyList2User(props datastore.PropertyList) *event.User {
 	user := new(event.User)
+	user.BlackList = make(map[string]string)
 	for _, v := range props {
 		switch v.Name {
 		case "Name":
@@ -91,6 +92,7 @@ func Group2PropertyList(group *event.Group) datastore.PropertyList {
 
 func PropertyList2Group(props datastore.PropertyList) *event.Group {
 	group := new(event.Group)
+	group.BlackList = make(map[string]string)
 	for _, v := range props {
 		switch v.Name {
 		case "Name":

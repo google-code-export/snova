@@ -5,10 +5,8 @@ package org.snova.c4.client.connection.rsocket;
 
 import static org.jboss.netty.channel.Channels.pipeline;
 
-import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.URL;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -169,9 +167,7 @@ public class RSocketProxyConnection extends ProxyConnection implements Runnable
 			                + "_"
 			                + C4ClientConfiguration.getInstance()
 			                        .getRServerPort()
-			                + "_"
-			                + C4ClientConfiguration.getInstance()
-			                        .getConnectionPoolSize()).append("\r\n");
+			                + "_1\r\n");
 			buffer.append("Connection: close\r\n");
 			buffer.append("Content-Length: 0\r\n\r\n");
 			logger.info(buffer.toString());
