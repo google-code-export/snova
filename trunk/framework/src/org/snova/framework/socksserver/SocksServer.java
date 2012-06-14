@@ -17,11 +17,12 @@ import net.sourceforge.jsocks.socks.SocksSocket;
 public class SocksServer implements Runnable
 {
 	private SocksServerSocket server = null;
+	private ExecutorService executor;
 
 	public SocksServer(SimpleSocketAddress listenAddress,
 	        final ExecutorService workerExecutor)
 	{
-		
+		executor = workerExecutor;
 	}
 	
 	@Override

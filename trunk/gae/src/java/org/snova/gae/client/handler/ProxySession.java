@@ -647,10 +647,12 @@ public class ProxySession
 		{
 			logger.debug("Orginal URL is " + event.url);
 		}
+		event.setHeader("Connection", "Close");
+		event.removeHeader("Proxy-Connection");
 		StringBuffer urlbuffer = new StringBuffer();
 		if (isHttps)
 		{
-			urlbuffer.append("https://").append(httpspath);
+			urlbuffer.append("https://").append(event.getHeader("Host"));
 		}
 		else
 		{

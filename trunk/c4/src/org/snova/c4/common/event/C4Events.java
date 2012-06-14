@@ -17,6 +17,9 @@ import org.arch.event.misc.CompressEvent;
 import org.arch.event.misc.CompressEventV2;
 import org.arch.event.misc.EncryptEvent;
 import org.arch.event.misc.EncryptEventV2;
+import org.arch.event.socket.SocketCloseEvent;
+import org.arch.event.socket.SocketConnectEvent;
+import org.arch.event.socket.SocketDataEvent;
 
 /**
  * @author qiyingwang
@@ -65,6 +68,12 @@ public class C4Events
 				        HTTPChunkEvent.class, handler);
 				EventDispatcher.getSingletonInstance().register(
 				        HTTPConnectionEvent.class, handler);
+				EventDispatcher.getSingletonInstance().register(
+				        SocketConnectEvent.class, handler);
+				EventDispatcher.getSingletonInstance().register(
+						SocketDataEvent.class, handler);
+				EventDispatcher.getSingletonInstance().register(
+						SocketCloseEvent.class, handler);
 			}
 			else
 			{

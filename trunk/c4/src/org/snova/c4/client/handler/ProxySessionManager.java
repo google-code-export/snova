@@ -3,7 +3,6 @@
  */
 package org.snova.c4.client.handler;
 
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -18,8 +17,8 @@ import org.jboss.netty.util.internal.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.c4.client.config.C4ClientConfiguration;
-import org.snova.c4.client.config.C4ClientConfiguration.ConnectionMode;
 import org.snova.c4.client.config.C4ClientConfiguration.C4ServerAuth;
+import org.snova.c4.client.config.C4ClientConfiguration.ConnectionMode;
 import org.snova.c4.client.connection.ProxyConnection;
 import org.snova.c4.client.connection.ProxyConnectionManager;
 import org.snova.c4.common.event.EventRestRequest;
