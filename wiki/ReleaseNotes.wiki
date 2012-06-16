@@ -4,6 +4,12 @@
 _You can download the latest version of the Snova [http://code.google.com/p/snova/downloads/list here]
 
 Snova - Release Notes
+===Version 0.14.0 - (2012.06.16)===
+ * `[C4]`：完善RSocket模式，增加upnp支持
+ * `[GAE]`：下载大文件/视频时的并发bug修复（某些情况下看youtube视频会触发）
+ * `[GAE]`：Java Server的bug（某些情况如twitter发推会触发）
+ * `[GAE]`：Go Server执行blacklist命令crash的问题
+
 ===Version 0.13.0 - (2012.04.22)===
  * `[C4]`：[试验性]增加RSocket模式，增强C4模式通信的实时性
  * `[GAE]`：GUI修改配置文件bug
