@@ -94,6 +94,7 @@ public class FetchServiceHandler
 		try
 		{
 			fetchReq = GAEServerHelper.toHTTPRequest(req);
+			
 		}
 		catch (MalformedURLException e)
 		{
@@ -117,6 +118,12 @@ public class FetchServiceHandler
 					responseEvent.addHeader("X-Range", req.getHeader("Range"));
 				}
 				ret = responseEvent;
+//				if(fetchRes.getResponseCode() == 400 || fetchRes.getResponseCode() == 403)
+//				{
+//					logger.error("#####Request is " + req.toString());
+//					logger.error("#####Request body len  is " + req.content.getRawBuffer().length);
+//				}
+				
 			}
 			catch (OverQuotaException e)
 			{

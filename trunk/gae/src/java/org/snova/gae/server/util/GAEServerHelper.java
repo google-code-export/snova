@@ -36,8 +36,7 @@ public class GAEServerHelper
 		{
 			req.addHeader(new HTTPHeader(header.getName(), header.getValue()));
 		}
-
-		req.setPayload(exchange.content.getRawBuffer());
+		req.setPayload(exchange.content.toArray());
 		return req;
 	}
 
