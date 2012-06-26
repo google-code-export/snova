@@ -66,41 +66,45 @@ import com.sun.xml.internal.ws.resources.HttpserverMessages;
  */
 public class HTTPProxyConnection extends ProxyConnection
 {
-	private static final int INITED = 0;
-	private static final int WAITING_CONNECT_RESPONSE = 1;
-	private static final int CONNECT_RESPONSED = 2;
-	private static final int DISCONNECTED = 3;
-
-	protected Logger logger = LoggerFactory.getLogger(getClass());
-	private static ClientSocketChannelFactory factory;
-
-	private AtomicBoolean waitingResponse = new AtomicBoolean(false);
-	private SocketChannel clientChannel = null;
-
-	private HttpServerAddress remoteAddress = null;
-	private AtomicInteger sslProxyConnectionStatus = new AtomicInteger(0);
-	private ChannelInitTask sslChannelInitTask = null;
+	private static final int	              INITED	               = 0;
+	private static final int	              WAITING_CONNECT_RESPONSE	= 1;
+	private static final int	              CONNECT_RESPONSED	       = 2;
+	private static final int	              DISCONNECTED	           = 3;
+	
+	protected Logger	                      logger	               = LoggerFactory
+	                                                                           .getLogger(getClass());
+	private static ClientSocketChannelFactory	factory;
+	
+	private AtomicBoolean	                  waitingResponse	       = new AtomicBoolean(
+	                                                                           false);
+	private SocketChannel	                  clientChannel	           = null;
+	
+	private HttpServerAddress	              remoteAddress	           = null;
+	private AtomicInteger	                  sslProxyConnectionStatus	= new AtomicInteger(
+	                                                                           0);
+	private ChannelInitTask	                  sslChannelInitTask	   = null;
+	
 	class ChannelInitTask
 	{
-		private boolean sslConnectionEnable;
-		private HttpRequest request;
-
+		private boolean		sslConnectionEnable;
+		private HttpRequest	request;
+		
 		ChannelInitTask(HttpRequest req, boolean isSSL)
 		{
 			this.request = req;
 			this.sslConnectionEnable = isSSL;
 		}
-
+		
 		public void onInitedSucceed()
 		{
 			clientChannel.write(request);
 		}
-
+		
 		public void onInitFailed()
 		{
 			close();
 		}
-
+		
 		public boolean isReady()
 		{
 			if (sslConnectionEnable)
@@ -109,12 +113,16 @@ public class HTTPProxyConnection extends ProxyConnection
 			}
 			return true;
 		}
-
+		
 		public void onVerify()
 		{
+			if(logger.isDebugEnabled())
+			{
+				logger.debug("Start onverify channel.");
+			}
 			if (sslConnectionEnable)
 			{
-				if(!isReady())
+				if (!isReady())
 				{
 					sslChannelInitTask = this;
 					return;
@@ -157,7 +165,7 @@ public class HTTPProxyConnection extends ProxyConnection
 			}
 		}
 	}
-
+	
 	public HTTPProxyConnection(GAEServerAuth auth)
 	{
 		super(auth);
@@ -167,20 +175,20 @@ public class HTTPProxyConnection extends ProxyConnection
 		        GAEConstants.HTTP_INVOKE_PATH, GAEClientConfiguration
 		                .getInstance().getConnectionMode()
 		                .equals(ConnectionMode.HTTPS));
-
+		
 	}
-
+	
 	public boolean isReady()
 	{
 		return !waitingResponse.get();
 	}
-
+	
 	@Override
 	protected void setAvailable(boolean flag)
 	{
 		waitingResponse.set(flag);
 	}
-
+	
 	@Override
 	protected void doClose()
 	{
@@ -190,16 +198,17 @@ public class HTTPProxyConnection extends ProxyConnection
 			clientChannel.close();
 		}
 	}
-
+	
 	@Override
 	protected int getMaxDataPackageSize()
 	{
 		return GAEConstants.APPENGINE_HTTP_BODY_LIMIT;
 	}
-
+	
 	private ChannelInitTask initConnectedChannel(Channel connectedChannel,
 	        HttpRequest req)
 	{
+
 		boolean sslConnectionEnable = false;
 		ProxyInfo info = cfg.getLocalProxy();
 		if (null != info)
@@ -214,7 +223,7 @@ public class HTTPProxyConnection extends ProxyConnection
 				String httpsHost = cfg.getGoogleProxyChain().host;
 				httpsHost = HostsHelper.getMappingHost(httpsHost);
 				int httpsport = cfg.getGoogleProxyChain().port;
-
+				
 				HttpRequest request = new DefaultHttpRequest(
 				        HttpVersion.HTTP_1_1, HttpMethod.CONNECT, httpsHost
 				                + ":" + httpsport);
@@ -240,12 +249,17 @@ public class HTTPProxyConnection extends ProxyConnection
 					logger.debug("Send google chain connect resuest:" + request);
 				}
 			}
+			else
+			{
+				sslProxyConnectionStatus.set(CONNECT_RESPONSED);
+			}
 		}
-		ChannelInitTask task = new ChannelInitTask(req, sslConnectionEnable);
 
+		ChannelInitTask task = new ChannelInitTask(req, sslConnectionEnable);
+		
 		return task;
 	}
-
+	
 	private ChannelFuture connectRemoteProxyServer(HttpServerAddress address)
 	{
 		ChannelPipeline pipeline = Channels.pipeline();
@@ -261,9 +275,10 @@ public class HTTPProxyConnection extends ProxyConnection
 				ThreadPoolExecutor workerExecutor = new OrderedMemoryAwareThreadPoolExecutor(
 				        20, 0, 0);
 				SharedObjectHelper.setGlobalThreadPool(workerExecutor);
-
+				
 			}
-			if (NetworkHelper.isIPV6Address(HostsHelper.getMappingHost(address.getHost())))
+			if (NetworkHelper.isIPV6Address(HostsHelper.getMappingHost(address
+			        .getHost())))
 			{
 				factory = new OioClientSocketChannelFactory(
 				        SharedObjectHelper.getGlobalThreadPool());
@@ -274,7 +289,7 @@ public class HTTPProxyConnection extends ProxyConnection
 				        SharedObjectHelper.getGlobalThreadPool(),
 				        SharedObjectHelper.getGlobalThreadPool());
 			}
-
+			
 		}
 		clientChannel = factory.newChannel(pipeline);
 		String connectHost;
@@ -306,7 +321,7 @@ public class HTTPProxyConnection extends ProxyConnection
 		        connectHost, connectPort));
 		return future;
 	}
-
+	
 	private HttpRequest buildSentRequest(String url, Buffer content)
 	{
 		HttpRequest request = new DefaultHttpRequest(HttpVersion.HTTP_1_1,
@@ -332,7 +347,7 @@ public class HTTPProxyConnection extends ProxyConnection
 		        .trim());
 		request.setHeader(HttpHeaders.Names.CONTENT_TYPE,
 		        "application/octet-stream");
-
+		
 		ChannelBuffer buffer = ChannelBuffers.wrappedBuffer(
 		        content.getRawBuffer(), content.getReadIndex(),
 		        content.readableBytes());
@@ -341,7 +356,7 @@ public class HTTPProxyConnection extends ProxyConnection
 		request.setContent(buffer);
 		return request;
 	}
-
+	
 	protected boolean doSend(Buffer content)
 	{
 		waitingResponse.set(true);
@@ -358,7 +373,7 @@ public class HTTPProxyConnection extends ProxyConnection
 			}
 		}
 		final HttpRequest request = buildSentRequest(url, content);
-
+		
 		if (null == clientChannel || !clientChannel.isConnected())
 		{
 			ChannelFuture connFuture = connectRemoteProxyServer(remoteAddress);
@@ -376,6 +391,7 @@ public class HTTPProxyConnection extends ProxyConnection
 					}
 					else
 					{
+						logger.error("Failed to connect google server.");
 						close();
 					}
 				}
@@ -391,7 +407,7 @@ public class HTTPProxyConnection extends ProxyConnection
 		}
 		return true;
 	}
-
+	
 	private void updateSSLProxyConnectionStatus(int status)
 	{
 		synchronized (sslProxyConnectionStatus)
@@ -400,7 +416,7 @@ public class HTTPProxyConnection extends ProxyConnection
 			sslProxyConnectionStatus.notify();
 		}
 	}
-
+	
 	private boolean casSSLProxyConnectionStatus(int current, int status)
 	{
 		synchronized (sslProxyConnectionStatus)
@@ -415,19 +431,19 @@ public class HTTPProxyConnection extends ProxyConnection
 			return true;
 		}
 	}
-
+	
 	// @ChannelPipelineCoverage("one")
 	class HttpResponseHandler extends SimpleChannelUpstreamHandler
 	{
-		private boolean readingChunks = false;
-		private int responseContentLength = 0;
-		private Buffer resBuffer = new Buffer(0);
-
+		private boolean	readingChunks		  = false;
+		private int		responseContentLength	= 0;
+		private Buffer	resBuffer		      = new Buffer(0);
+		
 		private void clearBuffer()
 		{
 			resBuffer = new Buffer(0);
 		}
-
+		
 		private void fillResponseBuffer(ChannelBuffer buffer)
 		{
 			int contentlen = buffer.readableBytes();
@@ -442,7 +458,7 @@ public class HTTPProxyConnection extends ProxyConnection
 				clearBuffer();
 			}
 		}
-
+		
 		@Override
 		public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
 		        throws Exception
@@ -455,7 +471,7 @@ public class HTTPProxyConnection extends ProxyConnection
 			close();
 			clearBuffer();
 		}
-
+		
 		@Override
 		public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e)
 		        throws Exception
@@ -469,7 +485,7 @@ public class HTTPProxyConnection extends ProxyConnection
 			close();
 			clearBuffer();
 		}
-
+		
 		@Override
 		public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
 		        throws Exception
@@ -478,7 +494,8 @@ public class HTTPProxyConnection extends ProxyConnection
 			if (!readingChunks)
 			{
 				HttpResponse response = (HttpResponse) e.getMessage();
-				if (logger.isDebugEnabled())
+				if (response.getStatus().getCode() != 200
+				        && logger.isDebugEnabled())
 				{
 					logger.debug("Recv response:" + e.getMessage());
 				}
@@ -493,14 +510,14 @@ public class HTTPProxyConnection extends ProxyConnection
 					m.setAccessible(true);
 					m.invoke(decoder, null);
 					waitingResponse.set(false);
-					if(null != sslChannelInitTask)
+					if (null != sslChannelInitTask)
 					{
 						sslChannelInitTask.onVerify();
 						sslChannelInitTask = null;
 					}
 					return;
 				}
-
+				
 				// responseContentLength = (int) HttpHeaders
 				// .getContentLength(response);
 				responseContentLength = (int) HttpHeaders

@@ -18,7 +18,7 @@ public interface GAEConstants
 	public static final String RESERVED_GOOGLEHTTPS_HOST_MAPPING = "GoogleHttps";
 	public static final String PREFERED_GOOGLE_PROXY = "PreferedGoogleProxy";
 	
-	public static final int APPENGINE_HTTP_BODY_LIMIT = 2000000; //2MB
+	public static final int APPENGINE_HTTP_BODY_LIMIT = 20000000; //2MB
 	public static final int APPENGINE_XMPP_BODY_LIMIT = 4096; //4KB
 	
 	public static final int FETCH_FAILED = -2;

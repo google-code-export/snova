@@ -237,10 +237,14 @@ public abstract class ProxyConnection
 		{
 			if (event instanceof HTTPRequestEvent)
 			{
-				logger.debug("Connection:" + this.hashCode()
-				        + " send out session[" + attach.second
-				        + "] HTTP request:");
-				logger.debug(event.toString());
+				logger.debug("Connection:"
+				        + this.hashCode()
+				        + " send out session["
+				        + attach.second
+				        + "] HTTP request:"
+				        + "\n================================================================\n"
+				        + event.toString()
+				        + "\n================================================================");
 			}
 		}
 		if (null == attach)
@@ -266,9 +270,9 @@ public abstract class ProxyConnection
 		EncryptEvent enc = new EncryptEvent(cfg.getEncrypter(), comress);
 		enc.setHash(attach.second);
 		synchronized (relevantSessions)
-        {
+		{
 			relevantSessions.add(attach.second);
-        }
+		}
 		Buffer msgbuffer = GAEEventHelper.encodeEvent(tags, enc);
 		if (msgbuffer.readableBytes() > getMaxDataPackageSize())
 		{
@@ -295,9 +299,9 @@ public abstract class ProxyConnection
 		}
 		waitingResponse = false;
 		synchronized (relevantSessions)
-        {
+		{
 			relevantSessions.remove(ev.getHash());
-        }
+		}
 		
 		int type;
 		type = Event.getTypeVersion(ev.getClass()).type;
@@ -344,8 +348,10 @@ public abstract class ProxyConnection
 				// just let
 				if (logger.isDebugEnabled())
 				{
-					logger.debug("Proxy connection received HTTP response:");
-					logger.debug(ev.toString());
+					logger.debug("Proxy connection received HTTP response for session[" +ev.getHash() + "]:"
+					        + "\n========================================================\n"
+					        + ev.toString()
+					        + "\n=========================================================");
 				}
 				break;
 			}

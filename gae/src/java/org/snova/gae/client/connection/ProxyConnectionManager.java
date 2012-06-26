@@ -219,17 +219,13 @@ public class ProxyConnectionManager
 		String appid = null != event ? GAEClientConfiguration.getInstance()
 		        .getBindingAppId(event.getHeader("Host")) : null;
 		GAEServerAuth auth = null;
-		if (null == appid)
-		{
-			auth = seletor.select();
-		}
-		else
+		if (null != appid)
 		{
 			auth = GAEClientConfiguration.getInstance().getGAEServerAuth(appid);
 		}
 		if(null == auth)
 		{
-			logger.error("#######Failed to select appid while selector");
+			auth = seletor.select();
 		}
 		return getClientConnectionByAuth(auth);
 	}
