@@ -40,6 +40,7 @@ public class RSocketService
 	private static ClientSocketChannelFactory factory;
 	private static Map<String, ListSelector<Channel>> remoteChannelTable = new ConcurrentHashMap<String, ListSelector<Channel>>();
 	
+	
 	public static void closeConnections(String token)
 	{
 		remoteChannelTable.remove(token);
@@ -74,7 +75,7 @@ public class RSocketService
 		SocketChannel channel = getClientSocketChannelFactory().newChannel(
 		        pipeline);
 		channel.getConfig().setOption("connectTimeoutMillis", 40 * 1000);
-		System.out.println("########Connect " + addr);
+		//System.out.println("########Connect " + addr);
 		ChannelFuture future = channel.connect(addr);
 		return future;
 	}
@@ -146,14 +147,33 @@ public class RSocketService
 	public static void eventNotify(String token)
 	{
 		ListSelector<Channel> selector = remoteChannelTable.get(token);
-		if (null != selector && selector.size() > 0)
+		EventService serv = EventService.getInstance(token);
+		Channel ch = selector.select();
+		if(null == ch)
 		{
-			Buffer tmp = new Buffer(1024);
-			EventService.getInstance(token).extractEventResponses(tmp, 8192);
-			ChannelBuffer message = ChannelBuffers
-			        .wrappedBuffer(tmp.getRawBuffer(), tmp.getReadIndex(),
-			                tmp.readableBytes());
-			selector.select().write(message);
+			return;
+		}
+		while(serv.getRestEventQueueSize() > 0)
+		{
+			Buffer[] tmp = new Buffer[selector.size()];
+			serv.extractEventResponses(tmp, 512*1024);
+			for(int i = 0; i < tmp.length; i++)
+			{
+				ch = selector.get(i);
+				if(ch == null)
+				{
+					ch = selector.select();
+				}
+				
+				if(null != tmp[i] && tmp[i].readable())
+				{
+					ChannelBuffer message = ChannelBuffers
+					        .wrappedBuffer(tmp[i].getRawBuffer(), tmp[i].getReadIndex(),
+					                tmp[i].readableBytes());
+					ch.write(message);
+				}
+			}
+
 		}
 	}
 

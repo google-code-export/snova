@@ -52,7 +52,7 @@ public class EventService
 		}
 	}
 	
-	private static final int	          MAX_EVENT_QUEUE_SIZE	         = 1000;
+	private static final int	          MAX_EVENT_QUEUE_SIZE	         = 2048;
 	protected Logger	                  logger	                     = LoggerFactory
 	                                                                             .getLogger(getClass());
 	// protected LinkedList<Event> reponseEventQueue = new LinkedList<Event>();
@@ -82,9 +82,9 @@ public class EventService
 		if (!responseQueue.isEmpty())
 		{
 			logger.info("Releaase all queued events");
-			responseQueue.clear();
-			sessionReponseQueueSizeTable.clear();
 		}
+		responseQueue.clear();
+		sessionReponseQueueSizeTable.clear();
 		instanceTable.remove(userToken);
 		suspendChannels.clear();
 	}
@@ -153,6 +153,33 @@ public class EventService
 		return sessionQueueSize.incrementAndGet();
 	}
 	
+	public int extractEventResponses(Buffer[] bufs, int maxSize)
+	{
+		int count = 0;
+		int hash = bufs.length;
+		synchronized (responseQueue)
+		{
+			LinkedList<Event> queue = responseQueue;
+			Event ev = null;
+			while (!queue.isEmpty())
+			{
+				ev = queue.removeFirst();
+				int idx = ev.getHash()%hash;
+				if(null == bufs[idx])
+				{
+					bufs[idx] = new Buffer(1024);
+				}
+				ev.encode(bufs[idx]);
+				count++;
+				if (bufs[idx].readableBytes() >= maxSize)
+				{
+					break;
+				}
+			}
+		}
+		return count;
+	}
+	
 	public int extractEventResponses(Buffer buf, int maxSize)
 	{
 		int count = 0;
@@ -164,13 +191,13 @@ public class EventService
 			{
 				ev = queue.removeFirst();
 				ev.encode(buf);
-				int sessionQueueSize = sessionEventQueueDecrementAndGet(ev
-				        .getHash());
-				if (suspendChannels.containsKey(ev.getHash())
-				        && sessionQueueSize < MAX_EVENT_QUEUE_SIZE)
-				{
-					suspendChannels.remove(ev.getHash()).setReadable(true);
-				}
+//				int sessionQueueSize = sessionEventQueueDecrementAndGet(ev
+//				        .getHash());
+//				if (suspendChannels.containsKey(ev.getHash())
+//				        && sessionQueueSize < MAX_EVENT_QUEUE_SIZE)
+//				{
+//					suspendChannels.remove(ev.getHash()).setReadable(true);
+//				}
 				count++;
 				if (buf.readableBytes() >= maxSize)
 				{

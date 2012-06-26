@@ -103,20 +103,20 @@ public class RSocketProxyConnection extends ProxyConnection implements Runnable
 		}
 		rSocketProxyConnectionTable.put(auth, this);
 		heartBeat();
-		int period = C4ClientConfiguration.getInstance().getHeartBeatPeriod() * 30;
+		int period = C4ClientConfiguration.getInstance().getHeartBeatPeriod();
 		SharedObjectHelper.getGlobalTimer().scheduleAtFixedRate(this, period,
 		        period, TimeUnit.MILLISECONDS);
-		SharedObjectHelper.getGlobalTimer().scheduleAtFixedRate(new Runnable()
-		{
-			public void run()
-			{
-				for (int i = 0; i < acceptedRemoteChannels.size(); i++)
-				{
-					acceptedRemoteChannels.select().write(
-					        ChannelBuffers.EMPTY_BUFFER);
-				}
-			}
-		}, 1, 1, TimeUnit.SECONDS);
+//		SharedObjectHelper.getGlobalTimer().scheduleAtFixedRate(new Runnable()
+//		{
+//			public void run()
+//			{
+//				for (int i = 0; i < acceptedRemoteChannels.size(); i++)
+//				{
+//					acceptedRemoteChannels.select().write(
+//					        ChannelBuffers.EMPTY_BUFFER);
+//				}
+//			}
+//		}, 1, 1, TimeUnit.SECONDS);
 	}
 	
 	@Override
@@ -167,7 +167,9 @@ public class RSocketProxyConnection extends ProxyConnection implements Runnable
 			                + "_"
 			                + C4ClientConfiguration.getInstance()
 			                        .getRServerPort()
-			                + "_1\r\n");
+			                + "_"
+			                + C4ClientConfiguration.getInstance()
+			                        .getConnectionPoolSize() + "\r\n");
 			buffer.append("Connection: close\r\n");
 			buffer.append("Content-Length: 0\r\n\r\n");
 			logger.info(buffer.toString());
