@@ -126,7 +126,15 @@ public class ProxySession
 							seqChunkTable.clear();
 							localHTTPChannel.close();
 						}
+						if(logger.isDebugEnabled())
+						{
+							logger.debug("Session[" + getSessionID() + "] expecte sequence chunk:" + waitingChunkSequence);
+						}
 						return;
+					}
+					if(logger.isDebugEnabled())
+					{
+						logger.debug("Session[" + getSessionID() + "] write sequence chunk:" + waitingChunkSequence + " with size:" + chunk.content.length);
 					}
 					waitingChunkSequence++;
 					ChannelBuffer buf = ChannelBuffers.wrappedBuffer(chunk.content);

@@ -30,9 +30,9 @@ public class C4 implements Plugin
 		        .getHostAddress()))
 		{
 			GatewayDiscover gatewayDiscover = new GatewayDiscover();
-			gatewayDiscover.discover();
-			
+			gatewayDiscover.discover();		
 			GatewayDevice activeGW = gatewayDiscover.getValidGateway();
+			C4ClientConfiguration.getInstance().setExternalIP(activeGW.getExternalIPAddress());
 			PortMappingEntry portMapping = new PortMappingEntry();
 			int port = C4ClientConfiguration.getInstance().getRServerPort();
 			if (activeGW.getSpecificPortMappingEntry(port, "TCP", portMapping))
@@ -53,7 +53,7 @@ public class C4 implements Plugin
 					logger.info("Mapping SUCCESSFUL");
 				}
 			}
-			C4ClientConfiguration.getInstance().setExternalIP(activeGW.getExternalIPAddress());
+			
 		}
 	}
 	

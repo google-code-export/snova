@@ -143,6 +143,7 @@ public class DirectSession extends Session
 	public void close()
 	{
 		closeRemote();
+		seqChunkTable.clear();
 	}
 	
 	protected ChannelFuture onRemoteConnected(ChannelFuture future,
@@ -166,7 +167,7 @@ public class DirectSession extends Session
 			response.setHash(getID());
 			response.statusCode = 200;
 			response.addHeader("Connection", "Keep-Alive");
-			response.addHeader("Proxy-Connection", "Keep-Alive");
+			//response.addHeader("Proxy-Connection", "Keep-Alive");
 			future.getChannel().getPipeline().remove("decoder");
 			EventService.getInstance(sessionManager.getUserToken()).offer(
 			        response, future.getChannel());
@@ -327,6 +328,7 @@ public class DirectSession extends Session
 		{
 			case HTTPEventContants.HTTP_REQUEST_EVENT_TYPE:
 			{
+				writeSequence.set(0);
 				final HTTPRequestEvent req = (HTTPRequestEvent) event;
 				
 				ChannelFuture future = getChannelFuture(req);
@@ -435,7 +437,7 @@ public class DirectSession extends Session
 		buf.readBytes(ev.content);
 		if(ev.content.length > 512)
 		{
-			CompressEventV2 wrap = new CompressEventV2(CompressorType.QUICKLZ, ev);
+			CompressEventV2 wrap = new CompressEventV2(CompressorType.SNAPPY, ev);
 			wrap.setHash(ev.getHash());
 			EventService.getInstance(sessionManager.getUserToken()).offer(wrap, ch);
 		}
