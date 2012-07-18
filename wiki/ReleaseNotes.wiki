@@ -1,9 +1,12 @@
-#summary Snova Release Notes
+#summary Snova/GSnova Release Notes
 #labels Featured
 
-_You can download the latest version of the Snova [http://code.google.com/p/snova/downloads/list here]
+_You can download the latest version of the Snova/GSnova [http://code.google.com/p/snova/downloads/list here]
 
-Snova - Release Notes
+Snova/GSnova - Release Notes
+===Version 0.15.0 - (2012.07.18)===
+ * `[GSnova]`：golang实现snova GAE client
+
 ===Version 0.14.0 - (2012.06.16)===
  * `[C4]`：完善RSocket模式，增加upnp支持
  * `[GAE]`：下载大文件/视频时的并发bug修复（某些情况下看youtube视频会触发）
