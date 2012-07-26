@@ -52,6 +52,19 @@ public class ListSelector<T>
 		return list.size();
 	}
 	
+	public synchronized T get(int idx)
+	{
+		if(list.isEmpty())
+		{
+			return null;
+		}
+		if(idx >= list.size())
+		{
+			return null;
+		}
+		return list.get(idx);
+	}
+	
 	public synchronized T select()
 	{
 		if(list.isEmpty())
