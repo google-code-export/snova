@@ -13,7 +13,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.c4.common.C4Constants;
-import org.snova.c4.server.service.RSocketService;
 
 /**
  * @author qiyingwang
@@ -31,7 +30,6 @@ public class RSocketHeartBeatServlet extends HttpServlet
 		String remote = req.getHeader(C4Constants.LOCAL_RSERVER_ADDR_HEADER);
 		if(null != remote)
 		{
-			RSocketService.routine(auth, remote, req.getHeader(C4Constants.USER_TOKEN_HEADER));
 		}
 		resp.setStatus(200);
 		if(null == remote)

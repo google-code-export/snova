@@ -17,7 +17,6 @@ import org.snova.c4.client.config.C4ClientConfiguration;
 import org.snova.c4.client.config.C4ClientConfiguration.C4ServerAuth;
 import org.snova.c4.client.config.C4ClientConfiguration.ConnectionMode;
 import org.snova.c4.client.connection.rsocket.RSocketProxyConnection;
-import org.snova.c4.client.connection.v2.HTTPProxyConnectionV2;
 import org.snova.framework.util.SharedObjectHelper;
 
 /**

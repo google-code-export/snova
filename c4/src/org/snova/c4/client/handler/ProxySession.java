@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
 import org.snova.c4.client.config.C4ClientConfiguration;
 import org.snova.c4.client.connection.ProxyConnection;
 import org.snova.c4.client.connection.ProxyConnectionManager;
-import org.snova.c4.common.event.SequentialChunkEvent;
+import org.snova.c4.common.event.TCPChunkEvent;
 import org.snova.c4.common.event.TransactionCompleteEvent;
 import org.snova.framework.config.SimpleSocketAddress;
 
@@ -55,7 +55,7 @@ public class ProxySession
 	
 	private ChannelFuture	                   writeFuture;
 	private LinkedList<ChannelBuffer>	       restChunkList	    = new LinkedList<ChannelBuffer>();
-	private Map<Integer, SequentialChunkEvent>	seqChunkTable	    = new HashMap<Integer, SequentialChunkEvent>();
+	private Map<Integer, TCPChunkEvent>	seqChunkTable	    = new HashMap<Integer, TCPChunkEvent>();
 	private int	                               waitingChunkSequence	= 0;
 	private boolean	                           closeAfterFinish	    = false;
 	private AtomicInteger	                   sequence	            = new AtomicInteger(
@@ -116,7 +116,7 @@ public class ProxySession
 			{
 				if (!seqChunkTable.isEmpty())
 				{
-					SequentialChunkEvent chunk = seqChunkTable
+					TCPChunkEvent chunk = seqChunkTable
 					        .remove(waitingChunkSequence);
 					if (null == chunk)
 					{
@@ -327,10 +327,10 @@ public class ProxySession
 				logger.error("Failed to write back content.");
 			}
 		}
-		else if (res instanceof SequentialChunkEvent)
+		else if (res instanceof TCPChunkEvent)
 		{
 			// status = ProxySessionStatus.PROCEEDING;
-			SequentialChunkEvent chunk = (SequentialChunkEvent) res;
+			TCPChunkEvent chunk = (TCPChunkEvent) res;
 			if (logger.isDebugEnabled())
 			{
 				logger.debug("Session[" + getSessionID()
@@ -462,7 +462,7 @@ public class ProxySession
 			// event.setHash(lastProxyEvent.getHash());
 			if (event.content.length > 0)
 			{
-				SequentialChunkEvent chunk = new SequentialChunkEvent();
+				TCPChunkEvent chunk = new TCPChunkEvent();
 				chunk.setHash(getSessionID());
 				chunk.content = event.content;
 				chunk.sequence = sequence.getAndIncrement();

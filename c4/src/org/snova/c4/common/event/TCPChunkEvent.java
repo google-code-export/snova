@@ -16,9 +16,9 @@ import org.snova.c4.common.C4Constants;
  * @author wqy
  *
  */
-@EventType(C4Constants.EVENT_SEQUNCEIAL_CHUNK_TYPE)
+@EventType(C4Constants.EVENT_TCP_CHUNK_TYPE)
 @EventVersion(1)
-public class SequentialChunkEvent extends Event
+public class TCPChunkEvent extends Event
 {
 	public int sequence;
 	public byte[] content = new byte[0];

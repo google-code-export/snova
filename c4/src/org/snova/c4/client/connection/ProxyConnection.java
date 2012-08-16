@@ -139,11 +139,6 @@ public abstract class ProxyConnection
 		{
 			for (Event event : events)
 			{
-				if (event instanceof EventRestRequest
-				        && !queuedEvents.isEmpty())
-				{
-					continue;
-				}
 				Event ready = null;
 				if (event instanceof EventRestRequest)
 				{
@@ -243,7 +238,7 @@ public abstract class ProxyConnection
 		
 		TypeVersion typever = Event.getTypeVersion(ev.getClass());
 		
-		if (logger.isDebugEnabled() && !(ev instanceof EventRestNotify))
+		if (logger.isDebugEnabled())
 		{
 			logger.debug("Handle received session[" + ev.getHash()
 			        + "] response event:" + ev.getClass().getName());
@@ -275,33 +270,12 @@ public abstract class ProxyConnection
 				}
 				return;
 			}
-			case C4Constants.EVENT_SEQUNCEIAL_CHUNK_TYPE:
+			case C4Constants.EVENT_TCP_CHUNK_TYPE:
 			case HTTPEventContants.HTTP_CONNECTION_EVENT_TYPE:
 			case HTTPEventContants.HTTP_CHUNK_EVENT_TYPE:
 			case HTTPEventContants.HTTP_RESPONSE_EVENT_TYPE:
-			case C4Constants.EVENT_TRANSACTION_COMPLETE_TYPE:
 			{
 				break;
-			}
-			case C4Constants.EVENT_REST_NOTIFY_TYPE:
-			{
-				EventRestNotify notify = (EventRestNotify) ev;
-				for (Integer sessionId : notify.restSessions)
-				{
-					if (null == ProxySessionManager.getInstance()
-					        .getProxySession(sessionId))
-					{
-						HTTPConnectionEvent close = new HTTPConnectionEvent(HTTPConnectionEvent.CLOSED);
-						close.setAttachment(sessionId);
-						send(close);
-					}
-				}
-				if (notify.rest > 0)
-				{
-					//send(new EventRestRequest());
-					logger.info("C4 server has " + notify.rest + " responses!");
-				}
-				return;
 			}
 			default:
 			{
