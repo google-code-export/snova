@@ -21,21 +21,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.c4.common.C4Constants;
 import org.snova.c4.common.event.EventRestNotify;
-import org.snova.c4.server.service.EventService;
-import org.snova.c4.server.service.TimeoutService;
-import org.snova.c4.server.session.DirectSession;
-import org.snova.c4.server.session.SessionManager;
 import org.snova.framework.util.SharedObjectHelper;
 
 /**
  * @author wqy
  * 
  */
-public class HTTPEventDispatcherServlet extends HttpServlet
+public class InvokeServlet extends HttpServlet
 {
 	protected Logger	logger	= LoggerFactory.getLogger(getClass());
 	
-	public HTTPEventDispatcherServlet()
+	public InvokeServlet()
 	{
 	}
 	
@@ -82,16 +78,7 @@ public class HTTPEventDispatcherServlet extends HttpServlet
 		{
 			userToken = "";
 		}
-		String actor = req.getHeader("ClientActor");
-		boolean assist = false;
-		if (actor != null && actor.equals("Assist"))
-		{
-			assist = true;
-		}
-		int transacTimeValue = ServletHelper.getTransacTime(req);
-		//long start = System.currentTimeMillis();
 		boolean sentData = false;
-		TimeoutService.touch(userToken);
 		try
 		{
 			int bodylen = req.getContentLength();
@@ -106,37 +93,10 @@ public class HTTPEventDispatcherServlet extends HttpServlet
 				}
 				if (len > 0)
 				{
-					EventService service = EventService.getInstance(userToken);
-					service.dispatchEvent(content);
-					if (assist)
-					{
-						synchronized (service)
-						{
-							if (service.getRestEventQueueSize() == 0)
-							{
-								service.wait(transacTimeValue - 5000);
-							}
-						}
-					}
+					//service.dispatchEvent(content);
 					Buffer buf = new Buffer(4096);
 					int maxResSize = ServletHelper.getMaxResponseSize(req);
-					service.extractEventResponses(buf, maxResSize);
-//					while (assist && buf.readableBytes() < maxResSize)
-//					{
-//						long now = System.currentTimeMillis();
-//						if (now - start < 2000)
-//						{
-//							synchronized (service)
-//							{
-//								service.wait(2000);
-//							}
-//						}
-//						else
-//						{
-//							break;
-//						}
-//						service.extractEventResponses(buf, maxResSize);
-//					}
+					//service.extractEventResponses(buf, maxResSize);
 					int size = buf.readableBytes();
 					try
 					{
@@ -158,7 +118,6 @@ public class HTTPEventDispatcherServlet extends HttpServlet
 			e.printStackTrace(new PrintStream(resp.getOutputStream()));
 			// logger.warn("Failed to process message", e);
 		}
-		TimeoutService.touch(userToken);
 		if (!sentData)
 		{
 			resp.setStatus(200);

@@ -55,10 +55,9 @@ public class C4Events
 			registerEventHandler(CompressEventV2.class, handler);
 			registerEventHandler(EncryptEventV2.class, handler);
 			
-			registerEventHandler(EventRestRequest.class, handler);
-			registerEventHandler(EventRestNotify.class, handler);
-			registerEventHandler(SequentialChunkEvent.class, handler);
-			registerEventHandler(TransactionCompleteEvent.class, handler);
+			registerEventHandler(SocketConnectionEvent.class, handler);
+			registerEventHandler(UserLoginEvent.class, handler);
+			registerEventHandler(TCPChunkEvent.class, handler);
 			registerEventHandler(RSocketAcceptedEvent.class, handler);
 			if (isServer)
 			{
