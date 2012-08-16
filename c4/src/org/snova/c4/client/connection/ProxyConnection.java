@@ -32,8 +32,6 @@ import org.snova.c4.client.config.C4ClientConfiguration.C4ServerAuth;
 import org.snova.c4.client.handler.ProxySession;
 import org.snova.c4.client.handler.ProxySessionManager;
 import org.snova.c4.common.C4Constants;
-import org.snova.c4.common.event.EventRestNotify;
-import org.snova.c4.common.event.EventRestRequest;
 import org.snova.framework.util.SharedObjectHelper;
 
 /**

@@ -123,7 +123,7 @@ public class ProxyConnectionManager
 					if (C4ClientConfiguration.getInstance()
 					        .isDualConnectionEnable())
 					{
-						connection = new DualHTTPProxyConnection(auth);
+						//connection = new DualHTTPProxyConnection(auth);
 					}
 					else
 					{
@@ -132,7 +132,7 @@ public class ProxyConnectionManager
 				}
 				else
 				{
-					connection = new HTTPProxyConnectionV2(auth);
+					//connection = new HTTPProxyConnectionV2(auth);
 				}
 				addProxyConnection(connlist, connection);
 				break;

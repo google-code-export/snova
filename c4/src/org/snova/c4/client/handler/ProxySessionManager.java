@@ -21,7 +21,6 @@ import org.snova.c4.client.config.C4ClientConfiguration.C4ServerAuth;
 import org.snova.c4.client.config.C4ClientConfiguration.ConnectionMode;
 import org.snova.c4.client.connection.ProxyConnection;
 import org.snova.c4.client.connection.ProxyConnectionManager;
-import org.snova.c4.common.event.EventRestRequest;
 import org.snova.framework.util.SharedObjectHelper;
 
 /**
@@ -168,37 +167,37 @@ public class ProxySessionManager implements Runnable
 		if (C4ClientConfiguration.getInstance().getConnectionMode()
 		        .equals(ConnectionMode.HTTP))
 		{
-			List<C4ServerAuth> auths = C4ClientConfiguration.getInstance()
-			        .getC4ServerAuths();
-			for (C4ServerAuth auth : auths)
-			{
-				ProxyConnection conn = ProxyConnectionManager.getInstance()
-				        .getClientConnectionByAuth(auth);
-				EventRestRequest ev = new EventRestRequest();
-				for (ProxySession s : sessions)
-				{
-					if (s.getProxyConnection() == conn)
-					{
-						ev.restSessions.add(s.getSessionID());
-					}
-				}
-				conn.send(new EventRestRequest());
-			}
+//			List<C4ServerAuth> auths = C4ClientConfiguration.getInstance()
+//			        .getC4ServerAuths();
+//			for (C4ServerAuth auth : auths)
+//			{
+//				ProxyConnection conn = ProxyConnectionManager.getInstance()
+//				        .getClientConnectionByAuth(auth);
+//				EventRestRequest ev = new EventRestRequest();
+//				for (ProxySession s : sessions)
+//				{
+//					if (s.getProxyConnection() == conn)
+//					{
+//						ev.restSessions.add(s.getSessionID());
+//					}
+//				}
+//				conn.send(new EventRestRequest());
+//			}
 		}
 	}
 	
-	public EventRestRequest getEventRestRequest(ProxyConnection conn)
-	{
-		EventRestRequest ev = new EventRestRequest();
-		for (ProxySession s : unCompleteSessions())
-		{
-			if (s.getProxyConnection() == conn)
-			{
-				ev.restSessions.add(s.getSessionID());
-			}
-		}
-		return ev;
-	}
+//	public EventRestRequest getEventRestRequest(ProxyConnection conn)
+//	{
+//		EventRestRequest ev = new EventRestRequest();
+//		for (ProxySession s : unCompleteSessions())
+//		{
+//			if (s.getProxyConnection() == conn)
+//			{
+//				ev.restSessions.add(s.getSessionID());
+//			}
+//		}
+//		return ev;
+//	}
 	
 	private List<ProxySession> unCompleteSessions()
 	{
@@ -225,40 +224,40 @@ public class ProxySessionManager implements Runnable
 	@Override
 	public void run()
 	{
-		if (logger.isDebugEnabled())
-		{
-			logger.debug("Current session table has " + sessionTable.size());
-		}
-		try
-		{
-			List<ProxySession> notCompleteSession = unCompleteSessions();
-			if (!sessionTable.isEmpty())
-			{
-				sendHeartBeat(notCompleteSession);
-			}
-			
-			if (notCompleteSession.isEmpty())
-			{
-				SharedObjectHelper.getGlobalTimer().schedule(
-				        this,
-				        C4ClientConfiguration.getInstance()
-				                .getHeartBeatPeriod(), TimeUnit.MILLISECONDS);
-			}
-			else
-			{
-				int time = C4ClientConfiguration.getInstance()
-				        .getHeartBeatPeriod() / notCompleteSession.size();
-				if (time < 500)
-				{
-					time = 500;
-				}
-				SharedObjectHelper.getGlobalTimer().schedule(this, time,
-				        TimeUnit.MILLISECONDS);
-			}
-		}
-		catch (Throwable e)
-		{
-			logger.error("Failed routine.", e);
-		}
+//		if (logger.isDebugEnabled())
+//		{
+//			logger.debug("Current session table has " + sessionTable.size());
+//		}
+//		try
+//		{
+//			List<ProxySession> notCompleteSession = unCompleteSessions();
+//			if (!sessionTable.isEmpty())
+//			{
+//				sendHeartBeat(notCompleteSession);
+//			}
+//			
+//			if (notCompleteSession.isEmpty())
+//			{
+//				SharedObjectHelper.getGlobalTimer().schedule(
+//				        this,
+//				        C4ClientConfiguration.getInstance()
+//				                .getHeartBeatPeriod(), TimeUnit.MILLISECONDS);
+//			}
+//			else
+//			{
+//				int time = C4ClientConfiguration.getInstance()
+//				        .getHeartBeatPeriod() / notCompleteSession.size();
+//				if (time < 500)
+//				{
+//					time = 500;
+//				}
+//				SharedObjectHelper.getGlobalTimer().schedule(this, time,
+//				        TimeUnit.MILLISECONDS);
+//			}
+//		}
+//		catch (Throwable e)
+//		{
+//			logger.error("Failed routine.", e);
+//		}
 	}
 }

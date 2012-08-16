@@ -34,7 +34,6 @@ import org.snova.c4.client.config.C4ClientConfiguration;
 import org.snova.c4.client.connection.ProxyConnection;
 import org.snova.c4.client.connection.ProxyConnectionManager;
 import org.snova.c4.common.event.TCPChunkEvent;
-import org.snova.c4.common.event.TransactionCompleteEvent;
 import org.snova.framework.config.SimpleSocketAddress;
 
 /**
@@ -363,10 +362,6 @@ public class ProxySession
 				close();
 				logger.error("Failed to write back content.");
 			}
-		}
-		else if (res instanceof TransactionCompleteEvent)
-		{
-			status = ProxySessionStatus.TRANSACTION_COMPELETE;
 		}
 	}
 	
