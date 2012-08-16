@@ -20,7 +20,6 @@ import org.arch.event.EventDispatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.c4.common.C4Constants;
-import org.snova.c4.common.event.EventRestNotify;
 import org.snova.framework.util.SharedObjectHelper;
 
 /**
