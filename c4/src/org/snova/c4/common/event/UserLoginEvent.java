@@ -3,7 +3,10 @@
  */
 package org.snova.c4.common.event;
 
+import java.io.IOException;
+
 import org.arch.buffer.Buffer;
+import org.arch.buffer.BufferHelper;
 import org.arch.event.Event;
 import org.arch.event.EventType;
 import org.arch.event.EventVersion;
@@ -17,19 +20,26 @@ import org.snova.c4.common.C4Constants;
 @EventVersion(1)
 public class UserLoginEvent extends Event
 {
-
+	public String user;
 	@Override
-    protected boolean onDecode(Buffer buffer)
+    protected boolean onDecode(Buffer buf)
     {
-	    // TODO Auto-generated method stub
-	    return false;
+		try
+		{
+			user = BufferHelper.readVarString(buf);
+			return true;
+		}
+		catch (IOException e)
+		{
+			return false;
+		}
     }
 
 	@Override
-    protected boolean onEncode(Buffer buffer)
+    protected boolean onEncode(Buffer buf)
     {
-	    // TODO Auto-generated method stub
-	    return false;
+		BufferHelper.writeVarString(buf, user);
+	    return true;
     }
 
 }

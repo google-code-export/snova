@@ -4,7 +4,6 @@
 package org.snova.c4.client.connection;
 
 import java.net.InetSocketAddress;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.arch.buffer.Buffer;
@@ -21,9 +20,7 @@ import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
-import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.SocketChannel;
-import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.handler.codec.http.DefaultHttpRequest;
 import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
@@ -34,7 +31,6 @@ import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseDecoder;
 import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.jboss.netty.handler.execution.ExecutionHandler;
-import org.jboss.netty.handler.execution.OrderedMemoryAwareThreadPoolExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.c4.client.config.C4ClientConfiguration;
@@ -49,43 +45,40 @@ import org.snova.framework.util.proxy.ProxyInfo;
  */
 public class HTTPProxyConnection extends ProxyConnection
 {
-	protected Logger	                      logger	          = LoggerFactory
-	                                                                      .getLogger(getClass());	
+	protected Logger logger = LoggerFactory.getLogger(getClass());
 	// private AtomicBoolean waitingResponse = new AtomicBoolean(
 	// false);
-	private ChannelFuture	                  clientChannelFuture	= null;
-	private int	                              connectFailedCount;
-	private long	                          lastWriteTime;
-	private boolean	                          isPrimary	          = false;
-	
-	private HttpResponseHandler	              responseHandler	  = null;
-	
-	public HTTPProxyConnection(C4ServerAuth auth)
-	{
-		this(auth, true);
-	}
-	
-	public HTTPProxyConnection(C4ServerAuth auth, boolean pri)
+	private ChannelFuture clientChannelFuture = null;
+	private int connectFailedCount;
+	private long lastWriteTime;
+	private int index;
+
+	private HttpResponseHandler responseHandler = null;
+
+	public HTTPProxyConnection(C4ServerAuth auth, int index)
 	{
 		super(auth);
-		isPrimary = pri;
+		this.index = index;
 	}
-	
+
+	// public HTTPProxyConnection(C4ServerAuth auth, boolean pri)
+	// {
+	//
+	// isPrimary = pri;
+	// }
+
 	public boolean isReady()
 	{
 		long now = System.currentTimeMillis();
-		if (isPrimary)
+		if (now - lastWriteTime >= C4ClientConfiguration.getInstance()
+		        .getHTTPRequestTimeout())
 		{
-			if (now - lastWriteTime >= C4ClientConfiguration.getInstance()
-			        .getHTTPRequestTimeout())
+			if (null != clientChannelFuture
+			        && clientChannelFuture.getChannel().isConnected())
 			{
-				if (null != clientChannelFuture
-				        && clientChannelFuture.getChannel().isConnected())
-				{
-					clientChannelFuture.getChannel().close();
-				}
-				return true;
+				clientChannelFuture.getChannel().close();
 			}
+			return true;
 		}
 		if (now - lastWriteTime < C4ClientConfiguration.getInstance()
 		        .getMinWritePeriod())
@@ -99,7 +92,7 @@ public class HTTPProxyConnection extends ProxyConnection
 		}
 		return responseHandler.isTransactionCompeleted();
 	}
-	
+
 	protected void doClose()
 	{
 		if (clientChannelFuture != null
@@ -109,7 +102,7 @@ public class HTTPProxyConnection extends ProxyConnection
 		}
 		clientChannelFuture = null;
 	}
-	
+
 	private ChannelFuture connectProxyServer()
 	{
 		ChannelPipeline pipeline = Channels.pipeline();
@@ -121,7 +114,8 @@ public class HTTPProxyConnection extends ProxyConnection
 		pipeline.addLast("encoder", new HttpRequestEncoder());
 		responseHandler = new HttpResponseHandler();
 		pipeline.addLast("handler", responseHandler);
-		SocketChannel channel = getClientSocketChannelFactory().newChannel(pipeline);
+		SocketChannel channel = getClientSocketChannelFactory().newChannel(
+		        pipeline);
 		String connectHost = auth.domain;
 		int connectPort = auth.port;
 		C4ClientConfiguration cfg = C4ClientConfiguration.getInstance();
@@ -132,19 +126,19 @@ public class HTTPProxyConnection extends ProxyConnection
 			connectPort = info.port;
 		}
 		// boolean sslConnectionEnable = false;
-		
+
 		connectHost = HostsHelper.getMappingHost(connectHost);
 		if (logger.isDebugEnabled())
 		{
 			logger.debug("#Connect remote proxy server " + connectHost + ":"
-			        + connectPort + (isPrimary ? "-Primay" : "-Assist"));
+			        + connectPort);
 		}
 		ChannelFuture future = channel.connect(new InetSocketAddress(
 		        connectHost, connectPort));
-		
+
 		return future;
 	}
-	
+
 	private synchronized ChannelFuture getRemoteChannelFuture()
 	{
 		if (null == clientChannelFuture
@@ -155,7 +149,7 @@ public class HTTPProxyConnection extends ProxyConnection
 		}
 		return clientChannelFuture;
 	}
-	
+
 	protected void sendContent(Channel ch, final Buffer content)
 	{
 		String url = "http://" + auth.domain + "/invoke";
@@ -184,9 +178,8 @@ public class HTTPProxyConnection extends ProxyConnection
 		        .getInstance().getPullTransactionTime());
 		request.setHeader(HttpHeaders.Names.CONTENT_TYPE,
 		        "application/octet-stream");
-		request.setHeader("ClientActor", isPrimary ? "Primary" : "Assist");
 		request.setHeader("MaxResponseSize", 512 * 1024 + "");
-		
+
 		ChannelBuffer buffer = ChannelBuffers.wrappedBuffer(
 		        content.getRawBuffer(), content.getReadIndex(),
 		        content.readableBytes());
@@ -196,13 +189,14 @@ public class HTTPProxyConnection extends ProxyConnection
 		ch.write(request).addListener(new ChannelFutureListener()
 		{
 			@Override
-			public void operationComplete(ChannelFuture future) throws Exception
+			public void operationComplete(ChannelFuture future)
+			        throws Exception
 			{
-				if(!future.isSuccess())
+				if (!future.isSuccess())
 				{
-					//retry
+					// retry
 					doSend(content);
-				}	
+				}
 			}
 		});
 		responseHandler.startTransaction();
@@ -211,7 +205,7 @@ public class HTTPProxyConnection extends ProxyConnection
 			logger.trace("Send event via HTTP connection.");
 		}
 	}
-	
+
 	protected boolean doSend(final Buffer content)
 	{
 		lastWriteTime = System.currentTimeMillis();
@@ -256,28 +250,27 @@ public class HTTPProxyConnection extends ProxyConnection
 		}
 		return true;
 	}
-	
+
 	class HttpResponseHandler extends SimpleChannelUpstreamHandler implements
 	        Runnable
 	{
-		private AtomicBoolean	unanwsered		      = new AtomicBoolean(false);
-		private AtomicBoolean	receivingResponse		= new AtomicBoolean(
-		                                                      false);
-		private long		    lastDataRecvTime		= -1;
-		private boolean		    finished		      = false;
-		private int		        responseContentLength	= 0;
-		private Buffer		    resBuffer		      = new Buffer(0);
-		
+		private AtomicBoolean unanwsered = new AtomicBoolean(false);
+		private AtomicBoolean receivingResponse = new AtomicBoolean(false);
+		private long lastDataRecvTime = -1;
+		private boolean finished = false;
+		private int responseContentLength = 0;
+		private Buffer resBuffer = new Buffer(0);
+
 		private boolean isTransactionCompeleted()
 		{
 			return !unanwsered.get() && !receivingResponse.get();
 		}
-		
+
 		private void clearBuffer()
 		{
 			resBuffer = new Buffer(0);
 		}
-		
+
 		private void transactionCompeleted()
 		{
 			clearBuffer();
@@ -285,7 +278,7 @@ public class HTTPProxyConnection extends ProxyConnection
 			receivingResponse.set(false);
 			onAvailable();
 		}
-		
+
 		private void transactionTimeout()
 		{
 			if (!unanwsered.get() && receivingResponse.get())
@@ -294,52 +287,49 @@ public class HTTPProxyConnection extends ProxyConnection
 				if (now - lastDataRecvTime < C4ClientConfiguration
 				        .getInstance().getHeartBeatPeriod())
 				{
-					//transactionTask = SharedObjectHelper.getGlobalTimer()
-					//        .schedule(this, 1, TimeUnit.SECONDS);
+					// transactionTask = SharedObjectHelper.getGlobalTimer()
+					// .schedule(this, 1, TimeUnit.SECONDS);
 					return;
 				}
 			}
-			//transactionTask = null;
-			logger.error("C4 HTTP "
-			        + (isPrimary ? "Priamry-"
-			                + HTTPProxyConnection.this.hashCode() : "Assist-"
-			                + HTTPProxyConnection.this.hashCode())
+			// transactionTask = null;
+			logger.error("C4 HTTP " + HTTPProxyConnection.this.hashCode()
 			        + " transaction timeout!");
 			transactionFailed();
 		}
-		
+
 		private void transactionFailed()
 		{
-//			if (null != transactionTask)
-//			{
-//				transactionTask.cancel(true);
-//				transactionTask = null;
-//			}
+			// if (null != transactionTask)
+			// {
+			// transactionTask.cancel(true);
+			// transactionTask = null;
+			// }
 			clearBuffer();
 			unanwsered.set(false);
 			receivingResponse.set(false);
 			close();
 			onAvailable();
-			
+
 		}
-		
+
 		private void startTransaction()
 		{
-//			if (null != transactionTask)
-//			{
-//				transactionTask.cancel(true);
-//				transactionTask = null;
-//			}
+			// if (null != transactionTask)
+			// {
+			// transactionTask.cancel(true);
+			// transactionTask = null;
+			// }
 			unanwsered.set(true);
 			receivingResponse.set(false);
-//			transactionTask = SharedObjectHelper.getGlobalTimer()
-//			        .schedule(
-//			                this,
-//			                C4ClientConfiguration.getInstance()
-//			                        .getHTTPRequestTimeout(),
-//			                TimeUnit.MILLISECONDS);
+			// transactionTask = SharedObjectHelper.getGlobalTimer()
+			// .schedule(
+			// this,
+			// C4ClientConfiguration.getInstance()
+			// .getHTTPRequestTimeout(),
+			// TimeUnit.MILLISECONDS);
 		}
-		
+
 		private void fillResponseBuffer(ChannelBuffer buffer)
 		{
 			int contentlen = buffer.readableBytes();
@@ -358,7 +348,7 @@ public class HTTPProxyConnection extends ProxyConnection
 				}
 			}
 		}
-		
+
 		@Override
 		public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
 		        throws Exception
@@ -366,17 +356,16 @@ public class HTTPProxyConnection extends ProxyConnection
 			// e.getCause().printStackTrace();
 			logger.error("exceptionCaught in HttpResponseHandler", e.getCause());
 			// updateSSLProxyConnectionStatus(DISCONNECTED);
-			//close();
+			// close();
 		}
-		
+
 		@Override
 		public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e)
 		        throws Exception
 		{
 			if (logger.isDebugEnabled())
 			{
-				logger.debug("C4 HTTP " + (isPrimary ? "Priamry" : "Assist")
-				        + " connection closed.");
+				logger.debug("C4 HTTP connection closed.");
 			}
 			if (!finished && responseContentLength > 0)
 			{
@@ -388,7 +377,7 @@ public class HTTPProxyConnection extends ProxyConnection
 			// updateSSLProxyConnectionStatus(DISCONNECTED);
 			transactionFailed();
 		}
-		
+
 		@Override
 		public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
 		        throws Exception
@@ -438,18 +427,18 @@ public class HTTPProxyConnection extends ProxyConnection
 				        + msg.getClass().getCanonicalName());
 			}
 		}
-		
+
 		@Override
 		public void run()
 		{
 			transactionTimeout();
 		}
 	}
-	
+
 	@Override
 	protected int getMaxDataPackageSize()
 	{
 		return -1;
 	}
-	
+
 }

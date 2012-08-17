@@ -16,5 +16,6 @@ public interface C4Constants
 	public static final int EVENT_RSOCKET_ACCEPTED_TYPE = 11506;
 
 	public static final String USER_TOKEN_HEADER = "UserToken";
+	public static final String FETCHER_INDEX = "FetcherIndex";
 	public static final String LOCAL_RSERVER_ADDR_HEADER = "RServerAddress";
 }

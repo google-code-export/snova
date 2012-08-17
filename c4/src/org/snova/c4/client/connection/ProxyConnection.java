@@ -18,6 +18,7 @@ import org.arch.event.EventHeader;
 import org.arch.event.TypeVersion;
 import org.arch.event.http.HTTPConnectionEvent;
 import org.arch.event.http.HTTPEventContants;
+import org.arch.event.http.HTTPRequestEvent;
 import org.arch.event.misc.CompressEvent;
 import org.arch.event.misc.CompressEventV2;
 import org.arch.event.misc.EncryptEvent;
@@ -40,23 +41,22 @@ import org.snova.framework.util.SharedObjectHelper;
  */
 public abstract class ProxyConnection
 {
-	protected static Logger	               logger	         = LoggerFactory
-	                                                                 .getLogger(ProxyConnection.class);
-	protected static C4ClientConfiguration	cfg	             = C4ClientConfiguration
-	                                                                 .getInstance();
+	protected static Logger logger = LoggerFactory
+	        .getLogger(ProxyConnection.class);
+	protected static C4ClientConfiguration cfg = C4ClientConfiguration
+	        .getInstance();
 	// private LinkedList<Event> queuedEvents = new LinkedList<Event>();
-	protected static ClientSocketChannelFactory	clientChannelFactory;
-	protected C4ServerAuth	               auth	             = null;
+	protected static ClientSocketChannelFactory clientChannelFactory;
+	protected C4ServerAuth auth = null;
 	// private String authToken = null;
 	// private AtomicInteger authTokenLock = new AtomicInteger(0);
-	private EventHandler	               outSessionHandler	= null;
-	
-	private long	                       lastsendtime	     = -1;
-	private LinkedList<Event>	           queuedEvents	     = new LinkedList<Event>();
-	
-	protected ProxyConnectionStateListner	stateListener;
-	
-	
+	private EventHandler outSessionHandler = null;
+
+	private long lastsendtime = -1;
+	private LinkedList<Event> queuedEvents = new LinkedList<Event>();
+
+	protected ProxyConnectionStateListner stateListener;
+
 	protected static ClientSocketChannelFactory getClientSocketChannelFactory()
 	{
 		if (null == clientChannelFactory)
@@ -66,26 +66,26 @@ public abstract class ProxyConnection
 				ThreadPoolExecutor workerExecutor = new OrderedMemoryAwareThreadPoolExecutor(
 				        20, 0, 0);
 				SharedObjectHelper.setGlobalThreadPool(workerExecutor);
-				
+
 			}
 			clientChannelFactory = new NioClientSocketChannelFactory(
 			        SharedObjectHelper.getGlobalThreadPool(),
 			        SharedObjectHelper.getGlobalThreadPool());
-			
+
 		}
 		return clientChannelFactory;
 	}
-	
+
 	public ProxyConnectionStateListner getStateListener()
 	{
 		return stateListener;
 	}
-	
+
 	public void setStateListener(ProxyConnectionStateListner stateListener)
 	{
 		this.stateListener = stateListener;
 	}
-	
+
 	protected void onAvailable()
 	{
 		if (null != stateListener)
@@ -93,44 +93,44 @@ public abstract class ProxyConnection
 			stateListener.onAvailable();
 		}
 	}
-	
+
 	protected ProxyConnection(C4ServerAuth auth)
 	{
 		this.auth = auth;
 	}
-	
+
 	public C4ServerAuth getC4ServerAuth()
 	{
 		return auth;
 	}
-	
+
 	protected abstract boolean doSend(Buffer msgbuffer);
-	
+
 	protected abstract int getMaxDataPackageSize();
-	
+
 	protected void doClose()
 	{
-		
+
 	}
-	
+
 	public abstract boolean isReady();
-	
+
 	protected void setAvailable(boolean flag)
 	{
 		// nothing
 	}
-	
+
 	public void close()
 	{
 		doClose();
 	}
-	
+
 	public boolean send(Event event, EventHandler handler)
 	{
 		outSessionHandler = handler;
 		return send(event);
 	}
-	
+
 	public boolean send(List<Event> events)
 	{
 		if (null != events)
@@ -138,20 +138,18 @@ public abstract class ProxyConnection
 			for (Event event : events)
 			{
 				Event ready = null;
-				if (event instanceof EventRestRequest)
+				if (event instanceof HTTPRequestEvent)
 				{
-					ready = event;
-				}
-				else
-				{
-					CompressEventV2 tmp = new CompressEventV2(cfg.getCompressor(), event);
+					CompressEventV2 tmp = new CompressEventV2(
+					        cfg.getCompressor(), event);
 					tmp.setHash(event.getHash());
-					EncryptEventV2 enc = new EncryptEventV2(cfg.getEncrypter(),
-							tmp);
-					enc.setHash(event.getHash());
-					ready = enc;
+					event = tmp;
 				}
-				
+
+				EncryptEventV2 enc = new EncryptEventV2(cfg.getEncrypter(), event);
+				enc.setHash(event.getHash());
+				ready = enc;
+
 				synchronized (queuedEvents)
 				{
 					queuedEvents.add(ready);
@@ -161,11 +159,11 @@ public abstract class ProxyConnection
 					logger.trace("Connection:" + this.hashCode()
 					        + " queued with queue size:" + queuedEvents.size()
 					        + ", session[" + event.getHash() + "] HTTP request");
-					
+
 				}
 			}
 		}
-		
+
 		long now = System.currentTimeMillis();
 		if (!isReady()
 		        && now - lastsendtime < C4ClientConfiguration.getInstance()
@@ -184,7 +182,7 @@ public abstract class ProxyConnection
 				{
 					send((List<Event>) null);
 				}
-			}, C4ClientConfiguration.getInstance().getMinWritePeriod()/2,
+			}, C4ClientConfiguration.getInstance().getMinWritePeriod() / 2,
 			        TimeUnit.MILLISECONDS);
 			return true;
 		}
@@ -193,7 +191,7 @@ public abstract class ProxyConnection
 			return true;
 		}
 		setAvailable(false);
-		
+
 		Buffer msgbuffer = new Buffer(1024);
 		synchronized (queuedEvents)
 		{
@@ -209,13 +207,13 @@ public abstract class ProxyConnection
 			}
 			queuedEvents.clear();
 		}
-		
+
 		lastsendtime = now;
 		boolean ret = doSend(msgbuffer);
 		return ret;
-		
+
 	}
-	
+
 	public boolean send(Event event)
 	{
 		if (null == event)
@@ -224,7 +222,7 @@ public abstract class ProxyConnection
 		}
 		return send(Arrays.asList(event));
 	}
-	
+
 	protected void handleRecvEvent(Event ev)
 	{
 		if (null == ev)
@@ -233,9 +231,9 @@ public abstract class ProxyConnection
 			// close();
 			return;
 		}
-		
+
 		TypeVersion typever = Event.getTypeVersion(ev.getClass());
-		
+
 		if (logger.isDebugEnabled())
 		{
 			logger.debug("Handle received session[" + ev.getHash()
@@ -253,7 +251,7 @@ public abstract class ProxyConnection
 				{
 					handleRecvEvent(((CompressEventV2) ev).ev);
 				}
-				
+
 				return;
 			}
 			case EventConstants.ENCRYPT_EVENT_TYPE:
@@ -282,7 +280,7 @@ public abstract class ProxyConnection
 				break;
 			}
 		}
-		
+
 		ProxySession session = ProxySessionManager.getInstance()
 		        .getProxySession(ev.getHash());
 		if (null != session)
@@ -312,7 +310,7 @@ public abstract class ProxyConnection
 						        + "] response event:"
 						        + ev.getClass().getName());
 					}
-					
+
 					HTTPConnectionEvent tmp = new HTTPConnectionEvent(
 					        HTTPConnectionEvent.CLOSED);
 					tmp.setHash(ev.getHash());
@@ -321,8 +319,8 @@ public abstract class ProxyConnection
 			}
 		}
 	}
-	
-	protected  void doRecv(Buffer content)
+
+	protected void doRecv(Buffer content)
 	{
 		Event ev = null;
 		try
