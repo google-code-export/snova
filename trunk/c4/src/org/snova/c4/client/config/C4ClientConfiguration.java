@@ -132,12 +132,12 @@ public class C4ClientConfiguration implements ReloadableConfiguration
 			        HEARTBEAT_PERIOD_NAME, 2000);
 			httpRequestTimeout = props.getIntProperty(CLIENT_TAG,
 			        HTTP_REQUEST_TIMEOUT_NAME, 30000);
-			clientPullEnable = props.getBoolProperty(CLIENT_TAG,
-			        CLIENT_PULL_ENABLE_NAME, true);
-			serverPullEnable = props.getBoolProperty(CLIENT_TAG,
-			        SERVER_PULL_ENABLE_NAME, true);
-			dualConnectionEnable = props.getBoolProperty(CLIENT_TAG,
-			        DUAL_CONN_ENABLE_NAME, true);
+//			clientPullEnable = props.getBoolProperty(CLIENT_TAG,
+//			        CLIENT_PULL_ENABLE_NAME, true);
+//			serverPullEnable = props.getBoolProperty(CLIENT_TAG,
+//			        SERVER_PULL_ENABLE_NAME, true);
+//			dualConnectionEnable = props.getBoolProperty(CLIENT_TAG,
+//			        DUAL_CONN_ENABLE_NAME, true);
 			minWritePeriod = props.getIntProperty(CLIENT_TAG, MIN_WRITE_PERIOD,
 			        500);
 			connectionPoolSize = props.getIntProperty(CLIENT_TAG,
@@ -299,41 +299,41 @@ public class C4ClientConfiguration implements ReloadableConfiguration
 		minWritePeriod = v;
 	}
 
-	private boolean clientPullEnable = true;
+//	private boolean clientPullEnable = true;
+//
+//	public void setClientPullEnable(boolean v)
+//	{
+//		this.clientPullEnable = v;
+//	}
+//
+//	public boolean isClientPullEnable()
+//	{
+//		return clientPullEnable;
+//	}
 
-	public void setClientPullEnable(boolean v)
-	{
-		this.clientPullEnable = v;
-	}
+//	private boolean serverPullEnable = true;
+//
+//	public void setServerPullEnable(boolean v)
+//	{
+//		this.serverPullEnable = v;
+//	}
+//
+//	public boolean isServerPullEnable()
+//	{
+//		return serverPullEnable;
+//	}
 
-	public boolean isClientPullEnable()
-	{
-		return clientPullEnable;
-	}
+	//private boolean dualConnectionEnable = true;
 
-	private boolean serverPullEnable = true;
+//	public void setDualConnectionEnable(boolean v)
+//	{
+//		this.dualConnectionEnable = v;
+//	}
 
-	public void setServerPullEnable(boolean v)
-	{
-		this.serverPullEnable = v;
-	}
-
-	public boolean isServerPullEnable()
-	{
-		return serverPullEnable;
-	}
-
-	private boolean dualConnectionEnable = true;
-
-	public void setDualConnectionEnable(boolean v)
-	{
-		this.dualConnectionEnable = v;
-	}
-
-	public boolean isDualConnectionEnable()
-	{
-		return dualConnectionEnable;
-	}
+//	public boolean isDualConnectionEnable()
+//	{
+//		return dualConnectionEnable;
+//	}
 
 	private int pullTransactionTime = 25000;
 
@@ -538,12 +538,12 @@ public class C4ClientConfiguration implements ReloadableConfiguration
 			        heartBeatPeriod);
 			props.setIntProperty(CLIENT_TAG, CONN_POOL_SIZE_NAME,
 			        connectionPoolSize);
-			props.setBoolProperty(CLIENT_TAG, CLIENT_PULL_ENABLE_NAME,
-			        clientPullEnable);
-			props.setBoolProperty(CLIENT_TAG, SERVER_PULL_ENABLE_NAME,
-			        serverPullEnable);
-			props.setBoolProperty(CLIENT_TAG, DUAL_CONN_ENABLE_NAME,
-			        dualConnectionEnable);
+//			props.setBoolProperty(CLIENT_TAG, CLIENT_PULL_ENABLE_NAME,
+//			        clientPullEnable);
+//			props.setBoolProperty(CLIENT_TAG, SERVER_PULL_ENABLE_NAME,
+//			        serverPullEnable);
+//			props.setBoolProperty(CLIENT_TAG, DUAL_CONN_ENABLE_NAME,
+//			        dualConnectionEnable);
 			props.setBoolProperty(CLIENT_TAG, SIMPLE_URL_ENABLE_NAME,
 			        simpleURLEnable);
 			props.setProperty(CLIENT_TAG, COMPRESSOR_NAME,

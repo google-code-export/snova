@@ -62,11 +62,11 @@ public class RSocketHandler extends SimpleChannelUpstreamHandler
 					RSocketAcceptedEvent rev = (RSocketAcceptedEvent) ev;
 					if(logger.isDebugEnabled())
 					{
-						logger.debug("Recv connection from " + rev.domain + ":" + rev.port);
+						logger.debug("Recv connection from " + rev.server);
 					}
 					C4ServerAuth auth = new C4ServerAuth();
-					auth.domain = rev.domain;
-					auth.port = rev.port;
+					auth.domain = rev.server;
+					auth.port = 80;
 					conn = RSocketProxyConnection.saveRConnection(auth, ctx.getChannel());
 				}
 				else

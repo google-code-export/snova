@@ -20,6 +20,7 @@ import org.arch.event.EventDispatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.c4.common.C4Constants;
+import org.snova.c4.server.session.RemoteProxySession;
 import org.snova.framework.util.SharedObjectHelper;
 
 /**
@@ -28,12 +29,12 @@ import org.snova.framework.util.SharedObjectHelper;
  */
 public class InvokeServlet extends HttpServlet
 {
-	protected Logger	logger	= LoggerFactory.getLogger(getClass());
-	
+	protected Logger logger = LoggerFactory.getLogger(getClass());
+
 	public InvokeServlet()
 	{
 	}
-	
+
 	private void writeBytes(HttpServletResponse resp, byte[] buf, int off,
 	        int len) throws IOException
 	{
@@ -50,9 +51,9 @@ public class InvokeServlet extends HttpServlet
 			resp.getOutputStream().flush();
 			writed += writeLen;
 		}
-		//resp.getOutputStream().close();
+		// resp.getOutputStream().close();
 	}
-	
+
 	private void send(HttpServletResponse resp, Buffer buf) throws Exception
 	{
 		// resp.setBufferSize(buf.readableBytes() + 100);
@@ -67,16 +68,26 @@ public class InvokeServlet extends HttpServlet
 		        buf.readableBytes());
 		// resp.getOutputStream().close();
 	}
-	
+
 	@Override
 	protected void doPost(HttpServletRequest req, final HttpServletResponse resp)
 	        throws ServletException, IOException
 	{
+		RemoteProxySession.init();
 		String userToken = req.getHeader(C4Constants.USER_TOKEN_HEADER);
 		if (null == userToken)
 		{
 			userToken = "";
 		}
+		String indexStr = req.getHeader(C4Constants.FETCHER_INDEX);
+		if (indexStr == null)
+		{
+			indexStr = "0:1";
+		}
+		String[] iis = indexStr.split(":");
+		int index = Integer.parseInt(iis[0]);
+		int poolSize = Integer.parseInt(iis[1]);
+		RemoteProxySession.touch(userToken, poolSize);
 		boolean sentData = false;
 		try
 		{
@@ -92,22 +103,24 @@ public class InvokeServlet extends HttpServlet
 				}
 				if (len > 0)
 				{
-					//service.dispatchEvent(content);
-					Buffer buf = new Buffer(4096);
-					int maxResSize = ServletHelper.getMaxResponseSize(req);
-					//service.extractEventResponses(buf, maxResSize);
-					int size = buf.readableBytes();
-					try
-					{
-						sentData = true;
-						send(resp, buf);
-					}
-					catch (Exception e)
-					{
-						logger.error("Requeue events since write " + size
-						        + " bytes while exception occured.", e);
-					}
+					RemoteProxySession.dispatchEvent(userToken, content);
+
 				}
+			}
+
+			Buffer buf = new Buffer(4096);
+			RemoteProxySession.extractEventResponses(userToken, index, buf,
+			        512 * 1024);
+			int size = buf.readableBytes();
+			try
+			{
+				sentData = true;
+				send(resp, buf);
+			}
+			catch (Exception e)
+			{
+				logger.error("Requeue events since write " + size
+				        + " bytes while exception occured.", e);
 			}
 		}
 		catch (Throwable e)

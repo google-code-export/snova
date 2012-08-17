@@ -20,16 +20,14 @@ import org.snova.c4.common.C4Constants;
 @EventVersion(1)
 public class RSocketAcceptedEvent extends Event
 {
-	public String domain;
-	public int port = 80;
+	public String server;
 
 	@Override
 	protected boolean onDecode(Buffer buf)
 	{
 		try
 		{
-			domain = BufferHelper.readVarString(buf);
-			port = BufferHelper.readVarInt(buf);
+			server = BufferHelper.readVarString(buf);
 			return true;
 		}
 		catch (IOException e)
@@ -41,8 +39,7 @@ public class RSocketAcceptedEvent extends Event
 	@Override
 	protected boolean onEncode(Buffer buf)
 	{
-		BufferHelper.writeVarString(buf, domain);
-		BufferHelper.writeVarInt(buf, port);
+		BufferHelper.writeVarString(buf, server);
 		return true;
 	}
 

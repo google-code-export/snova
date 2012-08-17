@@ -45,7 +45,7 @@ public class ProxyConnectionManager
 		for (C4ServerAuth auth : C4ClientConfiguration.getInstance()
 		        .getC4ServerAuths())
 		{
-			ProxyConnection conn = getClientConnectionByAuth(auth);
+			ProxyConnection conn = getClientConnectionByAuth(auth, 1);
 			if (null == conn)
 			{
 				logger.error("Failed to auth connetion for domain:"
@@ -88,8 +88,7 @@ public class ProxyConnectionManager
 		return true;
 	}
 
-	public ProxyConnection getClientConnectionByAuth(C4ServerAuth auth,
-	        boolean storeConnection)
+	public ProxyConnection getClientConnectionByAuth(C4ServerAuth auth, int hash)
 	{
 		ProxyConnection connection = null;
 		List<ProxyConnection> connlist = conntionTable.get(auth.domain);
@@ -98,63 +97,51 @@ public class ProxyConnectionManager
 			connlist = new ArrayList<ProxyConnection>();
 			conntionTable.put(auth.domain, connlist);
 		}
-		for (ProxyConnection conn : connlist)
-		{
-			if (conn.isReady())
-			{
-				return conn;
-			}
-		}
 		ConnectionMode mode = C4ClientConfiguration.getInstance()
 		        .getConnectionMode();
-		if (connlist.size() >= C4ClientConfiguration.getInstance()
-		        .getConnectionPoolSize()
-		        || (mode.equals(ConnectionMode.RSOCKET) && !connlist.isEmpty()))
+		while (connlist.size() < C4ClientConfiguration.getInstance()
+		        .getConnectionPoolSize())
 		{
-			return connlist.get(0);
-		}
+			switch (mode)
+			{
+				case HTTP:
+				{
+					connection = new HTTPProxyConnection(auth, connlist.size());
+					addProxyConnection(connlist, connection);
+					break;
+				}
+				case RSOCKET:
+				{
+					if (connlist.size() == 1)
+					{
+						return connlist.get(0);
+					}
+					connection = new RSocketProxyConnection(auth);
+					addProxyConnection(connlist, connection);
 
-		switch (mode)
-		{
-			case HTTP:
-			{
-				if (!C4ClientConfiguration.getInstance().isServerPullEnable())
-				{
-					if (C4ClientConfiguration.getInstance()
-					        .isDualConnectionEnable())
-					{
-						//connection = new DualHTTPProxyConnection(auth);
-					}
-					else
-					{
-						connection = new HTTPProxyConnection(auth);
-					}
+					break;
 				}
-				else
+				default:
 				{
-					//connection = new HTTPProxyConnectionV2(auth);
+					break;
 				}
-				addProxyConnection(connlist, connection);
-				break;
-			}
-			case RSOCKET:
-			{
-				connection = new RSocketProxyConnection(auth);
-				addProxyConnection(connlist, connection);
-				break;
-			}
-			default:
-			{
-				break;
 			}
 		}
 
-		return connection;
+		// if (connlist.size() >= C4ClientConfiguration.getInstance()
+		// .getConnectionPoolSize()
+		// || (mode.equals(ConnectionMode.RSOCKET) && !connlist.isEmpty()))
+		// {
+		// return connlist.get(0);
+		// }
+
+		return connlist.get(hash % connlist.size());
 	}
 
-	public ProxyConnection getClientConnectionByAuth(C4ServerAuth auth)
+	public ProxyConnection getClientConnectionByAuth(C4ServerAuth auth,
+	        HTTPRequestEvent event)
 	{
-		return getClientConnectionByAuth(auth, true);
+		return getClientConnectionByAuth(auth, event.getHash());
 	}
 
 	public ProxyConnection getClientConnection(HTTPRequestEvent event)
@@ -170,7 +157,7 @@ public class ProxyConnectionManager
 		{
 			auth = C4ClientConfiguration.getInstance().getC4ServerAuth(domain);
 		}
-		return getClientConnectionByAuth(auth);
+		return getClientConnectionByAuth(auth, event);
 	}
 
 	public void close()
