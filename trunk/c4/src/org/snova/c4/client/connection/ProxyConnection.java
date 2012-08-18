@@ -7,7 +7,6 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 import org.arch.buffer.Buffer;
 import org.arch.event.Event;
@@ -16,7 +15,6 @@ import org.arch.event.EventDispatcher;
 import org.arch.event.EventHandler;
 import org.arch.event.EventHeader;
 import org.arch.event.TypeVersion;
-import org.arch.event.http.HTTPConnectionEvent;
 import org.arch.event.http.HTTPEventContants;
 import org.arch.event.http.HTTPRequestEvent;
 import org.arch.event.misc.CompressEvent;
@@ -33,6 +31,7 @@ import org.snova.c4.client.config.C4ClientConfiguration.C4ServerAuth;
 import org.snova.c4.client.handler.ProxySession;
 import org.snova.c4.client.handler.ProxySessionManager;
 import org.snova.c4.common.C4Constants;
+import org.snova.c4.common.event.SocketConnectionEvent;
 import org.snova.framework.util.SharedObjectHelper;
 
 /**
@@ -41,22 +40,22 @@ import org.snova.framework.util.SharedObjectHelper;
  */
 public abstract class ProxyConnection
 {
-	protected static Logger logger = LoggerFactory
-	        .getLogger(ProxyConnection.class);
-	protected static C4ClientConfiguration cfg = C4ClientConfiguration
-	        .getInstance();
+	protected static Logger	                    logger	          = LoggerFactory
+	                                                                      .getLogger(ProxyConnection.class);
+	protected static C4ClientConfiguration	    cfg	              = C4ClientConfiguration
+	                                                                      .getInstance();
 	// private LinkedList<Event> queuedEvents = new LinkedList<Event>();
-	protected static ClientSocketChannelFactory clientChannelFactory;
-	protected C4ServerAuth auth = null;
+	protected static ClientSocketChannelFactory	clientChannelFactory;
+	protected C4ServerAuth	                    auth	          = null;
 	// private String authToken = null;
 	// private AtomicInteger authTokenLock = new AtomicInteger(0);
-	private EventHandler outSessionHandler = null;
-
-	private long lastsendtime = -1;
-	private LinkedList<Event> queuedEvents = new LinkedList<Event>();
-
-	protected ProxyConnectionStateListner stateListener;
-
+	private EventHandler	                    outSessionHandler	= null;
+	
+	private long	                            lastsendtime	  = -1;
+	private LinkedList<Event>	                queuedEvents	  = new LinkedList<Event>();
+	
+	protected ProxyConnectionStateListner	    stateListener;
+	
 	protected static ClientSocketChannelFactory getClientSocketChannelFactory()
 	{
 		if (null == clientChannelFactory)
@@ -66,26 +65,26 @@ public abstract class ProxyConnection
 				ThreadPoolExecutor workerExecutor = new OrderedMemoryAwareThreadPoolExecutor(
 				        20, 0, 0);
 				SharedObjectHelper.setGlobalThreadPool(workerExecutor);
-
+				
 			}
 			clientChannelFactory = new NioClientSocketChannelFactory(
 			        SharedObjectHelper.getGlobalThreadPool(),
 			        SharedObjectHelper.getGlobalThreadPool());
-
+			
 		}
 		return clientChannelFactory;
 	}
-
+	
 	public ProxyConnectionStateListner getStateListener()
 	{
 		return stateListener;
 	}
-
+	
 	public void setStateListener(ProxyConnectionStateListner stateListener)
 	{
 		this.stateListener = stateListener;
 	}
-
+	
 	protected void onAvailable()
 	{
 		if (null != stateListener)
@@ -93,44 +92,44 @@ public abstract class ProxyConnection
 			stateListener.onAvailable();
 		}
 	}
-
+	
 	protected ProxyConnection(C4ServerAuth auth)
 	{
 		this.auth = auth;
 	}
-
+	
 	public C4ServerAuth getC4ServerAuth()
 	{
 		return auth;
 	}
-
+	
 	protected abstract boolean doSend(Buffer msgbuffer);
-
+	
 	protected abstract int getMaxDataPackageSize();
-
+	
 	protected void doClose()
 	{
-
+		
 	}
-
+	
 	public abstract boolean isReady();
-
+	
 	protected void setAvailable(boolean flag)
 	{
 		// nothing
 	}
-
+	
 	public void close()
 	{
 		doClose();
 	}
-
+	
 	public boolean send(Event event, EventHandler handler)
 	{
 		outSessionHandler = handler;
 		return send(event);
 	}
-
+	
 	public boolean send(List<Event> events)
 	{
 		if (null != events)
@@ -145,11 +144,12 @@ public abstract class ProxyConnection
 					tmp.setHash(event.getHash());
 					event = tmp;
 				}
-
-				EncryptEventV2 enc = new EncryptEventV2(cfg.getEncrypter(), event);
+				
+				EncryptEventV2 enc = new EncryptEventV2(cfg.getEncrypter(),
+				        event);
 				enc.setHash(event.getHash());
 				ready = enc;
-
+				
 				synchronized (queuedEvents)
 				{
 					queuedEvents.add(ready);
@@ -159,11 +159,11 @@ public abstract class ProxyConnection
 					logger.trace("Connection:" + this.hashCode()
 					        + " queued with queue size:" + queuedEvents.size()
 					        + ", session[" + event.getHash() + "] HTTP request");
-
+					
 				}
 			}
 		}
-
+		
 		long now = System.currentTimeMillis();
 		if (!isReady()
 		        && now - lastsendtime < C4ClientConfiguration.getInstance()
@@ -175,23 +175,23 @@ public abstract class ProxyConnection
 				        + " is not ready while ready event queue size:"
 				        + queuedEvents.size());
 			}
-			SharedObjectHelper.getGlobalTimer().schedule(new Runnable()
-			{
-				@Override
-				public void run()
-				{
-					send((List<Event>) null);
-				}
-			}, C4ClientConfiguration.getInstance().getMinWritePeriod() / 2,
-			        TimeUnit.MILLISECONDS);
+			// SharedObjectHelper.getGlobalTimer().schedule(new Runnable()
+			// {
+			// @Override
+			// public void run()
+			// {
+			// send((List<Event>) null);
+			// }
+			// }, C4ClientConfiguration.getInstance().getMinWritePeriod() / 2,
+			// TimeUnit.MILLISECONDS);
 			return true;
 		}
-		if (queuedEvents.isEmpty())
-		{
-			return true;
-		}
+		// if (queuedEvents.isEmpty())
+		// {
+		// return true;
+		// }
 		setAvailable(false);
-
+		
 		Buffer msgbuffer = new Buffer(1024);
 		synchronized (queuedEvents)
 		{
@@ -207,13 +207,13 @@ public abstract class ProxyConnection
 			}
 			queuedEvents.clear();
 		}
-
+		
 		lastsendtime = now;
 		boolean ret = doSend(msgbuffer);
 		return ret;
-
+		
 	}
-
+	
 	public boolean send(Event event)
 	{
 		if (null == event)
@@ -222,7 +222,7 @@ public abstract class ProxyConnection
 		}
 		return send(Arrays.asList(event));
 	}
-
+	
 	protected void handleRecvEvent(Event ev)
 	{
 		if (null == ev)
@@ -231,14 +231,14 @@ public abstract class ProxyConnection
 			// close();
 			return;
 		}
-
+		
 		TypeVersion typever = Event.getTypeVersion(ev.getClass());
-
-		if (logger.isDebugEnabled())
-		{
-			logger.debug("Handle received session[" + ev.getHash()
-			        + "] response event:" + ev.getClass().getName());
-		}
+		
+//		if (logger.isDebugEnabled())
+//		{
+//			logger.debug("Handle received session[" + ev.getHash()
+//			        + "] response event:" + ev.getClass().getName());
+//		}
 		switch (typever.type)
 		{
 			case EventConstants.COMPRESS_EVENT_TYPE:
@@ -251,7 +251,7 @@ public abstract class ProxyConnection
 				{
 					handleRecvEvent(((CompressEventV2) ev).ev);
 				}
-
+				
 				return;
 			}
 			case EventConstants.ENCRYPT_EVENT_TYPE:
@@ -267,7 +267,7 @@ public abstract class ProxyConnection
 				return;
 			}
 			case C4Constants.EVENT_TCP_CHUNK_TYPE:
-			case HTTPEventContants.HTTP_CONNECTION_EVENT_TYPE:
+			case C4Constants.EVENT_TCP_CONNECTION_TYPE:
 			case HTTPEventContants.HTTP_CHUNK_EVENT_TYPE:
 			case HTTPEventContants.HTTP_RESPONSE_EVENT_TYPE:
 			{
@@ -280,7 +280,7 @@ public abstract class ProxyConnection
 				break;
 			}
 		}
-
+		
 		ProxySession session = ProxySessionManager.getInstance()
 		        .getProxySession(ev.getHash());
 		if (null != session)
@@ -301,7 +301,7 @@ public abstract class ProxyConnection
 			}
 			else
 			{
-				if (typever.type != HTTPEventContants.HTTP_CONNECTION_EVENT_TYPE)
+				if (typever.type != C4Constants.EVENT_TCP_CONNECTION_TYPE)
 				{
 					if (logger.isDebugEnabled())
 					{
@@ -310,16 +310,15 @@ public abstract class ProxyConnection
 						        + "] response event:"
 						        + ev.getClass().getName());
 					}
-
-					HTTPConnectionEvent tmp = new HTTPConnectionEvent(
-					        HTTPConnectionEvent.CLOSED);
+					
+					SocketConnectionEvent tmp = new SocketConnectionEvent();
 					tmp.setHash(ev.getHash());
 					send(tmp);
 				}
 			}
 		}
 	}
-
+	
 	protected void doRecv(Buffer content)
 	{
 		Event ev = null;

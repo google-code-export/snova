@@ -1,5 +1,29 @@
 snova-spac Changelog
 ===================
+Changes in version 0.15.0(2012.08.18)
+-------------------------------------------
+
+** Features
+   * 
+   
+** Improvement
+   * Fix forward socks
+      
+** Task
+   * NA
+   
+Changes in version 0.14.0(2012.06.16)
+-------------------------------------------
+
+** Features
+   * 
+   
+** Improvement
+   * 
+      
+** Task
+   * NA
+
 Changes in version 0.13.0(2012.04.22)
 -------------------------------------------
 
