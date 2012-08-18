@@ -3,10 +3,7 @@
  */
 package org.snova.c4.client.handler;
 
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import org.arch.common.Pair;
 import org.arch.event.http.HTTPChunkEvent;
@@ -16,12 +13,6 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.util.internal.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.snova.c4.client.config.C4ClientConfiguration;
-import org.snova.c4.client.config.C4ClientConfiguration.C4ServerAuth;
-import org.snova.c4.client.config.C4ClientConfiguration.ConnectionMode;
-import org.snova.c4.client.connection.ProxyConnection;
-import org.snova.c4.client.connection.ProxyConnectionManager;
-import org.snova.framework.util.SharedObjectHelper;
 
 /**
  * @author qiyingwang
@@ -37,27 +28,7 @@ public class ProxySessionManager implements Runnable
 	
 	private ProxySessionManager()
 	{
-		boolean enableHeartBeat = true;
-		if (C4ClientConfiguration.getInstance().getConnectionMode()
-		        .equals(ConnectionMode.HTTP))
-		{
-			if (C4ClientConfiguration.getInstance().isDualConnectionEnable()
-			        && !C4ClientConfiguration.getInstance()
-			                .isServerPullEnable())
-			{
-				enableHeartBeat = false;
-			}
-		}
-		else
-		{
-			enableHeartBeat = false;
-		}
-		if (enableHeartBeat)
-		{
-			SharedObjectHelper.getGlobalTimer().schedule(this,
-			        C4ClientConfiguration.getInstance().getHeartBeatPeriod(),
-			        TimeUnit.MILLISECONDS);
-		}
+
 		// new Thread(this).start();
 	}
 	
@@ -162,29 +133,29 @@ public class ProxySessionManager implements Runnable
 		return session;
 	}
 	
-	private void sendHeartBeat(List<ProxySession> sessions)
-	{
-		if (C4ClientConfiguration.getInstance().getConnectionMode()
-		        .equals(ConnectionMode.HTTP))
-		{
-//			List<C4ServerAuth> auths = C4ClientConfiguration.getInstance()
-//			        .getC4ServerAuths();
-//			for (C4ServerAuth auth : auths)
-//			{
-//				ProxyConnection conn = ProxyConnectionManager.getInstance()
-//				        .getClientConnectionByAuth(auth);
-//				EventRestRequest ev = new EventRestRequest();
-//				for (ProxySession s : sessions)
-//				{
-//					if (s.getProxyConnection() == conn)
-//					{
-//						ev.restSessions.add(s.getSessionID());
-//					}
-//				}
-//				conn.send(new EventRestRequest());
-//			}
-		}
-	}
+//	private void sendHeartBeat(List<ProxySession> sessions)
+//	{
+//		if (C4ClientConfiguration.getInstance().getConnectionMode()
+//		        .equals(ConnectionMode.HTTP))
+//		{
+////			List<C4ServerAuth> auths = C4ClientConfiguration.getInstance()
+////			        .getC4ServerAuths();
+////			for (C4ServerAuth auth : auths)
+////			{
+////				ProxyConnection conn = ProxyConnectionManager.getInstance()
+////				        .getClientConnectionByAuth(auth);
+////				EventRestRequest ev = new EventRestRequest();
+////				for (ProxySession s : sessions)
+////				{
+////					if (s.getProxyConnection() == conn)
+////					{
+////						ev.restSessions.add(s.getSessionID());
+////					}
+////				}
+////				conn.send(new EventRestRequest());
+////			}
+//		}
+//	}
 	
 //	public EventRestRequest getEventRestRequest(ProxyConnection conn)
 //	{
@@ -199,27 +170,27 @@ public class ProxySessionManager implements Runnable
 //		return ev;
 //	}
 	
-	private List<ProxySession> unCompleteSessions()
-	{
-		List<ProxySession> notCompleteSession = new LinkedList<ProxySession>();
-		List<ProxySession> clonesList = null;
-		synchronized (sessionTable)
-        {
-			clonesList = new LinkedList<ProxySession>(
-			        sessionTable.values());
-        }
-		
-		for (ProxySession session : clonesList)
-		{
-			ProxySessionStatus status = session.routine();
-			if (status.equals(ProxySessionStatus.WAITING_CONNECT_RESPONSE)
-			        || status.equals(ProxySessionStatus.WAITING_RESPONSE))
-			{
-				notCompleteSession.add(session);
-			}
-		}
-		return notCompleteSession;
-	}
+//	private List<ProxySession> unCompleteSessions()
+//	{
+//		List<ProxySession> notCompleteSession = new LinkedList<ProxySession>();
+//		List<ProxySession> clonesList = null;
+//		synchronized (sessionTable)
+//        {
+//			clonesList = new LinkedList<ProxySession>(
+//			        sessionTable.values());
+//        }
+//		
+//		for (ProxySession session : clonesList)
+//		{
+//			ProxySessionStatus status = session.routine();
+//			if (status.equals(ProxySessionStatus.WAITING_CONNECT_RESPONSE)
+//			        || status.equals(ProxySessionStatus.WAITING_RESPONSE))
+//			{
+//				notCompleteSession.add(session);
+//			}
+//		}
+//		return notCompleteSession;
+//	}
 	
 	@Override
 	public void run()

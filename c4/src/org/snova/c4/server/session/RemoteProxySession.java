@@ -246,6 +246,7 @@ public class RemoteProxySession extends SimpleChannelUpstreamHandler
 		{
 			case C4Constants.EVENT_TCP_CHUNK_TYPE:
 			{
+				//System.out.println("#####recv chunk for " + remoteAddr);
 				if (null != client)
 				{
 					final TCPChunkEvent chunk = (TCPChunkEvent) ev;
@@ -258,9 +259,13 @@ public class RemoteProxySession extends SimpleChannelUpstreamHandler
 							client.getChannel()
 							        .write(ChannelBuffers
 							                .wrappedBuffer(chunk.content));
+							//System.out.println("#####Write chunk for " + remoteAddr);
 						}
 					});
-
+				}
+				else
+				{
+					//System.out.println("#####No client");
 				}
 				break;
 			}
@@ -305,8 +310,11 @@ public class RemoteProxySession extends SimpleChannelUpstreamHandler
 						public void operationComplete(ChannelFuture future)
 						        throws Exception
 						{
+							//System.out.println("#####Offer chunk for " + remoteAddr);
 							TCPChunkEvent ev = new TCPChunkEvent();
-							ev.setHash(ev.getHash());
+							ev.sequence = sequence;
+							sequence++;
+							ev.setHash(sessionId);
 							if (future.isSuccess())
 							{
 								ev.content = "HTTP/1.1 200 OK\r\n\r\n"

@@ -1,5 +1,27 @@
 Snova Changelog
 ===================
+Changes in version 0.15.0(2012.08.18)
+-------------------------------------------
+** Features
+   * 
+   
+** Improvement
+   * Upgrade C4/SPAC plugins
+      
+** Task
+   * NA
+
+Changes in version 0.14.0(2012.06.16)
+-------------------------------------------
+** Features
+   * 
+   
+** Improvement
+   * Upgrade plugins to 0.14.0
+      
+** Task
+   * NA
+
 Changes in version 0.13.0(2012.04.09)
 -------------------------------------------
 ** Features

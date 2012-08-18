@@ -221,12 +221,17 @@ public class ProxyConnectionManager
 		GAEServerAuth auth = null;
 		if (null != appid)
 		{
+			if (logger.isDebugEnabled())
+			{
+				logger.debug("Select appid:" + appid + " for host:" + event.getHeader("Host"));
+			}
 			auth = GAEClientConfiguration.getInstance().getGAEServerAuth(appid);
 		}
-		if(null == auth)
+		if (null == auth)
 		{
 			auth = seletor.select();
 		}
+		
 		return getClientConnectionByAuth(auth);
 	}
 	

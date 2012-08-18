@@ -4,9 +4,12 @@
 package org.snova.c4.client.connection;
 
 import java.net.InetSocketAddress;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.arch.buffer.Buffer;
+import org.arch.event.Event;
 import org.arch.misc.crypto.base64.Base64;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
@@ -35,6 +38,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.c4.client.config.C4ClientConfiguration;
 import org.snova.c4.client.config.C4ClientConfiguration.C4ServerAuth;
+import org.snova.c4.client.connection.util.ConnectionHelper;
+import org.snova.c4.common.C4Constants;
 import org.snova.framework.util.HostsHelper;
 import org.snova.framework.util.SharedObjectHelper;
 import org.snova.framework.util.proxy.ProxyInfo;
@@ -43,30 +48,34 @@ import org.snova.framework.util.proxy.ProxyInfo;
  * @author qiyingwang
  * 
  */
-public class HTTPProxyConnection extends ProxyConnection
+public class HTTPProxyConnection extends ProxyConnection implements Runnable
 {
-	protected Logger logger = LoggerFactory.getLogger(getClass());
+	protected Logger	        logger	            = LoggerFactory
+	                                                        .getLogger(getClass());
 	// private AtomicBoolean waitingResponse = new AtomicBoolean(
 	// false);
-	private ChannelFuture clientChannelFuture = null;
-	private int connectFailedCount;
-	private long lastWriteTime;
-	private int index;
-
-	private HttpResponseHandler responseHandler = null;
-
+	private ChannelFuture	    clientChannelFuture	= null;
+	private int	                connectFailedCount;
+	private long	            lastWriteTime;
+	private int	                index;
+	
+	private HttpResponseHandler	responseHandler	    = null;
+	
 	public HTTPProxyConnection(C4ServerAuth auth, int index)
 	{
 		super(auth);
 		this.index = index;
+		SharedObjectHelper.getGlobalTimer().scheduleAtFixedRate(this, 500,
+		        C4ClientConfiguration.getInstance().getMinWritePeriod(),
+		        TimeUnit.MILLISECONDS);
 	}
-
+	
 	// public HTTPProxyConnection(C4ServerAuth auth, boolean pri)
 	// {
 	//
 	// isPrimary = pri;
 	// }
-
+	
 	public boolean isReady()
 	{
 		long now = System.currentTimeMillis();
@@ -92,7 +101,7 @@ public class HTTPProxyConnection extends ProxyConnection
 		}
 		return responseHandler.isTransactionCompeleted();
 	}
-
+	
 	protected void doClose()
 	{
 		if (clientChannelFuture != null
@@ -102,7 +111,7 @@ public class HTTPProxyConnection extends ProxyConnection
 		}
 		clientChannelFuture = null;
 	}
-
+	
 	private ChannelFuture connectProxyServer()
 	{
 		ChannelPipeline pipeline = Channels.pipeline();
@@ -126,7 +135,7 @@ public class HTTPProxyConnection extends ProxyConnection
 			connectPort = info.port;
 		}
 		// boolean sslConnectionEnable = false;
-
+		
 		connectHost = HostsHelper.getMappingHost(connectHost);
 		if (logger.isDebugEnabled())
 		{
@@ -135,10 +144,10 @@ public class HTTPProxyConnection extends ProxyConnection
 		}
 		ChannelFuture future = channel.connect(new InetSocketAddress(
 		        connectHost, connectPort));
-
+		
 		return future;
 	}
-
+	
 	private synchronized ChannelFuture getRemoteChannelFuture()
 	{
 		if (null == clientChannelFuture
@@ -149,13 +158,14 @@ public class HTTPProxyConnection extends ProxyConnection
 		}
 		return clientChannelFuture;
 	}
-
+	
 	protected void sendContent(Channel ch, final Buffer content)
 	{
 		String url = "http://" + auth.domain + "/invoke";
 		HttpRequest request = new DefaultHttpRequest(HttpVersion.HTTP_1_1,
 		        HttpMethod.POST, url);
 		request.setHeader("Host", auth.domain);
+		request.setHeader(C4Constants.USER_TOKEN_HEADER, ConnectionHelper.getUserToken());
 		request.setHeader(HttpHeaders.Names.CONNECTION, "keep-alive");
 		// request.setHeader(HttpHeaders.Names.CONNECTION, "close");
 		if (null != cfg.getLocalProxy())
@@ -174,18 +184,21 @@ public class HTTPProxyConnection extends ProxyConnection
 		        HttpHeaders.Values.BINARY);
 		request.setHeader(HttpHeaders.Names.USER_AGENT, C4ClientConfiguration
 		        .getInstance().getUserAgent());
-		request.setHeader("TransactionTime", C4ClientConfiguration
-		        .getInstance().getPullTransactionTime());
+//		request.setHeader("TransactionTime", C4ClientConfiguration
+//		        .getInstance().getPullTransactionTime());
 		request.setHeader(HttpHeaders.Names.CONTENT_TYPE,
 		        "application/octet-stream");
-		request.setHeader("MaxResponseSize", 512 * 1024 + "");
-
-		ChannelBuffer buffer = ChannelBuffers.wrappedBuffer(
-		        content.getRawBuffer(), content.getReadIndex(),
-		        content.readableBytes());
+//		request.setHeader("MaxResponseSize", 512 * 1024 + "");
 		request.setHeader("Content-Length",
-		        String.valueOf(buffer.readableBytes()));
-		request.setContent(buffer);
+		        String.valueOf(content.readableBytes()));
+		if (content.readableBytes() > 0)
+		{
+			ChannelBuffer buffer = ChannelBuffers.wrappedBuffer(
+			        content.getRawBuffer(), content.getReadIndex(),
+			        content.readableBytes());
+			request.setContent(buffer);
+		}
+		
 		ch.write(request).addListener(new ChannelFutureListener()
 		{
 			@Override
@@ -205,7 +218,7 @@ public class HTTPProxyConnection extends ProxyConnection
 			logger.trace("Send event via HTTP connection.");
 		}
 	}
-
+	
 	protected boolean doSend(final Buffer content)
 	{
 		lastWriteTime = System.currentTimeMillis();
@@ -250,27 +263,27 @@ public class HTTPProxyConnection extends ProxyConnection
 		}
 		return true;
 	}
-
+	
 	class HttpResponseHandler extends SimpleChannelUpstreamHandler implements
 	        Runnable
 	{
-		private AtomicBoolean unanwsered = new AtomicBoolean(false);
-		private AtomicBoolean receivingResponse = new AtomicBoolean(false);
-		private long lastDataRecvTime = -1;
-		private boolean finished = false;
-		private int responseContentLength = 0;
-		private Buffer resBuffer = new Buffer(0);
-
+		private AtomicBoolean	unanwsered		    = new AtomicBoolean(false);
+		private AtomicBoolean	receivingResponse	= new AtomicBoolean(false);
+		private long		  lastDataRecvTime		= -1;
+		private boolean		  finished		        = false;
+		private int		      responseContentLength	= 0;
+		private Buffer		  resBuffer		        = new Buffer(0);
+		
 		private boolean isTransactionCompeleted()
 		{
 			return !unanwsered.get() && !receivingResponse.get();
 		}
-
+		
 		private void clearBuffer()
 		{
 			resBuffer = new Buffer(0);
 		}
-
+		
 		private void transactionCompeleted()
 		{
 			clearBuffer();
@@ -278,7 +291,7 @@ public class HTTPProxyConnection extends ProxyConnection
 			receivingResponse.set(false);
 			onAvailable();
 		}
-
+		
 		private void transactionTimeout()
 		{
 			if (!unanwsered.get() && receivingResponse.get())
@@ -297,7 +310,7 @@ public class HTTPProxyConnection extends ProxyConnection
 			        + " transaction timeout!");
 			transactionFailed();
 		}
-
+		
 		private void transactionFailed()
 		{
 			// if (null != transactionTask)
@@ -310,9 +323,9 @@ public class HTTPProxyConnection extends ProxyConnection
 			receivingResponse.set(false);
 			close();
 			onAvailable();
-
+			
 		}
-
+		
 		private void startTransaction()
 		{
 			// if (null != transactionTask)
@@ -329,7 +342,7 @@ public class HTTPProxyConnection extends ProxyConnection
 			// .getHTTPRequestTimeout(),
 			// TimeUnit.MILLISECONDS);
 		}
-
+		
 		private void fillResponseBuffer(ChannelBuffer buffer)
 		{
 			int contentlen = buffer.readableBytes();
@@ -347,8 +360,13 @@ public class HTTPProxyConnection extends ProxyConnection
 					transactionCompeleted();
 				}
 			}
+			else
+			{
+				finished = true;
+				transactionCompeleted();
+			}
 		}
-
+		
 		@Override
 		public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
 		        throws Exception
@@ -358,7 +376,7 @@ public class HTTPProxyConnection extends ProxyConnection
 			// updateSSLProxyConnectionStatus(DISCONNECTED);
 			// close();
 		}
-
+		
 		@Override
 		public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e)
 		        throws Exception
@@ -377,7 +395,7 @@ public class HTTPProxyConnection extends ProxyConnection
 			// updateSSLProxyConnectionStatus(DISCONNECTED);
 			transactionFailed();
 		}
-
+		
 		@Override
 		public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
 		        throws Exception
@@ -427,18 +445,24 @@ public class HTTPProxyConnection extends ProxyConnection
 				        + msg.getClass().getCanonicalName());
 			}
 		}
-
+		
 		@Override
 		public void run()
 		{
 			transactionTimeout();
 		}
 	}
-
+	
 	@Override
 	protected int getMaxDataPackageSize()
 	{
 		return -1;
 	}
-
+	
+	@Override
+	public void run()
+	{
+		send((List<Event>) null);
+	}
+	
 }

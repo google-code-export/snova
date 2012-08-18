@@ -14,10 +14,10 @@
 	<property name="docs" value="${root}/docs" />
 	<property name="shell" value="${root}/shell" />
 	<property name="release" value="release" />
-	<property name="version" value="0.13.0" />
-	<property name="gaeversion" value="0.13.0" />
-	<property name="spacversion" value="0.13.0" />
-	<property name="c4version" value="0.13.0" />
+	<property name="version" value="0.15.0" />
+	<property name="gaeversion" value="0.15.0" />
+	<property name="spacversion" value="0.15.0" />
+	<property name="c4version" value="0.15.0" />
 	<property name="versionfile" value="org/snova/framework/common/Version.java" />
 	<property name="project_name" value="snova" />
 	<property name="releasename" value="${project_name}-${version}" />
@@ -61,7 +61,7 @@
 				<attribute name="Main-Class" value="org.snova.framework.launch.ApplicationLauncher" />
 				<attribute name="Class-Path" value="../conf  
 					arch.jar jboss-netty.jar bcprov-jdk16-146.jar
-					slf4j-api-1.6.4.jar slf4j-jdk14-1.6.4.jar" />
+					slf4j-api-1.6.4.jar slf4j-jdk14-1.6.4.jar jsocks.jar commons-lang-2.4.jar" />
 			</manifest>
 		</jar>
 		<delete dir="${classes}" />

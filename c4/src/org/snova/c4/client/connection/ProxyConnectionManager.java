@@ -17,6 +17,8 @@ import org.snova.c4.client.config.C4ClientConfiguration;
 import org.snova.c4.client.config.C4ClientConfiguration.C4ServerAuth;
 import org.snova.c4.client.config.C4ClientConfiguration.ConnectionMode;
 import org.snova.c4.client.connection.rsocket.RSocketProxyConnection;
+import org.snova.c4.client.connection.util.ConnectionHelper;
+import org.snova.c4.common.event.UserLoginEvent;
 import org.snova.framework.util.SharedObjectHelper;
 
 /**
@@ -107,6 +109,12 @@ public class ProxyConnectionManager
 				case HTTP:
 				{
 					connection = new HTTPProxyConnection(auth, connlist.size());
+					if(connlist.size() == 0)
+					{
+						UserLoginEvent ev = new UserLoginEvent();
+						ev.user = ConnectionHelper.getUserToken();
+						connection.send(ev);
+					}
 					addProxyConnection(connlist, connection);
 					break;
 				}

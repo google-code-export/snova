@@ -191,10 +191,14 @@ public class GatewayDevice {
             }
 
         }
-
+ 
         soapBody.append("</m:" + action + ">");
         soapBody.append("</SOAP-ENV:Body></SOAP-ENV:Envelope>");
-
+        if(action.startsWith("GetExternalIPAddress"))
+        {
+        	 System.out.println("#####" + soapBody);
+        }
+       
         URL postUrl = new URL(url);
         HttpURLConnection conn = (HttpURLConnection) postUrl.openConnection();
 

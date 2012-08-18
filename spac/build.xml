@@ -11,7 +11,7 @@
 		<property name="lib" value="${root}/lib" />
 		<property name="etc" value="${root}/conf" />
 		<property name="release" value="release" />
-		<property name="version" value="0.13.0" />
+		<property name="version" value="0.15.0" />
 	    <property name="release_dir_name" value="spac" />
 		<property name="project_name" value="snova-spac" />
 
@@ -29,6 +29,7 @@
 					<pathelement path="${root}/../framework/lib/framework.jar" />
 					<pathelement path="${root}/../framework/lib/netty-3.2.6.Final.jar" />
 					<pathelement path="${root}/../framework/lib/arch.jar" />
+					<pathelement path="${root}/../framework/lib/jsocks.jar" />
 				</classpath>
 			</javac>
 		</target>

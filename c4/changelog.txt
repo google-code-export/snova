@@ -1,9 +1,33 @@
 snova-c4 Changelog
 ===================
+Changes in version 0.15.0(2012.08.18)
+-------------------------------------------
+** Features
+   * Refactor C4 client/server
+   * Disable RSocket mode
+   
+** Improvement
+   * 
+      
+** Task
+   * NA
+
+Changes in version 0.14.0(2012.06.16)
+-------------------------------------------
+** Features
+   * Full RSocket mode
+   * Add upnp support for RSocket mode
+   
+** Improvement
+   * 
+      
+** Task
+   * NA
+
 Changes in version 0.13.0(2012.04.22)
 -------------------------------------------
 ** Features
-   * Add RSocket support
+   * Add premium RSocket mode
    
 ** Improvement
    * 

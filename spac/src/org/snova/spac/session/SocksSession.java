@@ -38,12 +38,16 @@ import org.snova.framework.util.SharedObjectHelper;
  */
 public class SocksSession extends Session
 {
-	protected static Logger	                      logger	   = LoggerFactory
-	                                                                   .getLogger(SocksSession.class);
-	private SocksSocket currentClient;
-	private Proxy	                              socksproxy;
-	private Map<SimpleSocketAddress, SocksSocket>	clientTable	= new HashMap<SimpleSocketAddress, SocksSocket>();
-	private List<SocksSocket> clientList = new LinkedList<SocksSocket>();
+	protected static Logger	    logger	= LoggerFactory
+	                                           .getLogger(SocksSession.class);
+	private SocksSocket	        currentClient;
+	private SimpleSocketAddress	currentRemoteAddr;
+	private Proxy	            socksproxy;
+	
+	// private Map<SimpleSocketAddress, SocksSocket> clientTable = new
+	// HashMap<SimpleSocketAddress, SocksSocket>();
+	// private List<SocksSocket> clientList = new LinkedList<SocksSocket>();
+	
 	public SocksSession(String target) throws UnknownHostException
 	{
 		String[] ss = target.split(":");
@@ -78,27 +82,32 @@ public class SocksSession extends Session
 	
 	private SocksSocket getSocksSocket(SimpleSocketAddress addr)
 	{
-		if (!clientTable.containsKey(addr))
+		if (addr.equals(currentRemoteAddr) && null != currentClient)
 		{
-			try
-			{
-				SocksSocket client = new SocksSocket(socksproxy, addr.host,
-				        addr.port);
-				clientTable.put(addr, client);
-				clientList.add(client);
-			}
-			catch (Exception e)
-			{
-				logger.error("Failed to create SocksSocket:" + addr, e);
-				HttpResponse res = new DefaultHttpResponse(
-				        HttpVersion.HTTP_1_1,
-				        HttpResponseStatus.SERVICE_UNAVAILABLE);
-				localChannel.write(res);
-				// closeLocalChannel();
-				return null;
-			}
+			return currentClient;
 		}
-		return clientTable.get(addr);
+		closeSocksClients();
+		try
+		{
+			if(logger.isDebugEnabled())
+			{
+				logger.debug("Socks connect " +  addr.host + ":" + addr.port);
+			}
+			currentClient = new SocksSocket(socksproxy, addr.host, addr.port);
+			currentRemoteAddr = addr;
+			SharedObjectHelper.getGlobalThreadPool().submit(
+			        new InputTask(currentClient));
+		}
+		catch (Exception e)
+		{
+			logger.error("Failed to create SocksSocket:" + addr, e);
+			HttpResponse res = new DefaultHttpResponse(HttpVersion.HTTP_1_1,
+			        HttpResponseStatus.SERVICE_UNAVAILABLE);
+			localChannel.write(res);
+			// closeLocalChannel();
+			return null;
+		}
+		return currentClient;
 	}
 	
 	@Override
@@ -164,22 +173,19 @@ public class SocksSession extends Session
 					logger.debug("Create a socks proxy socket fore remote:"
 					        + addr);
 				}
-				SharedObjectHelper.getGlobalThreadPool().submit(
-				        new InputTask(client));
+				currentClient = client;
+				
 				if (req.method.equalsIgnoreCase("Connect"))
 				{
-					String msg = "HTTP/1.1 200 Connection established\r\n"
-					        + "Connection: Keep-Alive\r\n"
-					        + "Proxy-Connection: Keep-Alive\r\n\r\n";
+					String msg = "HTTP/1.1 200 Connection established\r\n\r\n";
 					removeCodecHandler(localChannel);
-					localChannel.write(ChannelBuffers
-					        .wrappedBuffer(msg.getBytes()));
+					localChannel.write(ChannelBuffers.wrappedBuffer(msg
+					        .getBytes()));
 					
 					return;
 				}
 				else
 				{
-					currentClient = client;
 					Buffer buf = buildRequestBuffer(req);
 					writeRemoteSocket(buf, client);
 				}
@@ -218,11 +224,19 @@ public class SocksSession extends Session
 	
 	private void closeSocksClients()
 	{
-		for(SocksSocket client:clientList)
+		if (null != currentClient)
 		{
-			closeSocksClient(client);
+			try
+			{
+				currentClient.close();
+			}
+			catch (Exception e)
+			{
+				// TODO: handle exception
+			}
+			
+			currentClient = null;
 		}
-		clientList.clear();
 	}
 	
 	private void closeSocksClient(SocksSocket client)
