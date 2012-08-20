@@ -6,17 +6,12 @@ http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
 	version="2.5">
 	<servlet>
 		<servlet-name>HttpInvoke</servlet-name>
-		<servlet-class>org.snova.c4.server.servlet.HTTPEventDispatcherServlet</servlet-class>
+		<servlet-class>org.snova.c4.server.servlet.InvokeServlet</servlet-class>
 	</servlet>
 
 	<servlet>
 		<servlet-name>Index</servlet-name>
 		<servlet-class>org.snova.c4.server.servlet.IndexServlet</servlet-class>
-	</servlet>
-
-	<servlet>
-		<servlet-name>ClientPush</servlet-name>
-		<servlet-class>org.snova.c4.server.servlet.v2.HTTPPushInvokeServlet</servlet-class>
 	</servlet>
 	
 	<servlet>
@@ -24,20 +19,6 @@ http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
 		<servlet-class>org.snova.c4.server.servlet.RSocketHeartBeatServlet</servlet-class>
 	</servlet>
 
-	<servlet>
-		<servlet-name>ClientPull</servlet-name>
-		<servlet-class>org.snova.c4.server.servlet.v2.HTTPPullInvokeServlet</servlet-class>
-	</servlet>
-
-	<servlet-mapping>
-		<servlet-name>ClientPull</servlet-name>
-		<url-pattern>/invoke/pull</url-pattern>
-	</servlet-mapping>
-
-	<servlet-mapping>
-		<servlet-name>ClientPush</servlet-name>
-		<url-pattern>/invoke/push</url-pattern>
-	</servlet-mapping>
 	<servlet-mapping>
 		<servlet-name>HttpInvoke</servlet-name>
 		<url-pattern>/invoke</url-pattern>

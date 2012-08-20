@@ -1,1 +1,1 @@
-package org.snova.c4.common;    public class C4PluginVersion    {       public static final String value = "0.15.0";    }
+package org.snova.c4.common;    public class C4PluginVersion    {       public static final String value = "0.15.1";    }
