@@ -30,6 +30,8 @@ import org.snova.framework.util.SharedObjectHelper;
 public class InvokeServlet extends HttpServlet
 {
 	protected Logger logger = LoggerFactory.getLogger(getClass());
+	
+	private Buffer failedSentContent = new Buffer(4096);
 
 	public InvokeServlet()
 	{
@@ -73,6 +75,7 @@ public class InvokeServlet extends HttpServlet
 	protected void doPost(HttpServletRequest req, final HttpServletResponse resp)
 	        throws ServletException, IOException
 	{
+		Buffer buf = new Buffer(4096);
 		RemoteProxySession.init();
 		String userToken = req.getHeader(C4Constants.USER_TOKEN_HEADER);
 		if (null == userToken)
@@ -107,10 +110,13 @@ public class InvokeServlet extends HttpServlet
 
 				}
 			}
-
-			Buffer buf = new Buffer(4096);
+			if(failedSentContent.readable())
+			{
+				buf.write(failedSentContent, failedSentContent.readableBytes());
+				failedSentContent= new Buffer(0);
+			}
 			RemoteProxySession.extractEventResponses(userToken, index, buf,
-			        512 * 1024);
+			        256 * 1024);
 			int size = buf.readableBytes();
 			try
 			{
@@ -121,6 +127,8 @@ public class InvokeServlet extends HttpServlet
 			{
 				logger.error("Requeue events since write " + size
 				        + " bytes while exception occured.", e);
+				buf.setReadIndex(0);
+				failedSentContent.write(buf, buf.readableBytes());
 			}
 		}
 		catch (Throwable e)
