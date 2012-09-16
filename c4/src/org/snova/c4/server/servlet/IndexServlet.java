@@ -4,6 +4,7 @@
 package org.snova.c4.server.servlet;
 
 import java.io.IOException;
+import java.io.InputStream;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -18,10 +19,32 @@ import org.snova.c4.common.C4PluginVersion;
  */
 public class IndexServlet extends HttpServlet 
 {
+	private static String content = null;
+	
+	private static String getContent()
+	{
+		if(null == content)
+		{
+			InputStream is = IndexServlet.class.getResourceAsStream("/html/index.html");
+			byte[] buffer = new byte[64*1024];
+			try
+            {
+	            int len = is.read(buffer);
+	            content = new String(buffer,0 , len);
+	            content = content.replace("${version}", C4PluginVersion.value);
+            }
+            catch (IOException e)
+            {
+	            // TODO Auto-generated catch block
+	            e.printStackTrace();
+            }
+		}
+		return content;
+	}
 	@Override
 	protected void doGet(HttpServletRequest req, final HttpServletResponse resp)
 	        throws ServletException, IOException
 	{
-		resp.getOutputStream().print("Welcom to snova-c4 server v" + C4PluginVersion.value + "!");
+		resp.getOutputStream().print(getContent());
 	}
 }

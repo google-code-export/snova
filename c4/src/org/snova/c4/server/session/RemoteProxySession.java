@@ -40,6 +40,8 @@ import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
+import org.jboss.netty.handler.execution.ExecutionHandler;
+import org.jboss.netty.handler.execution.OrderedMemoryAwareThreadPoolExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.c4.common.C4Constants;
@@ -55,13 +57,17 @@ import org.snova.framework.util.SharedObjectHelper;
  */
 public class RemoteProxySession extends SimpleChannelUpstreamHandler
 {
-	protected static Logger logger = LoggerFactory
-	        .getLogger(RemoteProxySession.class);
-	private static boolean inited = false;
-	private static ClientSocketChannelFactory factory;
-	private static Map<String, Map<Integer, RemoteProxySession>> sessionTable = new HashMap<String, Map<Integer, RemoteProxySession>>();
-	private static Map<String, ArrayList<LinkedBlockingDeque<Event>>> sendEvents = new HashMap<String, ArrayList<LinkedBlockingDeque<Event>>>();
-
+	protected static Logger	                                          logger	   = LoggerFactory
+	                                                                                       .getLogger(RemoteProxySession.class);
+	private static boolean	                                          inited	   = false;
+	private static ClientSocketChannelFactory	                      factory;
+	private static Map<String, Map<Integer, RemoteProxySession>>	  sessionTable	= new HashMap<String, Map<Integer, RemoteProxySession>>();
+	private static Map<String, ArrayList<LinkedBlockingDeque<Event>>>	sendEvents	= new HashMap<String, ArrayList<LinkedBlockingDeque<Event>>>();
+	private static OrderedMemoryAwareThreadPoolExecutor	              executor	   = new OrderedMemoryAwareThreadPoolExecutor(
+	                                                                                       25,
+	                                                                                       1048576,
+	                                                                                       1048576);
+	
 	public static void init()
 	{
 		if (!inited)
@@ -70,7 +76,7 @@ public class RemoteProxySession extends SimpleChannelUpstreamHandler
 			inited = true;
 		}
 	}
-
+	
 	public static void touch(String user, int poolSize)
 	{
 		ArrayList<LinkedBlockingDeque<Event>> evss = sendEvents.get(user);
@@ -84,7 +90,7 @@ public class RemoteProxySession extends SimpleChannelUpstreamHandler
 			evss.add(new LinkedBlockingDeque<Event>(1024));
 		}
 	}
-
+	
 	public static void extractEventResponses(String user, int index,
 	        Buffer buf, int maxSize)
 	{
@@ -96,12 +102,15 @@ public class RemoteProxySession extends SimpleChannelUpstreamHandler
 			while (!queue.isEmpty() && buf.readableBytes() <= maxSize)
 			{
 				Event ev = queue.removeFirst();
+				if(sessionExist(user, ev.getHash()))
+				{
+					ev.encode(buf);
+				}
 				// System.out.println("Send event");
-				ev.encode(buf);
 			}
 		}
 	}
-
+	
 	private static Event extractEvent(Event ev)
 	{
 		while (Event.getTypeVersion(ev.getClass()).type == EventConstants.COMPRESS_EVENT_TYPE
@@ -126,7 +135,7 @@ public class RemoteProxySession extends SimpleChannelUpstreamHandler
 		}
 		return ev;
 	}
-
+	
 	protected static ChannelBuffer buildRequestChannelBuffer(HTTPRequestEvent ev)
 	{
 		StringBuilder buffer = new StringBuilder();
@@ -152,17 +161,25 @@ public class RemoteProxySession extends SimpleChannelUpstreamHandler
 			return headerbuf;
 		}
 	}
-
+	
 	private static void offerSendEvent(String user, Event event)
 	{
+		if(!sessionExist(user, event.getHash()))
+		{
+			return;
+		}
 		ArrayList<LinkedBlockingDeque<Event>> evss = sendEvents.get(user);
 		if (event instanceof TCPChunkEvent)
 		{
-			CompressEventV2 compress = new CompressEventV2();
-			compress.ev = event;
-			compress.type = CompressorType.SNAPPY;
-			compress.setHash(event.getHash());
-			event = compress;
+			TCPChunkEvent chunk = (TCPChunkEvent) event;
+			if(chunk.content.length > 1024)
+			{
+				CompressEventV2 compress = new CompressEventV2();
+				compress.ev = event;
+				compress.type = CompressorType.SNAPPY;
+				compress.setHash(event.getHash());
+				event = compress;
+			}
 		}
 		EncryptEventV2 encrypt = new EncryptEventV2();
 		encrypt.type = EncryptType.SE1;
@@ -172,7 +189,7 @@ public class RemoteProxySession extends SimpleChannelUpstreamHandler
 		// System.out.println("offer event to " + index);
 		evss.get(index).offer(encrypt);
 	}
-
+	
 	protected synchronized static ClientSocketChannelFactory getClientSocketChannelFactory()
 	{
 		if (null == factory)
@@ -181,7 +198,7 @@ public class RemoteProxySession extends SimpleChannelUpstreamHandler
 			        .getGlobalThreadPool();
 			if (null == workerExecutor)
 			{
-				workerExecutor = Executors.newFixedThreadPool(25);
+				workerExecutor = executor;
 				SharedObjectHelper.setGlobalThreadPool(workerExecutor);
 			}
 			factory = new NioClientSocketChannelFactory(workerExecutor,
@@ -189,13 +206,19 @@ public class RemoteProxySession extends SimpleChannelUpstreamHandler
 		}
 		return factory;
 	}
-
+	
 	private static void destorySession(RemoteProxySession session)
 	{
-		if(sessionTable.get(session.user) != null)
+		if (sessionTable.get(session.user) != null)
 		{
-			sessionTable.get(session.user).remove(session.sessionId);
+			sessionTable.get(session.user).remove(session.sessionId).close();
 		}
+	}
+	
+	private static boolean sessionExist(String user, int sessionId)
+	{
+		Map<Integer, RemoteProxySession> table = sessionTable.get(user);
+		return table.containsKey(sessionId);
 	}
 	private static RemoteProxySession getSession(String user, Event ev)
 	{
@@ -213,12 +236,28 @@ public class RemoteProxySession extends SimpleChannelUpstreamHandler
 		}
 		return session;
 	}
-
+	
 	private static void clearUser(String user)
 	{
-
+		ArrayList<LinkedBlockingDeque<Event>> evss = sendEvents.get(user);
+		if(null != evss)
+		{
+			for(LinkedBlockingDeque<Event> list:evss)
+			{
+				list.clear();
+			}
+		}
+		Map<Integer, RemoteProxySession> ss = sessionTable.get(user);
+		if(null != ss)
+		{
+			for(Map.Entry<Integer, RemoteProxySession> entry:ss.entrySet())
+			{
+				entry.getValue().close();
+			}
+			ss.clear();
+		}
 	}
-
+	
 	public static void dispatchEvent(String user, final Buffer content)
 	        throws Exception
 	{
@@ -238,15 +277,15 @@ public class RemoteProxySession extends SimpleChannelUpstreamHandler
 			}
 		}
 	}
-
+	
 	private void handleEvent(TypeVersion tv, Event ev)
 	{
-		//System.out.println("handleEvent" + ev.getClass().getName());
+		// System.out.println("handleEvent" + ev.getClass().getName());
 		switch (tv.type)
 		{
 			case C4Constants.EVENT_TCP_CHUNK_TYPE:
 			{
-				//System.out.println("#####recv chunk for " + remoteAddr);
+				// System.out.println("#####recv chunk for " + remoteAddr);
 				if (null != client)
 				{
 					final TCPChunkEvent chunk = (TCPChunkEvent) ev;
@@ -259,13 +298,14 @@ public class RemoteProxySession extends SimpleChannelUpstreamHandler
 							client.getChannel()
 							        .write(ChannelBuffers
 							                .wrappedBuffer(chunk.content));
-							//System.out.println("#####Write chunk for " + remoteAddr);
+							// System.out.println("#####Write chunk for " +
+							// remoteAddr);
 						}
 					});
 				}
 				else
 				{
-					//System.out.println("#####No client");
+					// System.out.println("#####No client");
 				}
 				break;
 			}
@@ -310,7 +350,8 @@ public class RemoteProxySession extends SimpleChannelUpstreamHandler
 						public void operationComplete(ChannelFuture future)
 						        throws Exception
 						{
-							//System.out.println("#####Offer chunk for " + remoteAddr);
+							// System.out.println("#####Offer chunk for " +
+							// remoteAddr);
 							TCPChunkEvent ev = new TCPChunkEvent();
 							ev.sequence = sequence;
 							sequence++;
@@ -355,7 +396,7 @@ public class RemoteProxySession extends SimpleChannelUpstreamHandler
 			}
 		}
 	}
-
+	
 	private ChannelFuture getClientChannel(String host, int port)
 	{
 		String addr = host + ":" + port;
@@ -369,6 +410,8 @@ public class RemoteProxySession extends SimpleChannelUpstreamHandler
 			client.getChannel().close();
 		}
 		ChannelPipeline pipeline = Channels.pipeline();
+		
+		pipeline.addLast("executor", new ExecutionHandler(executor));
 		pipeline.addLast("handler", this);
 		
 		Channel ch = getClientSocketChannelFactory().newChannel(pipeline);
@@ -378,7 +421,7 @@ public class RemoteProxySession extends SimpleChannelUpstreamHandler
 		sequence = 0;
 		return client;
 	}
-
+	
 	@Override
 	public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e)
 	        throws Exception
@@ -394,11 +437,11 @@ public class RemoteProxySession extends SimpleChannelUpstreamHandler
 	public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
 	        throws Exception
 	{
-	    // TODO Auto-generated method stub
-		//System.out.println("ex " + addrMap.get(e.getChannel()));
-		//e.getCause().printStackTrace();
+		// TODO Auto-generated method stub
+		// System.out.println("ex " + addrMap.get(e.getChannel()));
+		// e.getCause().printStackTrace();
 	}
-
+	
 	@Override
 	public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
 	        throws Exception
@@ -409,29 +452,37 @@ public class RemoteProxySession extends SimpleChannelUpstreamHandler
 			ChannelBuffer buf = (ChannelBuffer) msg;
 			TCPChunkEvent ev = new TCPChunkEvent();
 			ev.setHash(sessionId);
-			ev.sequence = sequence;
+			ev.sequence = sequence++;
 			ev.content = new byte[buf.readableBytes()];
 			buf.readBytes(ev.content);
 			offerSendEvent(user, ev);
-			sequence++;
+			// sequence++;
 		}
 		else
 		{
 			logger.error("Unsupported message type:" + msg.getClass().getName());
 		}
 	}
-
+	
+	void close()
+	{
+		if(null != client)
+		{
+			client.getChannel().close();
+		}
+	}
+	
 	RemoteProxySession(String user, int hash)
 	{
 		this.user = user;
 		this.sessionId = hash;
 	}
-
-	private int sessionId;
-	private int sequence;
-	private String method;
-	private String user;
-	private String remoteAddr;
-	private Map<Channel, String> addrMap = new HashMap<Channel, String>();
-	private ChannelFuture client = null;
+	
+	private int	                 sessionId;
+	private int	                 sequence;
+	private String	             method;
+	private String	             user;
+	private String	             remoteAddr;
+	private Map<Channel, String>	addrMap	= new HashMap<Channel, String>();
+	private ChannelFuture	     client	    = null;
 }
