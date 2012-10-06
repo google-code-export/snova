@@ -4,6 +4,22 @@
 _You can download the latest version of the Snova/GSnova [http://code.google.com/p/snova/downloads/list here]
 
 Snova/GSnova - Release Notes
+===Version 0.16.0 - (2012.10.06)===
+ * 仅gsnova，c4服务端更新
+ * `[Hosts]`:支持直接IP转发
+ * `[Hosts]`:集成smarthosts服务（此服务有些小问题，某些IP需要去除 `[Hosts]`->ExceptHosts）
+ * `[Hosts]`:强制指定的sites重定向至https（`[Hosts]`->RedirectHttps）
+ * `[Hosts]`:TCP查询可信DNS服务代替系统DNS
+ * `[Hosts]`:集成一个远程https DNS查询服务，在TCP查询可信DNS服务失效时生效
+ * `[Hosts]`:HTTP CRLF注入，可直接访问某些站点（`[Hosts]`->InjectCRLF）
+ * `[Hosts]`:多并发Range访问；类似GAE中多并发访问视频站点的实现（`[Hosts]`->InjectRange）
+ * `[SPAC]`:增强的规则实现，一般某个Proxy失败，自动切换至下一个实现
+ * `[SPAC]`:一个根据gfwlist以及自定义规则自动生成pac的实现（编辑user-gfwlist.txt）
+ * `[SPAC]`:一个生成的pac的web访问接口（`http://127.0.0.1:48100/pac/gfwlist`） 
+ * `[GAE]`:内存中缓存生成的伪造证书，降低通过GAE访问https站点时的CPU
+ * `[C4]`:删除rsocket相关code
+ * `[C4]`:服务端集成httpdns（`https://github.com/yinqiwen/httpdns`）
+
 ===Version 0.15.0 - (2012.08.18)===
  * `[GSnova]`：golang实现snova GAE client，支持snova大部分功能，包括GAE/SPAC/C4
  * `[C4]`：重构原实现（client&server），增强性能，server兼容Go/Java client
