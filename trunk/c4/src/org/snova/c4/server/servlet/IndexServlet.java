@@ -26,6 +26,10 @@ public class IndexServlet extends HttpServlet
 		if(null == content)
 		{
 			InputStream is = IndexServlet.class.getResourceAsStream("/html/index.html");
+			if(null == is)
+			{
+				return "#####No resource found.";
+			}
 			byte[] buffer = new byte[64*1024];
 			try
             {
