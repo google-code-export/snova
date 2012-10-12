@@ -4,6 +4,12 @@
 _You can download the latest version of the Snova/GSnova [http://code.google.com/p/snova/downloads/list here]
 
 Snova/GSnova - Release Notes
+===Version 0.17.0 - (2012.10.xx)===
+ * 仅gsnova更新
+ * `[SSH]`: 增加SSH支持，可配置多个服务端；支持用户名/密码以及用户名/密钥文件两种鉴权方式（密钥支持RSA/DSA）
+ * `[SPAC]`: 支持自定义的生成PAC文件中的proxy地址（配置`[SPAC]`下的PACProxy）
+ * 性能优化，减少内存占用
+
 ===Version 0.16.0 - (2012.10.06)===
  * 仅gsnova，c4服务端更新
  * `[Hosts]`:支持直接IP转发
