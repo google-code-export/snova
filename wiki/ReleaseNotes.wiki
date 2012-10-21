@@ -11,6 +11,7 @@ Snova/GSnova - Release Notes
  * `[GAE]`: 支持通过Web UI share/unshare appid
  * `[SPAC]`: 内置支持GFWList解析，解释，以及spac filter（Filter: IsBlockedByGFW）
  * `[SPAC]`: 内置wipmania IP库，以及spac filter（Filter: IsHostInCN）
+ * `[SPAC]`: spac.json修改后自动生效
  * `[SPAC]`: 支持远程同步spac.json规则脚本，默认关闭
  * `[SPAC]`: 支持自定义的生成PAC文件中的proxy地址（配置`[SPAC]`下的PACProxy）
  * 性能优化，减少内存占用
