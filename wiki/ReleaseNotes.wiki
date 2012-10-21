@@ -4,9 +4,14 @@
 _You can download the latest version of the Snova/GSnova [http://code.google.com/p/snova/downloads/list here]
 
 Snova/GSnova - Release Notes
-===Version 0.17.0 - (2012.10.xx)===
+===Version 0.17.0 - (2012.10.21)===
  * 仅gsnova更新
+ * 增加简单的本地Web UI
  * `[SSH]`: 增加SSH支持，可配置多个服务端；支持用户名/密码以及用户名/密钥文件两种鉴权方式（密钥支持RSA/DSA）
+ * `[GAE]`: 支持通过Web UI share/unshare appid
+ * `[SPAC]`: 内置支持GFWList解析，解释，以及spac filter（Filter: IsBlockedByGFW）
+ * `[SPAC]`: 内置wipmania IP库，以及spac filter（Filter: IsHostInCN）
+ * `[SPAC]`: 支持远程同步spac.json规则脚本，默认关闭
  * `[SPAC]`: 支持自定义的生成PAC文件中的proxy地址（配置`[SPAC]`下的PACProxy）
  * 性能优化，减少内存占用
 
