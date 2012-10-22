@@ -17,12 +17,31 @@
     }}}
   * 留意执行“heroku create --stack cedar”时的输出，一般会显示创建的域名，为 "xx.herokuapp.com", 记下该域名，为配置Client准备（该域名也可登录Heroku的Web找到）
     
-= Step 3: 配置Snova C4 Plugin的客户端 =
+= Step 3: 配置客户端 =
+客户端可选gsnova(Go)或者snova(Java)
+==gsnova(Go)==
+  * 修改gsnova.conf中C4部分，填入之前创建的域名，重启gsnova生效
+    {{{
+     [C4]
+     #Enable改为1，C4才能生效，默认为0关闭
+     Enable=1
+     #修改domain为Step2创建的域名, 可加多个域名
+     WorkerNode[0]=xyz.herokuapp.com
+     WorkerNode[1]=xyz.cloudfoundry.com
+    }}}
+  * 修改gsnova.conf中SPAC下默认的Proxy实现为C4
+    {{{    
+     [SPAC]
+     Enable=1
+     #默认Proxy实现，初始为GAE
+     Default=C4
+    }}}
+==snova(Java)==
   * 从snova-0.12.0120开始自动集成c4 plugin，无需单独安装
   * 修改`<snova>/plugins/c4/conf/c4-client.conf`
     {{{
        [C4]
-	   #修改domain为Step2创建的域名, 可加多个域名
+       #修改domain为Step2创建的域名, 可加多个域名
        WorkerNode[0]=xyz.herokuapp.com
        WorkerNode[1]=xyz.cloudfoundry.com
     }}}
