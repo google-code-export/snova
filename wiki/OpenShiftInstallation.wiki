@@ -40,6 +40,13 @@
      WorkerNode[0]=xyz.herokuapp.com
      WorkerNode[1]=xyz.cloudfoundry.com
     }}}
+  * 修改gsnova.conf中SPAC下默认的Proxy实现为C4
+    {{{    
+     [SPAC]
+     Enable=1
+     #默认Proxy实现，初始为GAE
+     Default=C4
+    }}}
 ==snova(Java)==
   * 从snova-0.12.0120开始自动集成c4 plugin，无需单独安装
   * 修改`<snova>/plugins/c4/conf/c4-client.conf`
