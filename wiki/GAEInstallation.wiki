@@ -24,7 +24,18 @@
     ** 进入解压的目录, 修改app.yaml， 将`application: snova-master`中snova-master值改为自己创建的appid
     ** 执行appcfg.py update `snova-gae-gserver-<version>`上传(appcfg.py在'<Google App Engine Go SDK>/'下
     
-= Step 5: 配置Snova GAE Plugin的客户端 =
+= Step 5: 配置客户端 =
+Client可选gsnova(Go)或者snova(Java).
+==gsnova(Go)==
+  * 修改gsnova.conf
+    目前通过修改配置文件gsnova.conf实现,具体说明可参考snova(Java)部分，eg:
+    {{{
+      [GAE]
+      Enable=1
+      WorkerNode[0]=myappid1
+      WorkerNode[1]=myappid2
+    }}}
+==snova(Java)==
   * Framework
         Framework的配置仅有两三项，具体涉及proxy的配置均在相应plugin的配置中;目前均在conf/snova.conf中（GUI启动则在Config对话框中配置）,简要说明如下：
        # 如下的配置为默认的proxy地址，相应的浏览器的proxy地址应该填"127.0.0.1:48100"
