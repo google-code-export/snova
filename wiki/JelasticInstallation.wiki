@@ -7,7 +7,26 @@
 = Step 2: 部署 =
   * 完全图形化的操作，无需安装工具，按照说明将`snova-c4-server-[version].war`上传并deploy到ROOT下即可   [http://jelastic.com/docs/upload-deploy-application  jelastic部署指南]
 
-= Step 4: 配置Snova C4 Plugin的客户端 =
+= Step 4: 配置客户端 =
+客户端可选gsnova(Go)或者snova(Java)
+==gsnova(Go)==
+  * 修改gsnova.conf中C4部分，填入之前创建的域名，重启gsnova生效
+    {{{
+     [C4]
+     #Enable改为1，C4才能生效，默认为0关闭
+     Enable=1
+     #修改domain为Step2创建的域名, 可加多个域名
+     WorkerNode[0]=xyz.herokuapp.com
+     WorkerNode[1]=xyz.cloudfoundry.com
+    }}}
+  * 修改gsnova.conf中SPAC下默认的Proxy实现为C4
+    {{{    
+     [SPAC]
+     Enable=1
+     #默认Proxy实现，初始为GAE
+     Default=C4
+    }}}
+==snova(Java)==
   * 从snova-0.12.0120开始自动集成c4 plugin，无需单独安装
   * 修改`<snova>/plugins/c4/conf/c4-client.conf`
     {{{
