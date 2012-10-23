@@ -4,6 +4,13 @@
 _You can download the latest version of the Snova/GSnova [http://code.google.com/p/snova/downloads/list here]
 
 Snova/GSnova - Release Notes
+===Version 0.17.2 - (2012.10.23)===
+ * `[GAE]`: 升级snappy库，解决之前的snappy传输解压缩问题
+ * `[GAE]`: 修改默认的`LocalProxy为GoogleHttps`
+ * `[SPAC]`: 将spac.json分为用户自定义部分和网络同步部分
+ * `[Hosts]`: 将hosts.conf分为用户自定义部分和网络同步部分
+
+
 ===Version 0.17.0 - (2012.10.21)===
  * 仅gsnova更新
  * 增加简单的本地Web UI
