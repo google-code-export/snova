@@ -1,8 +1,9 @@
 #summary GAE Plugin的部署配置说明.
 #labels Featured
 
-= Step 1: 准备JDK/JRE环境 =
+= Step 1: 准备依赖环境 =
   运行部署snova需要JRE/JDK 1.6+
+  运行部署gsnova无需任何依赖
 
 = Step 2: 创建`GoogleAppEngine帐号/应用` =
   在官方站点创建自己的GAE帐号以及appid http://appengine.google.com/
