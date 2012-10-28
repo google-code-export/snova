@@ -12,14 +12,8 @@
   * Windows先没有Go的SDK，但上传snova-gae可以用任意Linux下的Go SDK上传
 
 = Step 4: 部署Server到Appengine服务器 =
-  * Java版本（和Go版本任选其一）
-    ** GUI方式
-      * appcfgwrapper安装程序已经集成到`snova-gae-jserver-[version].zip`中，执行install.bat/install.sh即可，具体请参考此项目说明 http://code.google.com/p/appcfgwrapper/ 
-    ** 命令行方式
-       * 下载并解压`snova-gae-jserver-[version].zip`
-       * 进入解压的目录, 修改war/WEB-INF/appengine-web.xml， 将`<application>`值改为自己创建的appid
-       * 执行appcfg.cmd/appcfg.sh update war上传, 注意在解压后进入的目录执行(appcfg在'<Google App Engine Java SDK>/bin'下 )
-  * Go版本(Windows下可以用Linux SDK上传)
+  * Go版本(和Java版本任选其一)
+    两种方式
     ** 用自带的Deployer部署
        * 下载并解压`snova-gae-gserver-[version].zip`
        * windows用户执行deployer.exe；Mac/Linux用户执行python deployer.py
@@ -28,6 +22,15 @@
        * 下载并解压`snova-gae-gserver-[version].zip`
        * 进入解压的目录, 修改app.yaml， 将`application: snova-master`中snova-master值改为自己创建的appid
        * 执行appcfg.py update `snova-gae-gserver-<version>`上传(appcfg.py在'<Google App Engine Go SDK>/'下
+  * Java版本
+    两种方式
+    ** GUI方式
+      * appcfgwrapper安装程序已经集成到`snova-gae-jserver-[version].zip`中，执行install.bat/install.sh即可，具体请参考此项目说明 http://code.google.com/p/appcfgwrapper/ 
+    ** 命令行方式
+       * 下载并解压`snova-gae-jserver-[version].zip`
+       * 进入解压的目录, 修改war/WEB-INF/appengine-web.xml， 将`<application>`值改为自己创建的appid
+       * 执行appcfg.cmd/appcfg.sh update war上传, 注意在解压后进入的目录执行(appcfg在'<Google App Engine Java SDK>/bin'下 )
+
     
     
 = Step 5: 配置客户端 =
