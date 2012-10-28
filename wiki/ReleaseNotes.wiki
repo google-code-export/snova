@@ -7,6 +7,7 @@ Snova/GSnova - Release Notes
 ===Version 0.17.2 - (2012.10.23)===
  * `[GAE]`: 升级snappy库，解决之前的snappy传输解压缩问题
  * `[GAE]`: 修改默认的`LocalProxy为GoogleHttps`
+ * `[GAE]`: Go server自带一个deployer，简化部署
  * `[SPAC]`: 将spac.json分为用户自定义部分和网络同步部分
  * `[Hosts]`: 将hosts.conf分为用户自定义部分和网络同步部分
 
