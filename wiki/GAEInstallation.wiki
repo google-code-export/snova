@@ -20,9 +20,15 @@
        * 进入解压的目录, 修改war/WEB-INF/appengine-web.xml， 将`<application>`值改为自己创建的appid
        * 执行appcfg.cmd/appcfg.sh update war上传, 注意在解压后进入的目录执行(appcfg在'<Google App Engine Java SDK>/bin'下 )
   * Go版本(Windows下可以用Linux SDK上传)
-    ** 下载并解压`snova-gae-gserver-[version].zip`
-    ** 进入解压的目录, 修改app.yaml， 将`application: snova-master`中snova-master值改为自己创建的appid
-    ** 执行appcfg.py update `snova-gae-gserver-<version>`上传(appcfg.py在'<Google App Engine Go SDK>/'下
+    ** 用自带的Deployer部署
+       * 下载并解压`snova-gae-gserver-[version].zip`
+       * windows用户执行deployer.exe；Mac/Linux用户执行python deployer.py
+       * 按照deployer的指示输入，执行部署
+    ** 用`Appengine Go SDK`部署
+       * 下载并解压`snova-gae-gserver-[version].zip`
+       * 进入解压的目录, 修改app.yaml， 将`application: snova-master`中snova-master值改为自己创建的appid
+       * 执行appcfg.py update `snova-gae-gserver-<version>`上传(appcfg.py在'<Google App Engine Go SDK>/'下
+    
     
 = Step 5: 配置客户端 =
 Client可选gsnova(Go)或者snova(Java).
