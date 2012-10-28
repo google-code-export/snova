@@ -8,9 +8,8 @@
 = Step 2: 创建`GoogleAppEngine帐号/应用` =
   在官方站点创建自己的GAE帐号以及appid http://appengine.google.com/
 
-= Step 3: 准备GAE SDK环境 =
+= Step 3: 准备GAE SDK环境用于部署上传(可选，Go版本自带一个部署工具) =
   * 下载解压Google App Engine SDK(Java/Go) ([http://code.google.com/intl/en/appengine/downloads.html 最新版本])， snova-gae支持Java/Go两种语言的server端实现，任选一个即可
-  * Windows先没有Go的SDK，但上传snova-gae可以用任意Linux下的Go SDK上传
 
 = Step 4: 部署Server到Appengine服务器 =
   * Go版本(和Java版本任选其一)
