@@ -4,6 +4,11 @@
 _You can download the latest version of the Snova/GSnova [http://code.google.com/p/snova/downloads/list here]
 
 Snova/GSnova - Release Notes
+===Version 0.18.0 - (2012.11.03)===
+ * 默认端口48100增加socks协议支持
+ * DNS模块改进以及性能提升
+ * 一些Bug fix
+
 ===Version 0.17.2 - (2012.10.23)===
  * `[GAE]`: 升级snappy库，解决之前的snappy传输解压缩问题
  * `[GAE]`: 修改默认的`LocalProxy为GoogleHttps`
