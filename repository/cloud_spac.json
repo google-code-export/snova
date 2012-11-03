@@ -16,10 +16,6 @@
     "Proxy": ["Direct"]
   },
   {
-    "Host" : ["*.c.youtube.com"],
-    "Proxy": ["Default"]
-  },
-  {
     "Host" : ["*.blogspot.*", "*.appspot.com", "golang.org"],
     "Proxy": ["GoogleHttps", "Direct", "Default"]
   },
