@@ -4,7 +4,7 @@
 _You can download the latest version of the Snova/GSnova [http://code.google.com/p/snova/downloads/list here]
 
 Snova/GSnova - Release Notes
-===Version 0.18.2 - (2012.11.10)===
+===Version 0.18.3 - (2012.11.10)===
  * 通过可信DNS解析Google站点
  * DNS默认开启缓存，仅解析IPv4，提升DNS性能
  * exe文件增加icon
