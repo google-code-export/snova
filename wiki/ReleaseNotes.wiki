@@ -6,6 +6,7 @@ _You can download the latest version of the Snova/GSnova [http://code.google.com
 Snova/GSnova - Release Notes
 ===Version 0.18.2 - (2012.11.10)===
  * 通过可信DNS解析Google站点
+ * DNS默认开启缓存，仅解析IPv4，提升DNS性能
  * exe文件增加icon
  * C4支持域名+路径配置
  * 修改默认youtube路由规则（优先直接访问）
