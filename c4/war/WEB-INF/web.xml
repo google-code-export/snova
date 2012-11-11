@@ -13,12 +13,21 @@ http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
 		<servlet-name>Index</servlet-name>
 		<servlet-class>org.snova.c4.server.servlet.IndexServlet</servlet-class>
 	</servlet>
-	
+
 	<servlet>
 		<servlet-name>RSocket</servlet-name>
 		<servlet-class>org.snova.c4.server.servlet.RSocketHeartBeatServlet</servlet-class>
 	</servlet>
 
+	<servlet>
+		<servlet-name>DNSQuery</servlet-name>
+		<servlet-class>org.snova.httpdns.DNSServlet</servlet-class>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>DNSQuery</servlet-name>
+		<url-pattern>/dns</url-pattern>
+	</servlet-mapping>
 	<servlet-mapping>
 		<servlet-name>HttpInvoke</servlet-name>
 		<url-pattern>/invoke</url-pattern>

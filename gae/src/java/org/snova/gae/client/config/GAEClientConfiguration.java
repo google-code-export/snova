@@ -42,10 +42,10 @@ import org.snova.gae.common.GAEPluginVersion;
  */
 public class GAEClientConfiguration implements ReloadableConfiguration
 {
-	protected static Logger logger = LoggerFactory
-	        .getLogger(GAEClientConfiguration.class);
-	private static GAEClientConfiguration instance = new GAEClientConfiguration();
-
+	protected static Logger	              logger	 = LoggerFactory
+	                                                         .getLogger(GAEClientConfiguration.class);
+	private static GAEClientConfiguration	instance	= new GAEClientConfiguration();
+	
 	private static File getConfigFile()
 	{
 		URL url = GAEClientConfiguration.class.getResource("/"
@@ -61,38 +61,39 @@ public class GAEClientConfiguration implements ReloadableConfiguration
 		}
 		return new File(conf);
 	}
-
+	
 	private GAEClientConfiguration()
 	{
 		loadConfig();
 		ReloadableConfigurationMonitor.getInstance().registerConfigFile(this);
 	}
-
-	private static final String GAE_TAG = "GAE";
-	private static final String MASTER_NODE_NAME = "MasterNode";
-	private static final String WORKER_NODE_NAME = "WorkerNode";
-	private static final String XMPP_TAG = "XMPP";
-	private static final String ACCOUNT_NAME = "Account";
-	private static final String CLIENT_TAG = "Client";
-	private static final String CONNECTION_MODE_NAME = "ConnectionMode";
-	private static final String SESSION_TIMEOUT_NAME = "SessionTimeOut";
-	private static final String SIMPLE_URL_ENABLE_NAME = "SimpleURLEnable";
-	private static final String COMPRESSOR_NAME = "Compressor";
-	private static final String ENCRYPTER_NAME = "Encrypter";
-	private static final String CONN_POOL_SIZE_NAME = "ConnectionPoolSize";
-	private static final String FETCH_LIMIT_NAME = "FetchLimitSize";
-	private static final String CONCURRENT_RANGE_FETCHER_NAME = "ConcurrentRangeFetchWorker";
-	private static final String RANGE_RETRY_LIMIT_NAME = "RangeFetchRetryLimit";
-	private static final String USER_AGENT_NAME = "UserAgent";
-	private static final String MATCH_SITES_NAME = "Sites";
-	private static final String MATCH_END_URLS_NAME = "EndURLs";
-
-	private static final String INJECT_RANGE_TAG = "InjectRange";
-	private static final String APPID_BINDING_TAG = "AppIdBinding";
-	private static final String GOOGLE_PROXY_TAG = "GoogleProxy";
-	private static final String MODE_NAME = "Mode";
-	private static final String PROXY_NAME = "Proxy";
-
+	
+	private static final String	GAE_TAG	                      = "GAE";
+	private static final String	MASTER_NODE_NAME	          = "MasterNode";
+	private static final String	WORKER_NODE_NAME	          = "WorkerNode";
+	private static final String	ENABLE_PIPELINE_NAME	      = "PipelineEnable";
+	private static final String	XMPP_TAG	                  = "XMPP";
+	private static final String	ACCOUNT_NAME	              = "Account";
+	private static final String	CLIENT_TAG	                  = "Client";
+	private static final String	CONNECTION_MODE_NAME	      = "ConnectionMode";
+	private static final String	SESSION_TIMEOUT_NAME	      = "SessionTimeOut";
+	private static final String	SIMPLE_URL_ENABLE_NAME	      = "SimpleURLEnable";
+	private static final String	COMPRESSOR_NAME	              = "Compressor";
+	private static final String	ENCRYPTER_NAME	              = "Encrypter";
+	private static final String	CONN_POOL_SIZE_NAME	          = "ConnectionPoolSize";
+	private static final String	FETCH_LIMIT_NAME	          = "FetchLimitSize";
+	private static final String	CONCURRENT_RANGE_FETCHER_NAME	= "ConcurrentRangeFetchWorker";
+	private static final String	RANGE_RETRY_LIMIT_NAME	      = "RangeFetchRetryLimit";
+	private static final String	USER_AGENT_NAME	              = "UserAgent";
+	private static final String	MATCH_SITES_NAME	          = "Sites";
+	private static final String	MATCH_END_URLS_NAME	          = "EndURLs";
+	
+	private static final String	INJECT_RANGE_TAG	          = "InjectRange";
+	private static final String	APPID_BINDING_TAG	          = "AppIdBinding";
+	private static final String	GOOGLE_PROXY_TAG	          = "GoogleProxy";
+	private static final String	MODE_NAME	                  = "Mode";
+	private static final String	PROXY_NAME	                  = "Proxy";
+	
 	private void loadConfig()
 	{
 		try
@@ -121,9 +122,9 @@ public class GAEClientConfiguration implements ReloadableConfiguration
 						serverAuths.add(auth);
 					}
 				}
-
+				
 			}
-
+			
 			List<XmppAccount> tmp = new LinkedList<GAEClientConfiguration.XmppAccount>();
 			ps = props.getProperties(XMPP_TAG);
 			if (null != ps)
@@ -144,13 +145,15 @@ public class GAEClientConfiguration implements ReloadableConfiguration
 				}
 				xmppAccounts = tmp;
 			}
-
+			
 			connectionMode = ConnectionMode.valueOf(props.getProperty(
 			        CLIENT_TAG, CONNECTION_MODE_NAME, "HTTP"));
 			sessionTimeout = props.getIntProperty(CLIENT_TAG,
 			        SESSION_TIMEOUT_NAME, sessionTimeout);
 			simpleURLEnable = props.getBoolProperty(CLIENT_TAG,
 			        SIMPLE_URL_ENABLE_NAME, false);
+			pipelineEnable = props.getBoolProperty(CLIENT_TAG,
+			        ENABLE_PIPELINE_NAME, false);
 			compressor = CompressorType.valueOf(props.getProperty(CLIENT_TAG,
 			        COMPRESSOR_NAME, "Snappy").toUpperCase());
 			encrypter = EncryptType.valueOf(props.getProperty(CLIENT_TAG,
@@ -165,7 +168,7 @@ public class GAEClientConfiguration implements ReloadableConfiguration
 			        RANGE_RETRY_LIMIT_NAME, 1);
 			httpProxyUserAgent = props.getProperty(CLIENT_TAG, USER_AGENT_NAME,
 			        "Snova-GAE V" + GAEPluginVersion.value);
-
+			
 			ps = props.getProperties(INJECT_RANGE_TAG);
 			if (null != ps)
 			{
@@ -174,7 +177,7 @@ public class GAEClientConfiguration implements ReloadableConfiguration
 				k = ps.getProperty(MATCH_END_URLS_NAME);
 				rangeMatcher.parseEndURLs(k);
 			}
-
+			
 			ps = props.getProperties(APPID_BINDING_TAG);
 			if (null != ps)
 			{
@@ -188,7 +191,7 @@ public class GAEClientConfiguration implements ReloadableConfiguration
 					appIdBindings.add(binding);
 				}
 			}
-
+			
 			int modevalue = props.getIntProperty(GOOGLE_PROXY_TAG, MODE_NAME,
 			        GoolgeProxyMode.OVERRIDE.value);
 			gProxymode = GoolgeProxyMode.fromInt(modevalue);
@@ -208,19 +211,19 @@ public class GAEClientConfiguration implements ReloadableConfiguration
 			logger.error("Failed to load gae-client config file!", e);
 		}
 	}
-
+	
 	public static enum ConnectionMode
 	{
 		HTTP, HTTPS, XMPP;
 	}
-
+	
 	public static class GAEServerAuth
 	{
-		public String appid;
-		public String user;
-		public String passwd;
-		public boolean backendEnable;
-
+		public String	appid;
+		public String	user;
+		public String	passwd;
+		public boolean	backendEnable;
+		
 		public void init()
 		{
 			if (user == null || user.equals(""))
@@ -235,7 +238,7 @@ public class GAEClientConfiguration implements ReloadableConfiguration
 			user = user.trim();
 			passwd = passwd.trim();
 		}
-
+		
 		public boolean parse(String line)
 		{
 			if (null == line || line.trim().isEmpty())
@@ -265,19 +268,19 @@ public class GAEClientConfiguration implements ReloadableConfiguration
 			init();
 			return true;
 		}
-
+		
 		public String toString()
 		{
 			return user + ":" + passwd + "@" + appid
 			        + (backendEnable ? "/backend" : "");
 		}
 	}
-
+	
 	public static class MasterNode
 	{
-		public String appid = "snova-master";
-		public boolean backendEnable = false;
-
+		public String	appid		  = "snova-master";
+		public boolean	backendEnable	= false;
+		
 		public boolean parse(String line)
 		{
 			if (null == line || line.trim().isEmpty())
@@ -293,25 +296,25 @@ public class GAEClientConfiguration implements ReloadableConfiguration
 			}
 			return true;
 		}
-
+		
 		public String toString()
 		{
 			return appid + (backendEnable ? "/backend" : "");
 		}
 	}
-
+	
 	public static class XmppAccount
 	{
-		private static final String GTALK_SERVER = "talk.google.com";
-		private static final String GTALK_SERVER_NAME = "gmail.com";
-		private static final int GTALK_SERVER_PORT = 5222;
-
-		private static final String OVI_SERVER = "chat.ovi.com";
-		private static final String OVI_SERVER_NAME = "ovi.com";
-		private static final int OVI_SERVER_PORT = 5223;
-
-		protected static final int DEFAULT_PORT = 5222;
-
+		private static final String	GTALK_SERVER		= "talk.google.com";
+		private static final String	GTALK_SERVER_NAME	= "gmail.com";
+		private static final int	GTALK_SERVER_PORT	= 5222;
+		
+		private static final String	OVI_SERVER		  = "chat.ovi.com";
+		private static final String	OVI_SERVER_NAME		= "ovi.com";
+		private static final int	OVI_SERVER_PORT		= 5223;
+		
+		protected static final int	DEFAULT_PORT		= 5222;
+		
 		public boolean parse(String line)
 		{
 			if (null == line || line.trim().isEmpty())
@@ -331,7 +334,7 @@ public class GAEClientConfiguration implements ReloadableConfiguration
 				accountstr = line.substring(0, line.lastIndexOf('#'));
 				serverstr = line.substring(line.lastIndexOf('#') + 1);
 			}
-
+			
 			if (accountstr.indexOf(':') == -1)
 			{
 				logger.error("No XMPP user/pass separator ':' found in gae-client.conf.");
@@ -357,7 +360,7 @@ public class GAEClientConfiguration implements ReloadableConfiguration
 			}
 			return true;
 		}
-
+		
 		public XmppAccount init()
 		{
 			String server = StringUtils.parseServer(jid).trim();
@@ -409,45 +412,45 @@ public class GAEClientConfiguration implements ReloadableConfiguration
 				connectionConfig
 				        .setSocketFactory(SSLSocketFactory.getDefault());
 			}
-
+			
 			return this;
 		}
-
-		public String jid;
-		public String passwd;
-		public int serverPort;
-		public String serverHost;
-		public boolean isOldSSLEnable;
-
-		public ConnectionConfiguration connectionConfig;
-		public String name;
-
+		
+		public String		           jid;
+		public String		           passwd;
+		public int		               serverPort;
+		public String		           serverHost;
+		public boolean		           isOldSSLEnable;
+		
+		public ConnectionConfiguration	connectionConfig;
+		public String		           name;
+		
 		public String toString()
 		{
 			return jid + ":" + passwd + "#" + serverHost + ":" + serverPort
 			        + (isOldSSLEnable ? "/oldssl" : "");
 		}
 	}
-
-	private List<GAEServerAuth> serverAuths = new LinkedList<GAEServerAuth>();
-
+	
+	private List<GAEServerAuth>	serverAuths	= new LinkedList<GAEServerAuth>();
+	
 	public void setGAEServerAuths(List<GAEServerAuth> serverAuths)
 	{
 		this.serverAuths = serverAuths;
 	}
-
+	
 	public List<GAEServerAuth> getGAEServerAuths()
 	{
 		return serverAuths;
 	}
-
-	private MasterNode masterNode = new MasterNode();
-
+	
+	private MasterNode	masterNode	= new MasterNode();
+	
 	public MasterNode getMasterNode()
 	{
 		return masterNode;
 	}
-
+	
 	public GAEServerAuth getGAEServerAuth(String appid)
 	{
 		for (GAEServerAuth auth : serverAuths)
@@ -459,96 +462,96 @@ public class GAEClientConfiguration implements ReloadableConfiguration
 		}
 		return null;
 	}
-
-	private List<XmppAccount> xmppAccounts = new LinkedList<GAEClientConfiguration.XmppAccount>();
-
+	
+	private List<XmppAccount>	xmppAccounts	= new LinkedList<GAEClientConfiguration.XmppAccount>();
+	
 	public void setXmppAccounts(List<XmppAccount> xmppAccounts)
 	{
 		this.xmppAccounts = xmppAccounts;
 	}
-
+	
 	public List<XmppAccount> getXmppAccounts()
 	{
 		return xmppAccounts;
 	}
-
-	private ConnectionMode connectionMode = ConnectionMode.HTTP;
-
+	
+	private ConnectionMode	connectionMode	= ConnectionMode.HTTP;
+	
 	public ConnectionMode getConnectionMode()
 	{
 		return connectionMode;
 	}
-
+	
 	public void setConnectionMode(ConnectionMode mode)
 	{
 		connectionMode = mode;
 	}
-
-	private int sessionTimeout = 60000;
-
+	
+	private int	sessionTimeout	= 60000;
+	
 	public void setSessionTimeOut(int sessionTimeout)
 	{
 		this.sessionTimeout = sessionTimeout;
 	}
-
+	
 	public int getSessionTimeOut()
 	{
 		return sessionTimeout;
 	}
-
-	private CompressorType compressor;
-
+	
+	private CompressorType	compressor;
+	
 	public CompressorType getCompressor()
 	{
 		return compressor;
 	}
-
+	
 	public void setCompressor(CompressorType type)
 	{
 		compressor = type;
 	}
-
-	private EncryptType encrypter;
-
+	
+	private EncryptType	encrypter;
+	
 	public EncryptType getEncrypter()
 	{
 		return encrypter;
 	}
-
+	
 	public void setEncrypter(EncryptType type)
 	{
 		this.encrypter = type;
 	}
-
-	private boolean simpleURLEnable;
-
+	
+	private boolean	simpleURLEnable;
+	
 	public void setSimpleURLEnable(boolean simpleURLEnable)
 	{
 		this.simpleURLEnable = simpleURLEnable;
 	}
-
+	
 	public boolean isSimpleURLEnable()
 	{
 		return simpleURLEnable;
 	}
-
-	private int connectionPoolSize = 7;
-
+	
+	private int	connectionPoolSize	= 7;
+	
 	public void setConnectionPoolSize(int connectionPoolSize)
 	{
 		this.connectionPoolSize = connectionPoolSize;
 	}
-
+	
 	public int getConnectionPoolSize()
 	{
 		return connectionPoolSize;
 	}
-
+	
 	static class InjectRangeHeaderMatcher
 	{
-		List<String> injectRangeHeaderSiteSet = new LinkedList<String>();
-		List<String> injectRangeHeaderURLSet = new LinkedList<String>();
-
+		List<String>	injectRangeHeaderSiteSet	= new LinkedList<String>();
+		List<String>	injectRangeHeaderURLSet		= new LinkedList<String>();
+		
 		void putToIniProperties(IniProperties props)
 		{
 			StringBuilder buffer = new StringBuilder();
@@ -562,7 +565,7 @@ public class GAEClientConfiguration implements ReloadableConfiguration
 				props.setProperty(INJECT_RANGE_TAG, MATCH_SITES_NAME,
 				        buffer.toString());
 			}
-
+			
 			buffer = new StringBuilder();
 			for (String s : injectRangeHeaderURLSet)
 			{
@@ -574,9 +577,9 @@ public class GAEClientConfiguration implements ReloadableConfiguration
 				props.setProperty(INJECT_RANGE_TAG, MATCH_END_URLS_NAME,
 				        buffer.toString());
 			}
-
+			
 		}
-
+		
 		boolean parseSites(String line)
 		{
 			injectRangeHeaderSiteSet.clear();
@@ -590,7 +593,7 @@ public class GAEClientConfiguration implements ReloadableConfiguration
 			}
 			return true;
 		}
-
+		
 		boolean parseEndURLs(String line)
 		{
 			injectRangeHeaderURLSet.clear();
@@ -604,7 +607,7 @@ public class GAEClientConfiguration implements ReloadableConfiguration
 			}
 			return true;
 		}
-
+		
 		boolean siteMatched(String host)
 		{
 			for (String site : injectRangeHeaderSiteSet)
@@ -616,7 +619,7 @@ public class GAEClientConfiguration implements ReloadableConfiguration
 			}
 			return false;
 		}
-
+		
 		boolean endUrlMatched(String url)
 		{
 			for (String pattern : injectRangeHeaderURLSet)
@@ -629,83 +632,83 @@ public class GAEClientConfiguration implements ReloadableConfiguration
 			return false;
 		}
 	}
-
-	private InjectRangeHeaderMatcher rangeMatcher = new InjectRangeHeaderMatcher();
-
+	
+	private InjectRangeHeaderMatcher	rangeMatcher	= new InjectRangeHeaderMatcher();
+	
 	public boolean isInjectRangeHeaderSiteMatched(String host)
 	{
 		return rangeMatcher.siteMatched(host);
 	}
-
+	
 	public boolean isInjectRangeHeaderURLMatched(String url)
 	{
 		return rangeMatcher.endUrlMatched(url);
 	}
-
-	private int fetchLimitSize = 512000;
-
+	
+	private int	fetchLimitSize	= 512000;
+	
 	public void setFetchLimitSize(int fetchLimitSize)
 	{
 		this.fetchLimitSize = fetchLimitSize;
 	}
-
+	
 	public int getFetchLimitSize()
 	{
 		return fetchLimitSize;
 	}
-
-	private int concurrentFetchWorker;
-
+	
+	private int	concurrentFetchWorker;
+	
 	public void setConcurrentRangeFetchWorker(int num)
 	{
 		this.concurrentFetchWorker = num;
 	}
-
+	
 	public int getConcurrentRangeFetchWorker()
 	{
 		return concurrentFetchWorker;
 	}
-
-	private int rangeFetchRetryLimit = 1;
-
+	
+	private int	rangeFetchRetryLimit	= 1;
+	
 	public void setRangeFetchRetryLimit(int num)
 	{
 		this.rangeFetchRetryLimit = num;
 	}
-
+	
 	public int getRangeFetchRetryLimit()
 	{
 		return rangeFetchRetryLimit;
 	}
-
-	private ProxyInfo googleProxy;
-
+	
+	private ProxyInfo	googleProxy;
+	
 	public void setGoogleProxy(ProxyInfo localProxy)
 	{
 		this.googleProxy = localProxy;
 	}
-
+	
 	public ProxyInfo getGoogleProxy()
 	{
 		return googleProxy;
 	}
-
+	
 	public static enum GoolgeProxyMode
 	{
 		DISABLE(0), OVERRIDE(1), NEXT_CHAIN(2);
-		int value;
-
+		int	value;
+		
 		GoolgeProxyMode(int v)
 		{
 			this.value = v;
 		}
-
+		
 		public int getValue()
 		{
 			return value;
-
+			
 		}
-
+		
 		public static GoolgeProxyMode fromInt(int v)
 		{
 			switch (v)
@@ -721,19 +724,19 @@ public class GAEClientConfiguration implements ReloadableConfiguration
 			}
 		}
 	}
-
-	private GoolgeProxyMode gProxymode = GoolgeProxyMode.OVERRIDE;
-
+	
+	private GoolgeProxyMode	gProxymode	= GoolgeProxyMode.OVERRIDE;
+	
 	public void setGoolgeProxyMode(GoolgeProxyMode mode)
 	{
 		this.gProxymode = mode;
 	}
-
+	
 	public GoolgeProxyMode getGoolgeProxyMode()
 	{
 		return gProxymode;
 	}
-
+	
 	public void init() throws Exception
 	{
 		if (googleProxy != null)
@@ -772,7 +775,7 @@ public class GAEClientConfiguration implements ReloadableConfiguration
 				auth.init();
 			}
 		}
-
+		
 		if (getConnectionMode().equals(ConnectionMode.XMPP))
 		{
 			for (int i = 0; i < xmppAccounts.size(); i++)
@@ -796,12 +799,12 @@ public class GAEClientConfiguration implements ReloadableConfiguration
 			        + ConnectionMode.XMPP
 			        + ", at least one XMPP account needed.");
 		}
-
+		
 		if (googleProxy == null || googleProxy.host.contains("google"))
 		{
 			simpleURLEnable = true;
 		}
-
+		
 		if (null == masterNode || masterNode.appid == null)
 		{
 			boolean backendEnable = null != masterNode ? masterNode.backendEnable
@@ -811,14 +814,14 @@ public class GAEClientConfiguration implements ReloadableConfiguration
 			masterNode.backendEnable = backendEnable;
 		}
 	}
-
-	private List<AppIdBinding> appIdBindings = new LinkedList<GAEClientConfiguration.AppIdBinding>();
-
+	
+	private List<AppIdBinding>	appIdBindings	= new LinkedList<GAEClientConfiguration.AppIdBinding>();
+	
 	static class AppIdBinding
 	{
-		String appid;
-		List<String> sites = new LinkedList<String>();
-
+		String		 appid;
+		List<String>	sites	= new LinkedList<String>();
+		
 		void parse(String appid, String line)
 		{
 			this.appid = appid;
@@ -831,7 +834,7 @@ public class GAEClientConfiguration implements ReloadableConfiguration
 				}
 			}
 		}
-
+		
 		void putToIniProperties(IniProperties props)
 		{
 			StringBuilder buffer = new StringBuilder();
@@ -842,7 +845,7 @@ public class GAEClientConfiguration implements ReloadableConfiguration
 			props.setProperty(APPID_BINDING_TAG, appid, buffer.toString());
 		}
 	}
-
+	
 	public String getBindingAppId(String host)
 	{
 		if (null != appIdBindings)
@@ -860,19 +863,26 @@ public class GAEClientConfiguration implements ReloadableConfiguration
 		}
 		return null;
 	}
-
-	private String httpProxyUserAgent;
-
+	
+	private boolean	pipelineEnable	= true;
+	
+	public boolean isPipelineEnable()
+	{
+		return pipelineEnable;
+	}
+	
+	private String	httpProxyUserAgent;
+	
 	public String getUserAgent()
 	{
 		return httpProxyUserAgent;
 	}
-
+	
 	public void setUserAgent(String v)
 	{
 		httpProxyUserAgent = v;
 	}
-
+	
 	public ProxyInfo getGoogleProxyChain()
 	{
 		if (null != googleProxy
@@ -882,7 +892,7 @@ public class GAEClientConfiguration implements ReloadableConfiguration
 		}
 		return null;
 	}
-
+	
 	public ProxyInfo getLocalProxy()
 	{
 		if (null == googleProxy || gProxymode.equals(GoolgeProxyMode.DISABLE)
@@ -902,12 +912,12 @@ public class GAEClientConfiguration implements ReloadableConfiguration
 			}
 		}
 	}
-
+	
 	public static GAEClientConfiguration getInstance()
 	{
 		return instance;
 	}
-
+	
 	public void save() throws Exception
 	{
 		try
@@ -923,7 +933,7 @@ public class GAEClientConfiguration implements ReloadableConfiguration
 				i++;
 			}
 			props.setProperty(GAE_TAG, MASTER_NODE_NAME, masterNode.toString());
-
+			
 			i = 0;
 			for (XmppAccount account : xmppAccounts)
 			{
@@ -931,7 +941,7 @@ public class GAEClientConfiguration implements ReloadableConfiguration
 				        account.toString());
 				i++;
 			}
-
+			
 			props.setProperty(CLIENT_TAG, CONNECTION_MODE_NAME,
 			        connectionMode.toString());
 			props.setIntProperty(CLIENT_TAG, SESSION_TIMEOUT_NAME,
@@ -945,11 +955,13 @@ public class GAEClientConfiguration implements ReloadableConfiguration
 			props.setIntProperty(CLIENT_TAG, FETCH_LIMIT_NAME, fetchLimitSize);
 			props.setBoolProperty(CLIENT_TAG, SIMPLE_URL_ENABLE_NAME,
 			        simpleURLEnable);
+			props.setBoolProperty(CLIENT_TAG, ENABLE_PIPELINE_NAME,
+			        pipelineEnable);
 			props.setProperty(CLIENT_TAG, COMPRESSOR_NAME,
 			        compressor.toString());
 			props.setProperty(CLIENT_TAG, ENCRYPTER_NAME, encrypter.toString());
 			props.setProperty(CLIENT_TAG, USER_AGENT_NAME, httpProxyUserAgent);
-
+			
 			if (null != googleProxy)
 			{
 				props.setIntProperty(GOOGLE_PROXY_TAG, MODE_NAME,
@@ -957,12 +969,12 @@ public class GAEClientConfiguration implements ReloadableConfiguration
 				props.setProperty(GOOGLE_PROXY_TAG, PROXY_NAME,
 				        googleProxy.toString());
 			}
-
+			
 			for (AppIdBinding binding : appIdBindings)
 			{
 				binding.putToIniProperties(props);
 			}
-
+			
 			rangeMatcher.putToIniProperties(props);
 			props.store(fos);
 		}
@@ -971,17 +983,17 @@ public class GAEClientConfiguration implements ReloadableConfiguration
 			throw e;
 		}
 	}
-
+	
 	@Override
 	public void reload()
 	{
 		loadConfig();
 	}
-
+	
 	@Override
 	public File getConfigurationFile()
 	{
 		return getConfigFile();
 	}
-
+	
 }

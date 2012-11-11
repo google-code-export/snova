@@ -21,12 +21,16 @@ http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
 		<servlet-name>BackendStart</servlet-name>
 		<servlet-class>org.snova.gae.server.servlet.BackendInitServlet</servlet-class>
 	</servlet>
-	
+	<servlet>
+		<servlet-name>DNSQuery</servlet-name>
+		<servlet-class>org.snova.gae.server.servlet.DNSServlet</servlet-class>
+	</servlet>
+
 	<servlet-mapping>
 		<servlet-name>BackendStart</servlet-name>
 		<url-pattern>/_ah/start/</url-pattern>
 	</servlet-mapping>
-	
+
 	<servlet-mapping>
 		<servlet-name>XmppInvoke</servlet-name>
 		<url-pattern>/_ah/xmpp/message/chat/</url-pattern>
@@ -51,7 +55,7 @@ http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
 			<role-name>admin</role-name>
 		</auth-constraint>
 	</security-constraint>
-	
+
 
 	<servlet>
 		<servlet-name>Index</servlet-name>
@@ -62,6 +66,10 @@ http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
 		<url-pattern>/</url-pattern>
 	</servlet-mapping>
 
+	<servlet-mapping>
+		<servlet-name>DNSQuery</servlet-name>
+		<url-pattern>/dns</url-pattern>
+	</servlet-mapping>
 	<servlet>
 		<servlet-name>Admin</servlet-name>
 		<servlet-class>org.snova.gae.server.servlet.page.AdminServlet</servlet-class>

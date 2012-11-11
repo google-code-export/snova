@@ -14,6 +14,7 @@ import org.eclipse.jetty.util.thread.ThreadPool;
 import org.snova.c4.server.servlet.InvokeServlet;
 import org.snova.c4.server.servlet.IndexServlet;
 import org.snova.c4.server.servlet.RSocketHeartBeatServlet;
+import org.snova.httpdns.DNSServlet;
 
 
 
@@ -40,6 +41,7 @@ public class LauncherServer
 		server.setHandler(context);
 		context.addServlet(new ServletHolder(new IndexServlet()), "/*");
 		context.addServlet(new ServletHolder(new InvokeServlet()), "/invoke");
+		context.addServlet(new ServletHolder(new DNSServlet()), "/dns");
 		context.addServlet(new ServletHolder(new RSocketHeartBeatServlet()), "/rsocket");
 		QueuedThreadPool pool = new QueuedThreadPool(30);
 		pool.setMaxIdleTimeMs(30000);

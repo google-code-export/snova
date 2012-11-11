@@ -9,8 +9,11 @@ package org.arch.dns;
  */
 public class ResolveOptions
 {
-	public boolean	useTcp;
-	public int	   cacheTtl;
-	public int	   retry	= 3;
-	public int	   timeout	= 5000;
+	public static final int	DNS_CACHE_TTL_SELF	  = -2;
+	public static final int	DNS_CACHE_TTL_FOREVER	= -1;
+	
+	public boolean	        useTcp;
+	public int	            cacheTtl;
+	public int	            retry	              = 3;
+	public int	            timeout	              = 5000;
 }
