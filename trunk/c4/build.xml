@@ -15,7 +15,7 @@
 	<property name="conf" value="${root}/conf" />
 	<property name="temp" value="${root}/temp" />
 	<property name="release" value="release" />
-	<property name="version" value="0.15.1" />
+	<property name="version" value="0.18.0" />
 	<property name="versionfile" value="org/snova/c4/common/C4PluginVersion.java" />
 	<property name="release_dir_name" value="c4" />
 	<property name="project_name" value="snova-c4" />
@@ -36,6 +36,7 @@
 		<javac debug="on" destdir="${clientclasses}">
 			<src path="${srcroot}" />
 			<exclude name="org/snova/c4/server/**/*" />
+			<exclude name="org/snova/httpdns/**/*" />
 			<classpath>
 				<fileset dir="${lib}">
 					<include name="*.jar" />
@@ -55,7 +56,7 @@
 	</target>
 
 	<target name="compile-server" depends="prepare">
-		
+
 		<javac debug="on" destdir="${warclasses}">
 			<src path="${srcroot}" />
 			<exclude name="org/snova/c4/client/**/*" />
@@ -70,6 +71,10 @@
 				<pathelement path="${root}/../framework/lib/slf4j-api-1.6.4.jar" />
 			</classpath>
 		</javac>
+		<copy todir="${warclasses}/html" file="${srcroot}/html/index.html">
+		</copy>
+		<copy todir="${warclasses}/template" file="${srcroot}/template/result.html.template">
+		</copy>
 	</target>
 
 	<target name="compile" depends="compile-client, compile-server" />
@@ -81,12 +86,12 @@
 	</target>
 
 	<target name="war" depends="compile">
-		<copy todir="${warlib}" file="${root}/../framework/lib/framework.jar"/>
-		<copy todir="${warlib}" file="${root}/../framework/lib/arch.jar"/>
-		<copy todir="${warlib}" file="${root}/../framework/lib/netty-3.2.6.Final.jar"/>
-		<copy todir="${warlib}" file="${root}/../framework/lib/slf4j-api-1.6.4.jar"/>
+		<copy todir="${warlib}" file="${root}/../framework/lib/framework.jar" />
+		<copy todir="${warlib}" file="${root}/../framework/lib/arch.jar" />
+		<copy todir="${warlib}" file="${root}/../framework/lib/netty-3.2.6.Final.jar" />
+		<copy todir="${warlib}" file="${root}/../framework/lib/slf4j-api-1.6.4.jar" />
 
-		<zip destfile="${project_name}-server-${version}.war" basedir="${war}"/>
+		<zip destfile="${project_name}-server-${version}.war" basedir="${war}" />
 	</target>
 
 	<target name="herokupackage" depends="compile">
@@ -94,20 +99,29 @@
 		<property name="herokuserverdir" value="${herokurelease}/snova-heroku-server-${version}" />
 		<mkdir dir="${herokuserverdir}" />
 		<mkdir dir="${herokuserverdir}/target" />
+		<mkdir dir="${herokuserverdir}/static" />
 		<property name="herokusrc" value="${herokuserverdir}/src/main/java" />
 		<property name="herokurepo" value="${herokuserverdir}/repo/snova" />
 		<mkdir dir="${herokurepo}/arch/1.0" />
 		<mkdir dir="${herokurepo}/framework/1.0" />
-		<copy tofile="${herokurepo}/arch/1.0/arch-1.0.jar" file="${root}/../framework/lib/arch.jar"/>
-		<copy tofile="${herokurepo}/framework/1.0/framework-1.0.jar" file="${root}/../framework/lib/framework.jar"/>
+		<copy tofile="${herokurepo}/arch/1.0/arch-1.0.jar" file="${root}/../framework/lib/arch.jar" />
+		<copy tofile="${herokurepo}/framework/1.0/framework-1.0.jar" file="${root}/../framework/lib/framework.jar" />
 		<mkdir dir="${herokusrc}" />
 		<copy todir="${herokusrc}">
 			<fileset dir="${srcroot}">
 				<include name="**/org/snova/c4/server/**" />
+				<include name="**/org/snova/httpdns/**" />
 				<include name="**/org/snova/c4/common/**" />
 			</fileset>
 			<fileset dir="${root}/test">
 				<include name="**/LauncherServer.java" />
+			</fileset>
+		</copy>
+
+		<copy todir="${herokuserverdir}/static">
+			<fileset dir="${srcroot}">
+				<include name="**/html/**" />
+				<include name="**/template/**" />
 			</fileset>
 		</copy>
 		<copy todir="${herokuserverdir}">
@@ -115,8 +129,8 @@
 				<include name="*" />
 			</fileset>
 		</copy>
-		<zip destfile="${project_name}-heroku-server-${version}.zip" basedir="${herokurelease}"/>
-		<delete dir="${herokurelease}"/>
+		<zip destfile="${project_name}-heroku-server-${version}.zip" basedir="${herokurelease}" />
+		<delete dir="${herokurelease}" />
 	</target>
 
 	<target name="packageserver" depends="herokupackage, war">

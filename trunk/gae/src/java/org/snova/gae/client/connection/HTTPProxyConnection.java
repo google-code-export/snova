@@ -47,6 +47,7 @@ import org.jboss.netty.handler.execution.OrderedMemoryAwareThreadPoolExecutor;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.snova.framework.common.Constants;
 import org.snova.framework.config.SimpleSocketAddress;
 import org.snova.framework.util.HostsHelper;
 import org.snova.framework.util.SharedObjectHelper;
@@ -84,6 +85,8 @@ public class HTTPProxyConnection extends ProxyConnection
 	                                                                           0);
 	private ChannelInitTask	                  sslChannelInitTask	   = null;
 	
+	private boolean	                          supportPipeline	       = true;
+	
 	class ChannelInitTask
 	{
 		private boolean		sslConnectionEnable;
@@ -97,6 +100,7 @@ public class HTTPProxyConnection extends ProxyConnection
 		
 		public void onInitedSucceed()
 		{
+			injectCRLFs();
 			clientChannel.write(request);
 		}
 		
@@ -116,7 +120,7 @@ public class HTTPProxyConnection extends ProxyConnection
 		
 		public void onVerify()
 		{
-			if(logger.isDebugEnabled())
+			if (logger.isDebugEnabled())
 			{
 				logger.debug("Start onverify channel.");
 			}
@@ -180,6 +184,10 @@ public class HTTPProxyConnection extends ProxyConnection
 	
 	public boolean isReady()
 	{
+		if (supportPipeline)
+		{
+			return true;
+		}
 		return !waitingResponse.get();
 	}
 	
@@ -199,6 +207,21 @@ public class HTTPProxyConnection extends ProxyConnection
 		}
 	}
 	
+	private void injectCRLFs()
+	{
+		if (null != cfg.getLocalProxy())
+		{
+			if (ProxyType.HTTP.equals(cfg.getLocalProxy().type))
+			{
+				if (cfg.getLocalProxy().host.contains("Google"))
+				{
+					clientChannel.write(ChannelBuffers
+					        .wrappedBuffer(Constants.CRLF_CHARS));
+				}
+			}
+		}
+	}
+	
 	@Override
 	protected int getMaxDataPackageSize()
 	{
@@ -208,7 +231,7 @@ public class HTTPProxyConnection extends ProxyConnection
 	private ChannelInitTask initConnectedChannel(Channel connectedChannel,
 	        HttpRequest req)
 	{
-
+		
 		boolean sslConnectionEnable = false;
 		ProxyInfo info = cfg.getLocalProxy();
 		if (null != info)
@@ -239,11 +262,6 @@ public class HTTPProxyConnection extends ProxyConnection
 				}
 				sslProxyConnectionStatus.set(WAITING_CONNECT_RESPONSE);
 				connectedChannel.write(request);
-				// String req = "CONNECT docs.google.com:443 HTTP/1.1\r\n"
-				// + "Host: docs.google.com:443\r\n\r\n";
-				// ChannelBuffer tmp =
-				// ChannelBuffers.wrappedBuffer(req.getBytes());
-				// clientChannel.write(tmp);
 				if (logger.isDebugEnabled())
 				{
 					logger.debug("Send google chain connect resuest:" + request);
@@ -254,7 +272,7 @@ public class HTTPProxyConnection extends ProxyConnection
 				sslProxyConnectionStatus.set(CONNECT_RESPONSED);
 			}
 		}
-
+		
 		ChannelInitTask task = new ChannelInitTask(req, sslConnectionEnable);
 		
 		return task;
@@ -316,6 +334,14 @@ public class HTTPProxyConnection extends ProxyConnection
 		{
 			logger.debug("Connect remote proxy server " + connectHost + ":"
 			        + connectPort + " and sslEnable:" + sslConnectionEnable);
+		}
+		if (!NetworkHelper.isIPV6Address(HostsHelper.getMappingHost(address
+		        .getHost())))
+		{
+			if (!NetworkHelper.checkIp(connectHost))
+			{
+				connectHost = HostsHelper.lookupIP(connectHost);
+			}
 		}
 		ChannelFuture future = clientChannel.connect(new InetSocketAddress(
 		        connectHost, connectPort));
@@ -399,6 +425,7 @@ public class HTTPProxyConnection extends ProxyConnection
 		}
 		else
 		{
+			injectCRLFs();
 			clientChannel.write(request);
 			if (logger.isDebugEnabled())
 			{

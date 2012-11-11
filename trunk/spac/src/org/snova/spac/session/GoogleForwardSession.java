@@ -16,6 +16,7 @@ import org.arch.event.http.HTTPConnectionEvent;
 import org.arch.event.http.HTTPEventContants;
 import org.arch.event.http.HTTPRequestEvent;
 import org.arch.misc.crypto.base64.Base64;
+import org.arch.util.NetworkHelper;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
@@ -90,12 +91,7 @@ public class GoogleForwardSession extends Session
 	
 	private String getGoogleHttpsHost()
 	{
-		String s = HostsHelper.getMappingHost("GoogleHttpsIP");
-		if (s == "GoogleHttpsIP")
-		{
-			s = HostsHelper.getMappingHost("GoogleHttps");
-		}
-		return s;
+		return  HostsHelper.getMappingHost("GoogleHttps");
 	}
 	
 	protected SocketChannel newRemoteGoogleChannel()
@@ -235,6 +231,10 @@ public class GoogleForwardSession extends Session
 		{
 			logger.debug("Connect remote address " + connectHost + ":"
 			        + connectPort);
+		}
+		if (!NetworkHelper.checkIp(connectHost))
+		{
+			connectHost = HostsHelper.lookupIP(connectHost);
 		}
 		ChannelFuture future = channel.connect(new InetSocketAddress(
 		        connectHost, connectPort));

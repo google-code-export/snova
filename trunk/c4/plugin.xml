@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<plugin name="C4" version="0.15.0">
+<plugin name="C4" version="0.18.0">
    <depend/>
    <entryClass>org.snova.c4.client.shell.swing.GUIPluginWrapper</entryClass>   
    <description>

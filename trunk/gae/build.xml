@@ -19,7 +19,7 @@
 	<property name="temp" value="${root}/temp" />
 	<property name="shell" value="${root}/shell" />
 	<property name="release" value="release" />
-	<property name="version" value="0.15.0" />
+	<property name="version" value="0.18.0" />
 	<property name="versionfile" value="org/snova/gae/common/GAEPluginVersion.java" />
 	<property name="goversionfile" value="misc/version.go" />
 	<property name="release_dir_name" value="gae" />
@@ -37,8 +37,7 @@
 			{${line.separator}
 			   public static final String value = &quot;${version}&quot;;${line.separator}
 			}" file="${srcroot}/${versionfile}" />
-		<echo message="package misc ${line.separator} ${line.separator}const Version = &quot;${version}&quot;" 
-			file="${gosrcroot}/${goversionfile}" />
+		<echo message="package misc ${line.separator} ${line.separator}const Version = &quot;${version}&quot;" file="${gosrcroot}/${goversionfile}" />
 	</target>
 
 	<target name="compile-server" depends="prepare">
@@ -115,7 +114,7 @@
 		<delete dir="${releasedir}" />
 	</target>
 
-	<target name="release" depends="jarclient, packageserver">
+	<target name="release" depends="jarclient">
 		<property name="releaseprojectdir" value="${releasedir}/${release_dir_name}" />
 		<mkdir dir="${releaseprojectdir}" />
 		<mkdir dir="${releaseprojectdir}/deploy" />
