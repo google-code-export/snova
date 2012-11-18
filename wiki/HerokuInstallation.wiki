@@ -5,17 +5,15 @@
 按照Heroku官方的[http://devcenter.heroku.com/articles/quickstart QuickStart]注册帐号，安装SDK（注册较简单，仅需要email）
 
 = Step 2: 部署Snova C4 Plugin的服务端到Heroku =
-  * 下载`snova-c4-heroku-serverr-[version].zip`， 在任意目录下解压
-  * 在命令行下进入解压的目录，依次顺序执行以下的命令,每一行单独执行
+  * 下载`snova-c4-server-[version].war`， 放在任意地方
+  * 在命令行下war文件所在目录，依次顺序执行以下的命令,每一行单独执行
     {{{
        heroku login
-       git init
-       git add .
-       git commit -m "init"
-       heroku create --stack cedar
-       git push heroku master
+       heroku plugins:install https://github.com/heroku/heroku-deploy  --只需执行一次，以后不用执行
+       heroku apps:create      --此步创建一个app，名字随机，记住此步的appname（域名不含.herokuapp.com）。更新不用执行此步
+       heroku deploy:war --war <path_to_war_file> --app <app_name> 
     }}}
-  * 留意执行“heroku create --stack cedar”时的输出，一般会显示创建的域名，为 "xx.herokuapp.com", 记下该域名，为配置Client准备（该域名也可登录Heroku的Web找到）
+  * 留意执行“heroku apps:create”时的输出，一般会显示创建的域名，为 "xx.herokuapp.com", 记下该域名，为配置Client准备（执行heroku apps可列出所有app）
     
 = Step 3: 配置客户端 =
 客户端可选gsnova(Go)或者snova(Java)
