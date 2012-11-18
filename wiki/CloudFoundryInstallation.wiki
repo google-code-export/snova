@@ -12,11 +12,11 @@
    }}}
 
 = Step 3: 部署服务到`CloundFoundry` =
-  * 将`snova-c4-server-[version].war`放到任意的空目录下，然后在命令行下进入该目录，逐个执行下面的三行命令
+  * 将`snova-c4-server-[version].war`放到任意的空目录下，然后在命令行下进入该目录，逐个执行下面的三行命令。
     {{{
        vmc target api.cloudfoundry.com
        vmc login
-       vmc push <appname>  —— 此处appname为任意名称，为域名一部分，此命令执行后有类似下面的交互内容，参照下面的输入Y/N
+       vmc push <appname>  —— 若是更新已有的app，执行vmc update <appname>；执行此处appname为任意名称，为域名一部分，此命令执行后有类似下面的交互内容，参照下面的输入Y/N
         Would you like to deploy from the current directory? [Yn]: Y
         Application Deployed URL [<appname>.cloudfoundry.com]: <回车>
         Detected a Java Web Application, is this correct? [Yn]: Y
