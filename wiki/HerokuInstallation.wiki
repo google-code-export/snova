@@ -1,10 +1,10 @@
 #summary C4 Plugin在Heroku上的部署配置说明.
 #labels Featured,Phase-Support
 
-= Step 1: 准备Heroku SDK环境 =
-按照Heroku官方的[http://devcenter.heroku.com/articles/quickstart QuickStart]注册帐号，安装SDK（注册较简单，仅需要email）
+= Step 1: 准备Heroku Client环境 =
+按照Heroku官方的[http://devcenter.heroku.com/articles/quickstart QuickStart]注册帐号，安装Heroku Toolbelt（注册较简单，仅需要email）
 
-= Step 2: 部署Snova C4 Plugin的服务端到Heroku =
+= Step 2: 部署Snova C4的服务端到Heroku =
   * 下载`snova-c4-server-[version].war`， 放在任意地方
   * 在命令行下war文件所在目录，依次顺序执行以下的命令,每一行单独执行
     {{{
