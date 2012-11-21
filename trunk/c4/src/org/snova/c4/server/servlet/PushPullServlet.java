@@ -14,6 +14,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.arch.buffer.Buffer;
+import org.arch.buffer.BufferHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.c4.common.C4Constants;
@@ -27,8 +28,8 @@ import org.snova.c4.server.session.RemoteProxySessionV2;
  */
 public class PushPullServlet extends HttpServlet
 {
-	protected Logger logger = LoggerFactory.getLogger(getClass());
-
+	protected Logger	logger	= LoggerFactory.getLogger(getClass());
+	
 	private void writeBytes(HttpServletResponse resp, byte[] buf, int off,
 	        int len) throws IOException
 	{
@@ -47,7 +48,7 @@ public class PushPullServlet extends HttpServlet
 		}
 		// resp.getOutputStream().close();
 	}
-
+	
 	private void send(HttpServletResponse resp, Buffer buf) throws Exception
 	{
 		resp.setStatus(200);
@@ -56,7 +57,21 @@ public class PushPullServlet extends HttpServlet
 		writeBytes(resp, buf.getRawBuffer(), buf.getReadIndex(),
 		        buf.readableBytes());
 	}
-
+	
+	private void flushContent(HttpServletResponse resp, Buffer buf)
+	        throws Exception
+	{
+		resp.setStatus(200);
+		resp.setContentType("image/jpeg");
+		Buffer len = new Buffer(4);
+		BufferHelper.writeFixInt32(len, buf.readableBytes(), true);
+		resp.getOutputStream().write(len.getRawBuffer(), len.getReadIndex(),
+		        len.readableBytes());
+		resp.getOutputStream().write(buf.getRawBuffer(), buf.getReadIndex(),
+		        buf.readableBytes());
+		resp.getOutputStream().flush();
+	}
+	
 	@Override
 	protected void doPost(HttpServletRequest req, final HttpServletResponse resp)
 	        throws ServletException, IOException
@@ -102,26 +117,41 @@ public class PushPullServlet extends HttpServlet
 				{
 					s.extractEventResponses(buf, maxRead);
 				}
-				if (isPull && buf.readableBytes() == 0)
+				if (isPull)
 				{
-					Thread.sleep(1);
+					if (buf.readableBytes() > 0)
+					{
+						flushContent(resp, buf);
+						buf.clear();
+					}
+					else
+					{
+						Thread.sleep(1);
+					}
 					for (RemoteProxySessionV2 s : ss)
 					{
 						s.readClient(maxRead, timeout);
 					}
+					if ((System.currentTimeMillis() - begin) >= timeout * 1000)
+					{
+						break;
+					}
 				}
-				if ((System.currentTimeMillis() - begin) >= timeout * 1000)
-				{
-					break;
-				}
-			}
-			while (isPull && buf.readableBytes() == 0);
-
+				
+			} while (isPull);
+			
 			int size = buf.readableBytes();
 			try
 			{
 				sentData = true;
-				send(resp, buf);
+				if (!isPull)
+				{
+					send(resp, buf);
+				}
+				else
+				{
+					resp.getOutputStream().close();
+				}
 			}
 			catch (Exception e)
 			{
