@@ -3,8 +3,6 @@
  */
 package org.snova.c4.client.handler;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.arch.event.Event;
@@ -29,140 +27,55 @@ import org.snova.framework.config.SimpleSocketAddress;
  */
 public class ProxySession
 {
-	protected static Logger	            logger	          = LoggerFactory
-	                                                              .getLogger(ProxySession.class);
-	private ProxyConnectionManager	    connectionManager	= ProxyConnectionManager
-	                                                              .getInstance();
-	private ProxyConnection	            connection	      = null;
-	
-	private Integer	                    sessionID;
-	private String	                    remoteAddr;
-	private Channel	                    localHTTPChannel;
-	private ChannelFuture	            writeFuture;
-	private ProxySessionStatus	        status	          = ProxySessionStatus.INITED;
-	
-	private AtomicInteger	            sequence	      = new AtomicInteger(0);
-	
-	private AtomicInteger	            readSequence	  = new AtomicInteger(0);
-	private Map<Integer, TCPChunkEvent>	chunks	          = new ConcurrentHashMap<Integer, TCPChunkEvent>();
-	
+	protected static Logger logger = LoggerFactory
+	        .getLogger(ProxySession.class);
+	private ProxyConnectionManager connectionManager = ProxyConnectionManager
+	        .getInstance();
+	private ProxyConnection pushConnection = null;
+	private ProxyConnection pullConnection = null;
+	private Integer sessionID;
+	private String remoteAddr;
+	private Channel localHTTPChannel;
+	private ChannelFuture writeFuture;
+
+	private AtomicInteger sequence = new AtomicInteger(0);
+
+	private AtomicInteger readSequence = new AtomicInteger(0);
+
 	public ProxySession(Integer id, Channel localChannel)
 	{
 		this.sessionID = id;
 		this.localHTTPChannel = localChannel;
-		touch();
 	}
-	
-	// private void completeSequenceChunk()
-	// {
-	// synchronized (seqChunkTable)
-	// {
-	// if(null != localHTTPChannel && localHTTPChannel.isConnected())
-	// {
-	// if (!seqChunkTable.isEmpty())
-	// {
-	// TCPChunkEvent chunk = seqChunkTable
-	// .remove(waitingChunkSequence);
-	// if (null == chunk)
-	// {
-	// if(seqChunkTable.size() >= 500)
-	// {
-	// logger.error("#Close channel since too many(500) waiting chunks before chunk:"
-	// + waitingChunkSequence + " received.");
-	// seqChunkTable.clear();
-	// localHTTPChannel.close();
-	// }
-	// if(logger.isDebugEnabled())
-	// {
-	// logger.debug("Session[" + getSessionID() + "] expecte sequence chunk:" +
-	// waitingChunkSequence);
-	// }
-	// return;
-	// }
-	// if(logger.isDebugEnabled())
-	// {
-	// logger.debug("Session[" + getSessionID() + "] write sequence chunk:" +
-	// waitingChunkSequence + " with size:" + chunk.content.length);
-	// }
-	// waitingChunkSequence++;
-	// ChannelBuffer buf = ChannelBuffers.wrappedBuffer(chunk.content);
-	// writeFuture = localHTTPChannel.write(buf);
-	// writeFuture.addListener(seqFinishListener);
-	// return;
-	// }
-	// }
-	// else
-	// {
-	// close();
-	// return;
-	// }
-	// }
-	// if (seqChunkTable.isEmpty() && closeAfterFinish)
-	// {
-	// close();
-	// }
-	// }
-	
-	private void touch()
-	{
-		// touchTime = System.currentTimeMillis();
-	}
-	
-	public ProxySessionStatus getStatus()
-	{
-		return status;
-	}
-	
+
 	public Integer getSessionID()
 	{
 		return sessionID;
 	}
-	
-	public ProxyConnection getProxyConnection()
+
+	private void initConnection(HTTPRequestEvent event)
 	{
-		return connection;
-	}
-	
-	private ProxyConnection getClientConnection(HTTPRequestEvent event)
-	{
-		if (null == connection)
+		if (null == pushConnection)
 		{
-			connection = connectionManager.getClientConnection(event);
+			ProxyConnection[] conns = connectionManager
+			        .getDualClientConnection(event);
+			pushConnection = conns[0];
+			pullConnection = conns[1];
+			pushConnection.setSession(this);
+			pullConnection.setSession(this);
+			pushConnection.setPullConnection(false);
+			pullConnection.setPullConnection(true);
+			pushConnection.start();
+			pullConnection.start();
+			pullConnection.pullData();
 		}
-		return connection;
 	}
-	
+
 	public void handleResponse(final Event res)
 	{
-		//touch();
 		doHandleResponse(res);
 	}
-	
-	private void writeChunk()
-	{
-		if (!chunks.isEmpty())
-		{
-			final TCPChunkEvent chunk = chunks.remove(readSequence.get());
-			if (null == chunk)
-			{
-				return;
-			}
-			readSequence.addAndGet(1);
-			localHTTPChannel.write(ChannelBuffers
-			        .wrappedBuffer(chunk.content));
-			writeChunk();
-//			writeFuture.addListener(new ChannelFutureListener()
-//			{
-//				@Override
-//				public void operationComplete(ChannelFuture future)
-//				        throws Exception
-//				{
-//					writeFuture = 
-//				}
-//			});
-		}
-	}
-	
+
 	public void doHandleResponse(Event res)
 	{
 		if (logger.isDebugEnabled())
@@ -179,12 +92,13 @@ public class ProxySession
 			{
 				if (conn.addr.equalsIgnoreCase(remoteAddr))
 				{
-					if(null != writeFuture)
+					if (null != writeFuture)
 					{
 						writeFuture.addListener(new ChannelFutureListener()
-						{							
+						{
 							@Override
-							public void operationComplete(ChannelFuture future) throws Exception
+							public void operationComplete(ChannelFuture future)
+							        throws Exception
 							{
 								close();
 							}
@@ -208,8 +122,9 @@ public class ProxySession
 			}
 			if (null != localHTTPChannel && localHTTPChannel.isConnected())
 			{
-				chunks.put(chunk.sequence, chunk);
-				writeChunk();
+				//chunks.put(chunk.sequence, chunk);
+				//writeChunk();
+				localHTTPChannel.write(ChannelBuffers.wrappedBuffer(chunk.content));
 			}
 			else
 			{
@@ -218,17 +133,15 @@ public class ProxySession
 			}
 		}
 	}
-	
+
 	private void handleConnect(HTTPRequestEvent event)
 	{
-		//touch();
-		// isRequestSent = true;
-		status = ProxySessionStatus.WAITING_CONNECT_RESPONSE;
 		localHTTPChannel.getPipeline().remove("decoder");
 		localHTTPChannel.getPipeline().remove("encoder");
-		getClientConnection(event).send(event);
+		initConnection(event);
+		pushConnection.send(event);
 	}
-	
+
 	protected SimpleSocketAddress getRemoteAddress(HTTPRequestEvent request)
 	{
 		String host = request.getHeader("Host");
@@ -264,10 +177,9 @@ public class ProxySession
 		}
 		return new SimpleSocketAddress(hostValue, port);
 	}
-	
+
 	public synchronized void handle(HTTPRequestEvent event)
 	{
-		touch();
 		clearStatus();
 		String host = event.getHeader("Host");
 		remoteAddr = host;
@@ -282,20 +194,11 @@ public class ProxySession
 				remoteAddr = remoteAddr + ":80";
 			}
 		}
-//		if (null == host)
-//		{
-//			SimpleSocketAddress addr = getRemoteAddress(event);
-//			host = addr.toString();
-//			event.setHeader("Host", host);
-//		}
 		readSequence.set(0);
-		// event.removeHeader("Proxy-Connection");
-		// event.setHeader("Connection", "Close");
-		
+
 		if (event.method.equalsIgnoreCase(HttpMethod.CONNECT.getName()))
 		{
 			handleConnect(event);
-			// lastProxyEvent = event;
 		}
 		else
 		{
@@ -305,10 +208,9 @@ public class ProxySession
 				int end = event.url.indexOf("/", start);
 				event.url = event.url.substring(end);
 			}
-			status = ProxySessionStatus.WAITING_RESPONSE;
-			// isRequestSent = true;
-			getClientConnection(event).send(event);
-			
+			initConnection(event);
+			pushConnection.send(event);
+
 			if (logger.isDebugEnabled())
 			{
 				logger.debug("Session[" + getSessionID() + "] sent request.");
@@ -316,20 +218,18 @@ public class ProxySession
 			}
 		}
 	}
-	
+
 	public synchronized void handle(HTTPChunkEvent event)
 	{
-		touch();
-		if (null != connection)
+		if (null != pushConnection)
 		{
-			// event.setHash(lastProxyEvent.getHash());
 			if (event.content.length > 0)
 			{
 				TCPChunkEvent chunk = new TCPChunkEvent();
 				chunk.setHash(getSessionID());
 				chunk.content = event.content;
 				chunk.sequence = sequence.getAndIncrement();
-				connection.send(chunk);
+				pushConnection.send(chunk);
 			}
 		}
 		else
@@ -337,17 +237,12 @@ public class ProxySession
 			close();
 		}
 	}
-	
+
 	private void clearStatus()
 	{
-		// restChunkList.clear();
-		// seqChunkTable.clear();
-		// waitingChunkSequence = 0;
-		// writeFuture = null;
-		// closeAfterFinish = false;
 		sequence.set(0);
 	}
-	
+
 	public void close()
 	{
 		if (ProxySessionManager.getInstance().getProxySession(getSessionID()) == null)
@@ -361,13 +256,23 @@ public class ProxySession
 		localHTTPChannel = null;
 		SocketConnectionEvent ev = new SocketConnectionEvent();
 		ev.setHash(getSessionID());
+		ev.addr = remoteAddr;
 		ev.status = SocketConnectionEvent.TCP_CONN_CLOSED;
-		if (null != connection)
+		if (null != pushConnection)
 		{
-			connection.send(ev);
+			pushConnection.send(ev);
+			pushConnection.stop();
 		}
-		status = ProxySessionStatus.SESSION_COMPLETED;
+		if (null != pullConnection)
+		{
+			pullConnection.stop();
+		}
 		ProxySessionManager.getInstance().removeSession(this);
 		clearStatus();
+
+		connectionManager.recycleProxyConnection(pushConnection);
+		connectionManager.recycleProxyConnection(pullConnection);
+		pushConnection = null;
+		pullConnection = null;
 	}
 }

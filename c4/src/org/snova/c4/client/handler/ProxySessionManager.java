@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory;
  * @author qiyingwang
  * 
  */
-public class ProxySessionManager implements Runnable
+public class ProxySessionManager
 {
 	protected static Logger	           logger	     = LoggerFactory
 	                                                         .getLogger(ProxySessionManager.class);
@@ -131,104 +131,5 @@ public class ProxySessionManager implements Runnable
 			session.handle(event);
 		}
 		return session;
-	}
-	
-//	private void sendHeartBeat(List<ProxySession> sessions)
-//	{
-//		if (C4ClientConfiguration.getInstance().getConnectionMode()
-//		        .equals(ConnectionMode.HTTP))
-//		{
-////			List<C4ServerAuth> auths = C4ClientConfiguration.getInstance()
-////			        .getC4ServerAuths();
-////			for (C4ServerAuth auth : auths)
-////			{
-////				ProxyConnection conn = ProxyConnectionManager.getInstance()
-////				        .getClientConnectionByAuth(auth);
-////				EventRestRequest ev = new EventRestRequest();
-////				for (ProxySession s : sessions)
-////				{
-////					if (s.getProxyConnection() == conn)
-////					{
-////						ev.restSessions.add(s.getSessionID());
-////					}
-////				}
-////				conn.send(new EventRestRequest());
-////			}
-//		}
-//	}
-	
-//	public EventRestRequest getEventRestRequest(ProxyConnection conn)
-//	{
-//		EventRestRequest ev = new EventRestRequest();
-//		for (ProxySession s : unCompleteSessions())
-//		{
-//			if (s.getProxyConnection() == conn)
-//			{
-//				ev.restSessions.add(s.getSessionID());
-//			}
-//		}
-//		return ev;
-//	}
-	
-//	private List<ProxySession> unCompleteSessions()
-//	{
-//		List<ProxySession> notCompleteSession = new LinkedList<ProxySession>();
-//		List<ProxySession> clonesList = null;
-//		synchronized (sessionTable)
-//        {
-//			clonesList = new LinkedList<ProxySession>(
-//			        sessionTable.values());
-//        }
-//		
-//		for (ProxySession session : clonesList)
-//		{
-//			ProxySessionStatus status = session.routine();
-//			if (status.equals(ProxySessionStatus.WAITING_CONNECT_RESPONSE)
-//			        || status.equals(ProxySessionStatus.WAITING_RESPONSE))
-//			{
-//				notCompleteSession.add(session);
-//			}
-//		}
-//		return notCompleteSession;
-//	}
-	
-	@Override
-	public void run()
-	{
-//		if (logger.isDebugEnabled())
-//		{
-//			logger.debug("Current session table has " + sessionTable.size());
-//		}
-//		try
-//		{
-//			List<ProxySession> notCompleteSession = unCompleteSessions();
-//			if (!sessionTable.isEmpty())
-//			{
-//				sendHeartBeat(notCompleteSession);
-//			}
-//			
-//			if (notCompleteSession.isEmpty())
-//			{
-//				SharedObjectHelper.getGlobalTimer().schedule(
-//				        this,
-//				        C4ClientConfiguration.getInstance()
-//				                .getHeartBeatPeriod(), TimeUnit.MILLISECONDS);
-//			}
-//			else
-//			{
-//				int time = C4ClientConfiguration.getInstance()
-//				        .getHeartBeatPeriod() / notCompleteSession.size();
-//				if (time < 500)
-//				{
-//					time = 500;
-//				}
-//				SharedObjectHelper.getGlobalTimer().schedule(this, time,
-//				        TimeUnit.MILLISECONDS);
-//			}
-//		}
-//		catch (Throwable e)
-//		{
-//			logger.error("Failed routine.", e);
-//		}
 	}
 }

@@ -59,6 +59,7 @@ public class C4Events
 			registerEventHandler(UserLoginEvent.class, handler);
 			registerEventHandler(TCPChunkEvent.class, handler);
 			registerEventHandler(RSocketAcceptedEvent.class, handler);
+			registerEventHandler(SocketReadEvent.class, handler);
 			if (isServer)
 			{
 				EventDispatcher.getSingletonInstance().register(

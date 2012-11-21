@@ -65,23 +65,14 @@ public class C4ClientConfiguration implements ReloadableConfiguration
 	private static final String C4_TAG = "C4";
 	private static final String WORKER_NODE_NAME = "WorkerNode";
 	private static final String CLIENT_TAG = "Client";
-	private static final String RSERVER_TAG = "RServer";
 	private static final String CONNECTION_MODE_NAME = "ConnectionMode";
-	private static final String SESSION_IDLE_TIMEOUT_NAME = "SessionIdleTimeout";
 	private static final String SIMPLE_URL_ENABLE_NAME = "SimpleURLEnable";
 	private static final String COMPRESSOR_NAME = "Compressor";
 	private static final String ENCRYPTER_NAME = "Encrypter";
-	private static final String HEARTBEAT_PERIOD_NAME = "HeartBeatPeriod";
 	private static final String HTTP_REQUEST_TIMEOUT_NAME = "HTTPRequestTimeout";
-	private static final String PULL_TRANSACTION_NAME = "PullTransactionTime";
-	private static final String CLIENT_PULL_ENABLE_NAME = "ClientPullEnable";
-	private static final String SERVER_PULL_ENABLE_NAME = "ServerPullEnable";
+	private static final String MAX_READ_BYTES_NAME = "MaxReadBytes";
+	private static final String USE_GLOBAL_PROXY_NAME = "UseGlobalProxy";
 	private static final String USER_AGENT_NAME = "UserAgent";
-	private static final String DUAL_CONN_ENABLE_NAME = "DualConnectionEnable";
-	private static final String MIN_WRITE_PERIOD = "MinWritePeriod";
-	private static final String CONN_POOL_SIZE_NAME = "ConnectionPoolSize";
-	private static final String RSERVER_PORT_NAME = "Port";
-	private static final String RSERVER_EXTERNAL_IP_NAME = "ExternalIP";
 
 	private static final String APPID_BINDING_TAG = "DomainBinding";
 
@@ -116,39 +107,20 @@ public class C4ClientConfiguration implements ReloadableConfiguration
 
 			connectionMode = ConnectionMode.valueOf(props.getProperty(
 			        CLIENT_TAG, CONNECTION_MODE_NAME, "HTTP"));
-			sessionTimeout = props.getIntProperty(CLIENT_TAG,
-			        SESSION_IDLE_TIMEOUT_NAME, sessionTimeout);
 			simpleURLEnable = props.getBoolProperty(CLIENT_TAG,
 			        SIMPLE_URL_ENABLE_NAME, false);
 			compressor = CompressorType.valueOf(props.getProperty(CLIENT_TAG,
 			        COMPRESSOR_NAME, "Snappy").toUpperCase());
 			encrypter = EncryptType.valueOf(props.getProperty(CLIENT_TAG,
 			        ENCRYPTER_NAME, "SE1"));
-			sessionTimeout = props.getIntProperty(CLIENT_TAG,
-			        SESSION_IDLE_TIMEOUT_NAME, sessionTimeout);
-			pullTransactionTime = props.getIntProperty(CLIENT_TAG,
-			        PULL_TRANSACTION_NAME, pullTransactionTime);
-			heartBeatPeriod = props.getIntProperty(CLIENT_TAG,
-			        HEARTBEAT_PERIOD_NAME, 2000);
 			httpRequestTimeout = props.getIntProperty(CLIENT_TAG,
-			        HTTP_REQUEST_TIMEOUT_NAME, 30000);
-//			clientPullEnable = props.getBoolProperty(CLIENT_TAG,
-//			        CLIENT_PULL_ENABLE_NAME, true);
-//			serverPullEnable = props.getBoolProperty(CLIENT_TAG,
-//			        SERVER_PULL_ENABLE_NAME, true);
-//			dualConnectionEnable = props.getBoolProperty(CLIENT_TAG,
-//			        DUAL_CONN_ENABLE_NAME, true);
-			minWritePeriod = props.getIntProperty(CLIENT_TAG, MIN_WRITE_PERIOD,
-			        500);
-			connectionPoolSize = props.getIntProperty(CLIENT_TAG,
-			        CONN_POOL_SIZE_NAME, 2);
-			rServerPort = props.getIntProperty(RSERVER_TAG, RSERVER_PORT_NAME, rServerPort);
+			        HTTP_REQUEST_TIMEOUT_NAME, 25);
+			maxReadBytes = props.getIntProperty(CLIENT_TAG,
+			        MAX_READ_BYTES_NAME, 512 * 1024);
+			useGlobalProxy = props.getBoolProperty(CLIENT_TAG,
+			        USE_GLOBAL_PROXY_NAME, false);
 			httpProxyUserAgent = props.getProperty(CLIENT_TAG, USER_AGENT_NAME,
 			        "Snova-C4 V" + C4PluginVersion.value);
-			if(null == externalIP)
-			{
-				externalIP = props.getProperty(RSERVER_TAG, RSERVER_EXTERNAL_IP_NAME);
-			}
 
 			ps = props.getProperties(APPID_BINDING_TAG);
 			if (null != ps)
@@ -263,90 +235,6 @@ public class C4ClientConfiguration implements ReloadableConfiguration
 		connectionMode = mode;
 	}
 
-	private int connectionPoolSize = 1;
-
-	public int getConnectionPoolSize()
-	{
-		return connectionPoolSize;
-	}
-
-	public void setConnectionPoolSize(int size)
-	{
-		connectionPoolSize = size;
-	}
-
-	private int sessionTimeout = 50000;
-
-	public void setSessionIdleTimeout(int sessionTimeout)
-	{
-		this.sessionTimeout = sessionTimeout;
-	}
-
-	public int getSessionIdleTimeout()
-	{
-		return sessionTimeout;
-	}
-
-	private int minWritePeriod = 500;
-
-	public int getMinWritePeriod()
-	{
-		return minWritePeriod;
-	}
-
-	public void setMinWritePeriod(int v)
-	{
-		minWritePeriod = v;
-	}
-
-//	private boolean clientPullEnable = true;
-//
-//	public void setClientPullEnable(boolean v)
-//	{
-//		this.clientPullEnable = v;
-//	}
-//
-//	public boolean isClientPullEnable()
-//	{
-//		return clientPullEnable;
-//	}
-
-//	private boolean serverPullEnable = true;
-//
-//	public void setServerPullEnable(boolean v)
-//	{
-//		this.serverPullEnable = v;
-//	}
-//
-//	public boolean isServerPullEnable()
-//	{
-//		return serverPullEnable;
-//	}
-
-	//private boolean dualConnectionEnable = true;
-
-//	public void setDualConnectionEnable(boolean v)
-//	{
-//		this.dualConnectionEnable = v;
-//	}
-
-//	public boolean isDualConnectionEnable()
-//	{
-//		return dualConnectionEnable;
-//	}
-
-	private int pullTransactionTime = 25000;
-
-	public void setPullTransactionTime(int v)
-	{
-		this.pullTransactionTime = v;
-	}
-
-	public int getPullTransactionTime()
-	{
-		return pullTransactionTime;
-	}
-
 	private CompressorType compressor;
 
 	public CompressorType getCompressor()
@@ -383,19 +271,19 @@ public class C4ClientConfiguration implements ReloadableConfiguration
 		return simpleURLEnable;
 	}
 
-	private int heartBeatPeriod = 2000;
+	private int maxReadBytes = 512 * 1024;
 
-	public void setheartBeatPeriod(int heartBeatPeriod)
+	public int getMaxReadBytes()
 	{
-		this.heartBeatPeriod = heartBeatPeriod;
+		return maxReadBytes;
 	}
 
-	public int getHeartBeatPeriod()
+	public void setMaxReadBytes(int maxReadBytes)
 	{
-		return heartBeatPeriod;
+		this.maxReadBytes = maxReadBytes;
 	}
 
-	private int httpRequestTimeout = 30000;
+	private int httpRequestTimeout = 25;
 
 	public void setHTTPRequestTimeout(int timeout)
 	{
@@ -405,6 +293,18 @@ public class C4ClientConfiguration implements ReloadableConfiguration
 	public int getHTTPRequestTimeout()
 	{
 		return httpRequestTimeout;
+	}
+
+	private boolean useGlobalProxy = false;
+
+	public boolean isUseGlobalProxy()
+	{
+		return useGlobalProxy;
+	}
+
+	public void setUseGlobalProxy(boolean useGlobalProxy)
+	{
+		this.useGlobalProxy = useGlobalProxy;
 	}
 
 	public void init() throws Exception
@@ -483,28 +383,6 @@ public class C4ClientConfiguration implements ReloadableConfiguration
 	{
 		httpProxyUserAgent = v;
 	}
-	
-	private String externalIP;
-
-	public String getExternalIP()
-	{
-		return externalIP;
-	}
-
-	public void setExternalIP(String ip)
-	{
-		externalIP = ip;
-	}
-	
-	private int rServerPort = 48101;
-	public int getRServerPort()
-	{
-		return rServerPort;
-	}
-	public void setRServerPort(int port)
-	{
-		rServerPort = port;
-	}
 
 	public static C4ClientConfiguration getInstance()
 	{
@@ -528,34 +406,15 @@ public class C4ClientConfiguration implements ReloadableConfiguration
 
 			props.setProperty(CLIENT_TAG, CONNECTION_MODE_NAME,
 			        connectionMode.toString());
-			props.setIntProperty(CLIENT_TAG, SESSION_IDLE_TIMEOUT_NAME,
-			        sessionTimeout);
 			props.setIntProperty(CLIENT_TAG, HTTP_REQUEST_TIMEOUT_NAME,
 			        httpRequestTimeout);
-			props.setIntProperty(CLIENT_TAG, PULL_TRANSACTION_NAME,
-			        pullTransactionTime);
-			props.setIntProperty(CLIENT_TAG, HEARTBEAT_PERIOD_NAME,
-			        heartBeatPeriod);
-			props.setIntProperty(CLIENT_TAG, CONN_POOL_SIZE_NAME,
-			        connectionPoolSize);
-//			props.setBoolProperty(CLIENT_TAG, CLIENT_PULL_ENABLE_NAME,
-//			        clientPullEnable);
-//			props.setBoolProperty(CLIENT_TAG, SERVER_PULL_ENABLE_NAME,
-//			        serverPullEnable);
-//			props.setBoolProperty(CLIENT_TAG, DUAL_CONN_ENABLE_NAME,
-//			        dualConnectionEnable);
+
 			props.setBoolProperty(CLIENT_TAG, SIMPLE_URL_ENABLE_NAME,
 			        simpleURLEnable);
 			props.setProperty(CLIENT_TAG, COMPRESSOR_NAME,
 			        compressor.toString());
 			props.setProperty(CLIENT_TAG, ENCRYPTER_NAME, encrypter.toString());
 			props.setProperty(CLIENT_TAG, USER_AGENT_NAME, httpProxyUserAgent);
-			props.setIntProperty(CLIENT_TAG, MIN_WRITE_PERIOD, minWritePeriod);
-			props.setIntProperty(RSERVER_TAG, RSERVER_PORT_NAME, rServerPort);
-			if(null != externalIP)
-			{
-				props.setProperty(RSERVER_TAG, RSERVER_EXTERNAL_IP_NAME, externalIP);
-			}
 			for (AppIdBinding binding : appIdBindings)
 			{
 				binding.putToIniProperties(props);
