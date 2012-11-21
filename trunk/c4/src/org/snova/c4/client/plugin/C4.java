@@ -20,43 +20,6 @@ public class C4 implements Plugin
 {
 	protected static Logger	logger	= LoggerFactory.getLogger(C4.class);
 	
-	private void portMapping() throws Exception
-	{
-		if (null != C4ClientConfiguration.getInstance().getExternalIP())
-		{
-			return;
-		}
-		if (NetworkHelper.isPrivateIP(InetAddress.getLocalHost()
-		        .getHostAddress()))
-		{
-			GatewayDiscover gatewayDiscover = new GatewayDiscover();
-			gatewayDiscover.discover();		
-			GatewayDevice activeGW = gatewayDiscover.getValidGateway();
-			C4ClientConfiguration.getInstance().setExternalIP(activeGW.getExternalIPAddress());
-			PortMappingEntry portMapping = new PortMappingEntry();
-			int port = C4ClientConfiguration.getInstance().getRServerPort();
-			if (activeGW.getSpecificPortMappingEntry(port, "TCP", portMapping))
-			{
-				logger.info("Port " + port
-				        + " is already mapped. Aborting test.");
-				return;
-			}
-			else
-			{
-				logger.info("Mapping free. Sending port mapping request for port "
-				        + port);
-				
-				// test static lease duration mapping
-				if (activeGW.addPortMapping(port, port, activeGW
-				        .getLocalAddress().getHostAddress(), "TCP", "Snova-C4"))
-				{
-					logger.info("Mapping SUCCESSFUL");
-				}
-			}
-			
-		}
-	}
-	
 	@Override
 	public void onLoad(PluginContext context) throws Exception
 	{
@@ -67,19 +30,6 @@ public class C4 implements Plugin
 	public void onActive(PluginContext context) throws Exception
 	{
 		C4Events.init(new C4ClientEventHandler(), false);
-		if (C4ClientConfiguration.getInstance().getConnectionMode()
-		        .equals(ConnectionMode.RSOCKET))
-		{
-			try
-			{
-				portMapping();
-			}
-			catch (Exception e)
-			{
-				logger.error("Failed to mapping port.", e);
-			}
-			
-		}
 	}
 	
 	@Override

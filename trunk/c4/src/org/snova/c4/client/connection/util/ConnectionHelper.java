@@ -44,6 +44,5 @@ public class ConnectionHelper
 			userToken = RandomHelper.generateRandomString(8);
 		}
 		return userToken;
-
 	}
 }

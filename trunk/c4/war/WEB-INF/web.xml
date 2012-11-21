@@ -8,17 +8,22 @@ http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
 		<servlet-name>HttpInvoke</servlet-name>
 		<servlet-class>org.snova.c4.server.servlet.InvokeServlet</servlet-class>
 	</servlet>
+	
+	<servlet>
+		<servlet-name>Push</servlet-name>
+		<servlet-class>org.snova.c4.server.servlet.PushPullServlet</servlet-class>
+	</servlet>
+	
+	<servlet>
+		<servlet-name>Pull</servlet-name>
+		<servlet-class>org.snova.c4.server.servlet.PushPullServlet</servlet-class>
+	</servlet>
 
 	<servlet>
 		<servlet-name>Index</servlet-name>
 		<servlet-class>org.snova.c4.server.servlet.IndexServlet</servlet-class>
 	</servlet>
-
-	<servlet>
-		<servlet-name>RSocket</servlet-name>
-		<servlet-class>org.snova.c4.server.servlet.RSocketHeartBeatServlet</servlet-class>
-	</servlet>
-
+	
 	<servlet>
 		<servlet-name>DNSQuery</servlet-name>
 		<servlet-class>org.snova.httpdns.DNSServlet</servlet-class>
@@ -33,8 +38,12 @@ http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
 		<url-pattern>/invoke</url-pattern>
 	</servlet-mapping>
 	<servlet-mapping>
-		<servlet-name>RSocket</servlet-name>
-		<url-pattern>/rsocket</url-pattern>
+		<servlet-name>Push</servlet-name>
+		<url-pattern>/invoke2</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>Pull</servlet-name>
+		<url-pattern>/pull</url-pattern>
 	</servlet-mapping>
 
 	<servlet-mapping>
