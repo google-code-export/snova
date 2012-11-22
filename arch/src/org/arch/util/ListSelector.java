@@ -78,6 +78,7 @@ public class ListSelector<T>
 		return list.get(cursor++);
 	}
 	
+	
 	public synchronized T randomSelect()
 	{
 		if(list.isEmpty())

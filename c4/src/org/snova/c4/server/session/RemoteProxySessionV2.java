@@ -8,6 +8,8 @@ import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -58,15 +60,30 @@ public class RemoteProxySessionV2
 		}
 	}
 
-	public void extractEventResponses(Buffer buf, int maxSize)
+	public boolean extractEventResponses(Buffer buf, int maxSize,
+	        LinkedList<Event> evs)
 	{
+		boolean containsCloseEvent = false;
 		while (!sendEvents.isEmpty() && buf.readableBytes() <= maxSize)
 		{
 			Event ev = sendEvents.removeFirst();
-			if (sessionExist(user, ev.getHash()))
+			ev.encode(buf);
+			evs.add(ev);
+			ev = extractEvent(ev);
+			if (Event.getTypeVersion(ev.getClass()).type == C4Constants.EVENT_TCP_CONNECTION_TYPE)
 			{
-				ev.encode(buf);
+				containsCloseEvent = true;
 			}
+		}
+		return containsCloseEvent;
+	}
+
+	public void requeueEvents(LinkedList<Event> evs)
+	{
+		while (!evs.isEmpty())
+		{
+			Event ev = evs.removeLast();
+			sendEvents.addFirst(ev);
 		}
 	}
 
@@ -122,18 +139,18 @@ public class RemoteProxySessionV2
 
 	private void offerSendEvent(Event event)
 	{
-//		if (event instanceof TCPChunkEvent)
-//		{
-//			TCPChunkEvent chunk = (TCPChunkEvent) event;
-//			if (chunk.content.length > 1024)
-//			{
-//				CompressEventV2 compress = new CompressEventV2();
-//				compress.ev = event;
-//				compress.type = CompressorType.SNAPPY;
-//				compress.setHash(event.getHash());
-//				event = compress;
-//			}
-//		}
+		// if (event instanceof TCPChunkEvent)
+		// {
+		// TCPChunkEvent chunk = (TCPChunkEvent) event;
+		// if (chunk.content.length > 1024)
+		// {
+		// CompressEventV2 compress = new CompressEventV2();
+		// compress.ev = event;
+		// compress.type = CompressorType.SNAPPY;
+		// compress.setHash(event.getHash());
+		// event = compress;
+		// }
+		// }
 		EncryptEventV2 encrypt = new EncryptEventV2();
 		encrypt.type = EncryptType.SE1;
 		encrypt.ev = event;
@@ -147,12 +164,6 @@ public class RemoteProxySessionV2
 		{
 			sessionTable.get(session.user).remove(session.sessionId).close();
 		}
-	}
-
-	private static boolean sessionExist(String user, int sessionId)
-	{
-		Map<Integer, RemoteProxySessionV2> table = sessionTable.get(user);
-		return table.containsKey(sessionId);
 	}
 
 	private static RemoteProxySessionV2 getSession(String user, Event ev)

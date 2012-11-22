@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.HashSet;
+import java.util.LinkedList;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -15,6 +16,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.arch.buffer.Buffer;
 import org.arch.buffer.BufferHelper;
+import org.arch.event.Event;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.c4.common.C4Constants;
@@ -28,8 +30,8 @@ import org.snova.c4.server.session.RemoteProxySessionV2;
  */
 public class PushPullServlet extends HttpServlet
 {
-	protected Logger	logger	= LoggerFactory.getLogger(getClass());
-	
+	protected Logger logger = LoggerFactory.getLogger(getClass());
+
 	private void writeBytes(HttpServletResponse resp, byte[] buf, int off,
 	        int len) throws IOException
 	{
@@ -48,7 +50,7 @@ public class PushPullServlet extends HttpServlet
 		}
 		// resp.getOutputStream().close();
 	}
-	
+
 	private void send(HttpServletResponse resp, Buffer buf) throws Exception
 	{
 		resp.setStatus(200);
@@ -57,7 +59,7 @@ public class PushPullServlet extends HttpServlet
 		writeBytes(resp, buf.getRawBuffer(), buf.getReadIndex(),
 		        buf.readableBytes());
 	}
-	
+
 	private void flushContent(HttpServletResponse resp, Buffer buf)
 	        throws Exception
 	{
@@ -71,7 +73,7 @@ public class PushPullServlet extends HttpServlet
 		        buf.readableBytes());
 		resp.getOutputStream().flush();
 	}
-	
+
 	@Override
 	protected void doPost(HttpServletRequest req, final HttpServletResponse resp)
 	        throws ServletException, IOException
@@ -108,25 +110,47 @@ public class PushPullServlet extends HttpServlet
 			int timeout = Integer.parseInt(misc[1]);
 			int maxRead = Integer.parseInt(misc[2]);
 			boolean isPull = role != null && role.equals("pull");
+			boolean supportChunk = true;
+			if (misc.length > 3)
+			{
+				supportChunk = false;
+			}
 			System.out.println("Process role:" + role + " session size:"
 			        + ss.size());
 			long begin = System.currentTimeMillis();
+			LinkedList<Event> evs = new LinkedList<Event>();
+			RemoteProxySessionV2 session = null;
+			boolean containsCloseEvent = false;
 			do
 			{
+				evs.clear();
 				for (RemoteProxySessionV2 s : ss)
 				{
-					s.extractEventResponses(buf, maxRead);
+					containsCloseEvent = s.extractEventResponses(buf, maxRead,
+					        evs);
+					session = s;
 				}
 				if (isPull)
 				{
 					if (buf.readableBytes() > 0)
 					{
-						flushContent(resp, buf);
-						buf.clear();
+						if (supportChunk)
+						{
+							flushContent(resp, buf);
+							buf.clear();
+						}
+						else
+						{
+							break;
+						}
 					}
 					else
 					{
 						Thread.sleep(1);
+					}
+					if (containsCloseEvent)
+					{
+						break;
 					}
 					for (RemoteProxySessionV2 s : ss)
 					{
@@ -137,14 +161,15 @@ public class PushPullServlet extends HttpServlet
 						break;
 					}
 				}
-				
-			} while (isPull);
-			
+
+			}
+			while (isPull);
+
 			int size = buf.readableBytes();
 			try
 			{
 				sentData = true;
-				if (!isPull)
+				if (!isPull || !supportChunk)
 				{
 					send(resp, buf);
 				}
@@ -157,7 +182,10 @@ public class PushPullServlet extends HttpServlet
 			{
 				logger.error("Requeue events since write " + size
 				        + " bytes while exception occured.", e);
-				buf.setReadIndex(0);
+				if (null != session)
+				{
+					session.requeueEvents(evs);
+				}
 			}
 		}
 		catch (Throwable e)

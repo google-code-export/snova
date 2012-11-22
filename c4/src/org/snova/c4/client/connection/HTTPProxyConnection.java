@@ -6,6 +6,7 @@ package org.snova.c4.client.connection;
 import java.net.InetSocketAddress;
 
 import org.arch.buffer.Buffer;
+import org.arch.buffer.BufferHelper;
 import org.arch.misc.crypto.base64.Base64;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
@@ -212,8 +213,9 @@ public class HTTPProxyConnection extends ProxyConnection
 
 	class HttpResponseHandler extends SimpleChannelUpstreamHandler
 	{
-		private int responseContentLength = 0;
+		private int responseContentLength = -1;
 		private Buffer resBuffer = new Buffer(0);
+		private boolean transferEncoding = false;
 
 		private void clearBuffer()
 		{
@@ -229,25 +231,76 @@ public class HTTPProxyConnection extends ProxyConnection
 			}
 		}
 
+		private boolean tryHandleBuffer()
+		{
+			if (responseContentLength == -1)
+			{
+				if (resBuffer.readableBytes() >= 4)
+				{
+					responseContentLength = BufferHelper.readFixInt32(
+					        resBuffer, true);
+					if (responseContentLength <= 0
+					        || responseContentLength > 2 * cfg
+					                .getMaxReadBytes())
+					{
+						logger.error("##############Invalid length :"
+						        + responseContentLength + ":"
+						        + resBuffer.readableBytes() + " for session:"
+						        + getSession().getSessionID());
+						return false;
+					}
+				}
+				else
+				{
+					return false;
+				}
+			}
+			if (responseContentLength > 0)
+			{
+				if (resBuffer.readableBytes() < responseContentLength)
+				{
+					return false;
+				}
+				Buffer content = new Buffer(responseContentLength);
+				content.write(resBuffer, responseContentLength);
+				doRecv(content);
+				resBuffer.discardReadedBytes();
+				responseContentLength = -1;
+			}
+			return true;
+		}
+
 		private void fillResponseBuffer(ChannelBuffer buffer)
 		{
 			int contentlen = buffer.readableBytes();
-			if (contentlen > 0 && isRunning)
+
+			if (contentlen > 0)
 			{
 				resBuffer.ensureWritableBytes(contentlen);
 				buffer.readBytes(resBuffer.getRawBuffer(),
 				        resBuffer.getWriteIndex(), contentlen);
 				resBuffer.advanceWriteIndex(contentlen);
-				if (responseContentLength <= resBuffer.readableBytes())
+
+				if (!transferEncoding)
 				{
-					doRecv(resBuffer);
-					clearBuffer();
-					transactionCompeleted();
+					if (responseContentLength <= resBuffer.readableBytes())
+					{
+						doRecv(resBuffer);
+						transactionCompeleted();
+					}
+				}
+				else
+				{
+					while (resBuffer.readable() && tryHandleBuffer())
+						;
 				}
 			}
 			else
 			{
-				transactionCompeleted();
+				if (!transferEncoding)
+				{
+					transactionCompeleted();
+				}
 			}
 		}
 
@@ -284,14 +337,20 @@ public class HTTPProxyConnection extends ProxyConnection
 			if (msg instanceof HttpResponse)
 			{
 				HttpResponse response = (HttpResponse) e.getMessage();
-				responseContentLength = (int) HttpHeaders
-				        .getContentLength(response);
-				if (logger.isTraceEnabled())
+				transferEncoding = response.isChunked();
+				String theader = response
+				        .getHeader(HttpHeaders.Names.TRANSFER_ENCODING);
+				transferEncoding = theader != null
+				        && theader.equalsIgnoreCase("chunked");
+				if (!transferEncoding)
 				{
-					logger.trace("Response received:" + response
-					        + " with content-length:" + responseContentLength
-					        + " with content-type:"
-					        + response.getHeader("Content-Type"));
+					responseContentLength = (int) HttpHeaders
+					        .getContentLength(response);
+				}
+				else
+				{
+					clearBuffer();
+					responseContentLength = -1;
 				}
 				if (response.getStatus().getCode() == 200)
 				{
@@ -312,6 +371,12 @@ public class HTTPProxyConnection extends ProxyConnection
 			{
 				HttpChunk chunk = (HttpChunk) e.getMessage();
 				fillResponseBuffer(chunk.getContent());
+				if (chunk.isLast() && transferEncoding)
+				{
+					transactionCompeleted();
+					// logger.error("##############Last chunk" + " for session:"
+					// + getSession().getSessionID());
+				}
 			}
 			else
 			{

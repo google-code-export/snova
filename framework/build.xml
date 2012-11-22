@@ -14,10 +14,10 @@
 	<property name="docs" value="${root}/docs" />
 	<property name="shell" value="${root}/shell" />
 	<property name="release" value="release" />
-	<property name="version" value="0.18.0" />
+	<property name="version" value="0.19.0" />
 	<property name="gaeversion" value="0.18.0" />
 	<property name="spacversion" value="0.18.0" />
-	<property name="c4version" value="0.18.0" />
+	<property name="c4version" value="0.19.0" />
 	<property name="versionfile" value="org/snova/framework/common/Version.java" />
 	<property name="project_name" value="snova" />
 	<property name="releasename" value="${project_name}-${version}" />
@@ -79,6 +79,7 @@
 				<exclude name="org/jboss/netty/handler/codec/embedder/**" />
 				<exclude name="org/jboss/netty/handler/codec/serialization/**" />
 				<exclude name="org/jboss/netty/handler/codec/http/websocket/**" />
+				<exclude name="org/jboss/netty/handler/timeout/**" />
 				<exclude name="org/jboss/netty/channel/socket/http/**" />
 				<exclude name="org/jboss/netty/util/internal/jzlib/**" />
 			</zipfileset>
