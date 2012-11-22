@@ -45,12 +45,12 @@ import org.snova.c4.common.event.UserLoginEvent;
  */
 public class RemoteProxySessionV2
 {
-	protected static Logger logger = LoggerFactory
-	        .getLogger(RemoteProxySessionV2.class);
-	private static boolean inited = false;
-	private static Map<String, Map<Integer, RemoteProxySessionV2>> sessionTable = new ConcurrentHashMap<String, Map<Integer, RemoteProxySessionV2>>();
-	private LinkedBlockingDeque<Event> sendEvents = new LinkedBlockingDeque<Event>();
-
+	protected static Logger	                                       logger	     = LoggerFactory
+	                                                                                     .getLogger(RemoteProxySessionV2.class);
+	private static boolean	                                       inited	     = false;
+	private static Map<String, Map<Integer, RemoteProxySessionV2>>	sessionTable	= new ConcurrentHashMap<String, Map<Integer, RemoteProxySessionV2>>();
+	private LinkedBlockingDeque<Event>	                           sendEvents	 = new LinkedBlockingDeque<Event>();
+	
 	public static void init()
 	{
 		if (!inited)
@@ -59,7 +59,7 @@ public class RemoteProxySessionV2
 			inited = true;
 		}
 	}
-
+	
 	public boolean extractEventResponses(Buffer buf, int maxSize,
 	        LinkedList<Event> evs)
 	{
@@ -77,7 +77,7 @@ public class RemoteProxySessionV2
 		}
 		return containsCloseEvent;
 	}
-
+	
 	public void requeueEvents(LinkedList<Event> evs)
 	{
 		while (!evs.isEmpty())
@@ -86,7 +86,7 @@ public class RemoteProxySessionV2
 			sendEvents.addFirst(ev);
 		}
 	}
-
+	
 	private static Event extractEvent(Event ev)
 	{
 		while (Event.getTypeVersion(ev.getClass()).type == EventConstants.COMPRESS_EVENT_TYPE
@@ -111,7 +111,7 @@ public class RemoteProxySessionV2
 		}
 		return ev;
 	}
-
+	
 	protected static byte[] buildRequestContent(HTTPRequestEvent ev)
 	{
 		StringBuilder buffer = new StringBuilder();
@@ -136,28 +136,16 @@ public class RemoteProxySessionV2
 			return header;
 		}
 	}
-
+	
 	private void offerSendEvent(Event event)
 	{
-		// if (event instanceof TCPChunkEvent)
-		// {
-		// TCPChunkEvent chunk = (TCPChunkEvent) event;
-		// if (chunk.content.length > 1024)
-		// {
-		// CompressEventV2 compress = new CompressEventV2();
-		// compress.ev = event;
-		// compress.type = CompressorType.SNAPPY;
-		// compress.setHash(event.getHash());
-		// event = compress;
-		// }
-		// }
 		EncryptEventV2 encrypt = new EncryptEventV2();
 		encrypt.type = EncryptType.SE1;
 		encrypt.ev = event;
 		encrypt.setHash(event.getHash());
 		sendEvents.add(encrypt);
 	}
-
+	
 	private static void destorySession(RemoteProxySessionV2 session)
 	{
 		if (sessionTable.get(session.user) != null)
@@ -165,7 +153,7 @@ public class RemoteProxySessionV2
 			sessionTable.get(session.user).remove(session.sessionId).close();
 		}
 	}
-
+	
 	private static RemoteProxySessionV2 getSession(String user, Event ev)
 	{
 		Map<Integer, RemoteProxySessionV2> table = sessionTable.get(user);
@@ -182,7 +170,7 @@ public class RemoteProxySessionV2
 		}
 		return session;
 	}
-
+	
 	private static void clearUser(String user)
 	{
 		Map<Integer, RemoteProxySessionV2> ss = sessionTable.get(user);
@@ -195,7 +183,7 @@ public class RemoteProxySessionV2
 			ss.clear();
 		}
 	}
-
+	
 	public static void dispatchEvent(String user, final Buffer content,
 	        Set<RemoteProxySessionV2> ss) throws Exception
 	{
@@ -217,10 +205,10 @@ public class RemoteProxySessionV2
 			}
 		}
 	}
-
+	
 	private boolean handleEvent(TypeVersion tv, Event ev)
 	{
-
+		
 		switch (tv.type)
 		{
 			case C4Constants.EVENT_TCP_CHUNK_TYPE:
@@ -303,7 +291,7 @@ public class RemoteProxySessionV2
 		}
 		return true;
 	}
-
+	
 	private boolean checkClient(String host, int port)
 	{
 		String addr = host + ":" + port;
@@ -327,19 +315,21 @@ public class RemoteProxySessionV2
 		remoteAddr = addr;
 		return true;
 	}
-
+	
 	public boolean readClient(int maxread, int timeout)
 	{
 		if (null != client)
 		{
 			try
 			{
-				ByteBuffer buffer = ByteBuffer.allocate(maxread);
+				//ByteBuffer buffer = ByteBuffer.allocate(maxread);
+				byte[] buffer = new byte[maxread];
 				client.socket().setSoTimeout(timeout * 1000);
-				System.out.println("Session[" + sessionId + "]start Read at");
-				int n = client.read(buffer);
-				System.out.println("Session[" + sessionId + "]####Read " + n
-				        + " for " + remoteAddr);
+				// System.out.println("Session[" + sessionId +
+				// "]start Read at");
+				int n = client.socket().getInputStream().read(buffer);
+				// System.out.println("Session[" + sessionId + "]####Read " + n
+				// + " for " + remoteAddr);
 				if (n < 0)
 				{
 					close();
@@ -347,9 +337,8 @@ public class RemoteProxySessionV2
 				}
 				if (n > 0)
 				{
-					buffer.flip();
 					byte[] content = new byte[n];
-					buffer.get(content);
+					System.arraycopy(buffer, 0, content, 0, n);
 					TCPChunkEvent ev = new TCPChunkEvent();
 					ev.setHash(sessionId);
 					ev.sequence = sequence++;
@@ -370,7 +359,7 @@ public class RemoteProxySessionV2
 		}
 		return false;
 	}
-
+	
 	private boolean writeContent(byte[] content)
 	{
 		if (null != client)
@@ -388,7 +377,7 @@ public class RemoteProxySessionV2
 		}
 		return false;
 	}
-
+	
 	void close()
 	{
 		if (null != client)
@@ -409,17 +398,17 @@ public class RemoteProxySessionV2
 			offerSendEvent(ev);
 		}
 	}
-
+	
 	RemoteProxySessionV2(String user, int hash)
 	{
 		this.user = user;
 		this.sessionId = hash;
 	}
-
-	private int sessionId;
-	private int sequence;
-	private String method;
-	private String user;
-	private String remoteAddr;
-	private volatile SocketChannel client = null;
+	
+	private int	                   sessionId;
+	private int	                   sequence;
+	private String	               method;
+	private String	               user;
+	private String	               remoteAddr;
+	private volatile SocketChannel	client	= null;
 }
