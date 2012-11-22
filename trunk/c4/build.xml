@@ -133,7 +133,7 @@
 		<delete dir="${herokurelease}" />
 	</target>
 
-	<target name="packageserver" depends="herokupackage, war">
+	<target name="packageserver" depends="war">
 	</target>
 
 	<target name="release" depends="jarclient, packageserver">

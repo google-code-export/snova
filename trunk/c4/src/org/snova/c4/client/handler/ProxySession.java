@@ -39,7 +39,6 @@ public class ProxySession
 	private ChannelFuture writeFuture;
 
 	private AtomicInteger sequence = new AtomicInteger(0);
-
 	private AtomicInteger readSequence = new AtomicInteger(0);
 
 	public ProxySession(Integer id, Channel localChannel)
@@ -70,6 +69,7 @@ public class ProxySession
 			pullConnection.pullData();
 		}
 	}
+
 
 	public void handleResponse(final Event res)
 	{
@@ -114,7 +114,7 @@ public class ProxySession
 		else if (res instanceof TCPChunkEvent)
 		{
 			// status = ProxySessionStatus.PROCEEDING;
-			TCPChunkEvent chunk = (TCPChunkEvent) res;
+			final TCPChunkEvent chunk = (TCPChunkEvent) res;
 			if (logger.isDebugEnabled())
 			{
 				logger.debug("Session[" + getSessionID()
@@ -122,14 +122,14 @@ public class ProxySession
 			}
 			if (null != localHTTPChannel && localHTTPChannel.isConnected())
 			{
-				//chunks.put(chunk.sequence, chunk);
-				//writeChunk();
-				localHTTPChannel.write(ChannelBuffers.wrappedBuffer(chunk.content));
+				writeFuture = localHTTPChannel.write(ChannelBuffers
+				        .wrappedBuffer(chunk.content));
 			}
 			else
 			{
 				close();
-				logger.error("Failed to write back content.");
+				logger.error("Failed to write back content for session:"
+				        + getSessionID());
 			}
 		}
 	}
@@ -199,6 +199,11 @@ public class ProxySession
 		if (event.method.equalsIgnoreCase(HttpMethod.CONNECT.getName()))
 		{
 			handleConnect(event);
+			if (logger.isDebugEnabled())
+			{
+				logger.debug("Session[" + getSessionID() + "] sent request.");
+				logger.debug(event.toString());
+			}
 		}
 		else
 		{

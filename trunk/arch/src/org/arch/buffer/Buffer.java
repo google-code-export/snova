@@ -141,8 +141,14 @@ public class Buffer
 				newCapacity <<= 1;
 			}
 			byte[] tmp = new byte[newCapacity];
-			System.arraycopy(buffer, 0, tmp, 0, readableBytes());
+			int copylen = readableBytes();
+			if(copylen > 0)
+			{
+				System.arraycopy(buffer, read_index, tmp, 0, copylen);
+			}
 			buffer = tmp;
+			read_index = 0;
+			write_index = copylen;
 			return true;
 		}
 	}

@@ -12,6 +12,8 @@ import org.arch.buffer.BufferHelper;
  */
 public class EventHeader
 {
+	public static boolean ZIGZAG_ENABLE = true;
+	
 	public int type;
 	public int version;
 	public int hash;
@@ -27,9 +29,18 @@ public class EventHeader
 	
 	public boolean encode(Buffer buffer)
 	{
-		BufferHelper.writeVarInt(buffer, type);
-		BufferHelper.writeVarInt(buffer, version);
-		BufferHelper.writeVarInt(buffer, hash);
+		if(ZIGZAG_ENABLE)
+		{
+			BufferHelper.writeVarInt(buffer, type);
+			BufferHelper.writeVarInt(buffer, version);
+			BufferHelper.writeVarInt(buffer, hash);
+		}
+		else
+		{
+			BufferHelper.writeFixInt32(buffer, type,true);
+			BufferHelper.writeFixInt32(buffer, hash,true);
+			BufferHelper.writeFixInt32(buffer, version,true);
+		}
 		return true;
 	}
 	
@@ -37,9 +48,18 @@ public class EventHeader
 	{
 		try
         {
-			type = BufferHelper.readVarInt(buffer);
-			version = BufferHelper.readVarInt(buffer);
-			hash = BufferHelper.readVarInt(buffer);
+			if(ZIGZAG_ENABLE)
+			{
+				type = BufferHelper.readVarInt(buffer);
+				version = BufferHelper.readVarInt(buffer);
+				hash = BufferHelper.readVarInt(buffer);
+			}
+			else
+			{
+				type = BufferHelper.readFixInt32(buffer, true);
+				hash = BufferHelper.readFixInt32(buffer, true);
+				version = BufferHelper.readFixInt32(buffer, true);
+			}
         }
         catch (Exception e)
         {
