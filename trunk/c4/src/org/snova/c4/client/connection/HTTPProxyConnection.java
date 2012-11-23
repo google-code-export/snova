@@ -164,7 +164,10 @@ public class HTTPProxyConnection extends ProxyConnection
 				if (!future.isSuccess())
 				{
 					// retry
-					doSend(content);
+					if(!isPullConnection)
+					{
+						doSend(content);
+					}	
 				}
 			}
 		});
