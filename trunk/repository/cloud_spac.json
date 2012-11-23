@@ -1,11 +1,19 @@
 [
   {
+    "URL" : ["www.google.*/imgres"],
+    "Proxy":["Direct", "Default"]
+  },
+  {
+    "Host" : ["feedproxy.google.com"],
+    "Proxy":["Google", "Default"]
+  },
+  {
     "Host" : ["*.ytimg.com*", "*.google.com(.*)?","*.googleusercontent.com*", "*.gstatic.com", "*.googleapis.com*", "*.googlecode.com"],
-    "Proxy":["Google", "Direct", "Default"]
+    "Proxy":["GoogleHttps", "Direct", "Default"]
   },
   {
     "Host" : ["*.doubleclick.net*", "*.google-analytics.com*", "*.blogger.com", "*.google.co.*"],
-    "Proxy":["Google", "Direct", "Default"]
+    "Proxy":["GoogleHttps", "Direct", "Default"]
   },
   {
     "Host" : ["*.golang.org"],
@@ -13,12 +21,12 @@
   },
   {
     "Host" : ["*.blogspot.*", "*.appspot.com", "golang.org"],
-    "Proxy": ["Google", "Direct", "Default"]
+    "Proxy": ["GoogleHttps", "Default"]
   },
   {
     "Host" : ["*.youtube.com"],
-    "Proxy": ["Google", "Direct", "Default"],
-    "Attr":  ["Direct", "Default"]
+    "Proxy": ["GoogleHttps", "Default"],
+    "Attr":  ["Direct", "CRLF"]
   },
   {
     "Protocol" : "http",
