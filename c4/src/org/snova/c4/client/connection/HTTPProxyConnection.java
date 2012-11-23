@@ -4,6 +4,7 @@
 package org.snova.c4.client.connection;
 
 import java.net.InetSocketAddress;
+import java.util.concurrent.TimeUnit;
 
 import org.arch.buffer.Buffer;
 import org.arch.buffer.BufferHelper;
@@ -153,7 +154,7 @@ public class HTTPProxyConnection extends ProxyConnection
 			        content.readableBytes());
 			request.setContent(buffer);
 		}
-
+		responseHandler.unanswered = true;
 		ch.write(request).addListener(new ChannelFutureListener()
 		{
 			@Override
@@ -215,19 +216,40 @@ public class HTTPProxyConnection extends ProxyConnection
 	{
 		private int responseContentLength = -1;
 		private Buffer resBuffer = new Buffer(0);
-		private boolean transferEncoding = false;
+		private boolean hasLenHeader = false;
+		private boolean hasTranferEncoding = false;
+		private boolean unanswered = true;
+		private int wait = 1;
 
 		private void clearBuffer()
 		{
 			resBuffer = new Buffer(0);
 		}
 
-		private void transactionCompeleted()
+		private void transactionCompeleted(boolean success)
 		{
 			clearBuffer();
 			if (isPullConnection && isRunning)
 			{
-				pullData();
+				if (success)
+				{
+					wait = 1;
+					pullData();
+				}
+				else
+				{
+					SharedObjectHelper.getGlobalTimer().schedule(new Runnable()
+					{
+
+						@Override
+						public void run()
+						{
+							pullData();
+
+						}
+					}, wait, TimeUnit.SECONDS);
+					wait = wait * 2;
+				}
 			}
 		}
 
@@ -281,25 +303,28 @@ public class HTTPProxyConnection extends ProxyConnection
 				        resBuffer.getWriteIndex(), contentlen);
 				resBuffer.advanceWriteIndex(contentlen);
 
-				if (!transferEncoding)
+				if (!hasTranferEncoding)
 				{
 					if (responseContentLength <= resBuffer.readableBytes())
 					{
-						doRecv(resBuffer);
-						transactionCompeleted();
+						if (hasLenHeader)
+						{
+							responseContentLength = -1;
+							while (resBuffer.readable() && tryHandleBuffer())
+								;
+						}
+						else
+						{
+							doRecv(resBuffer);
+							responseContentLength = -1;
+						}
 					}
+
 				}
 				else
 				{
 					while (resBuffer.readable() && tryHandleBuffer())
 						;
-				}
-			}
-			else
-			{
-				if (!transferEncoding)
-				{
-					transactionCompeleted();
 				}
 			}
 		}
@@ -325,8 +350,13 @@ public class HTTPProxyConnection extends ProxyConnection
 				{
 					logger.error("Not finished since no enought data read.");
 				}
+				transactionCompeleted(false);
+				return;
 			}
-			transactionCompeleted();
+			if (unanswered)
+			{
+				transactionCompeleted(false);
+			}
 		}
 
 		@Override
@@ -337,12 +367,18 @@ public class HTTPProxyConnection extends ProxyConnection
 			if (msg instanceof HttpResponse)
 			{
 				HttpResponse response = (HttpResponse) e.getMessage();
-				transferEncoding = response.isChunked();
+				hasLenHeader = response.isChunked();
 				String theader = response
 				        .getHeader(HttpHeaders.Names.TRANSFER_ENCODING);
-				transferEncoding = theader != null
+				hasTranferEncoding = theader != null
 				        && theader.equalsIgnoreCase("chunked");
-				if (!transferEncoding)
+				String c4LenHeader = response.getHeader("C4LenHeader");
+				hasLenHeader = false;
+				if (null != c4LenHeader && !c4LenHeader.isEmpty())
+				{
+					hasLenHeader = true;
+				}
+				if (!hasTranferEncoding)
 				{
 					responseContentLength = (int) HttpHeaders
 					        .getContentLength(response);
@@ -352,10 +388,16 @@ public class HTTPProxyConnection extends ProxyConnection
 					clearBuffer();
 					responseContentLength = -1;
 				}
+				unanswered = false;
 				if (response.getStatus().getCode() == 200)
 				{
 					ChannelBuffer content = response.getContent();
+					int len = content.readableBytes();
 					fillResponseBuffer(content);
+					if (len == responseContentLength)
+					{
+						transactionCompeleted(true);
+					}
 				}
 				else
 				{
@@ -364,18 +406,16 @@ public class HTTPProxyConnection extends ProxyConnection
 					byte[] buf = new byte[response.getContent().readableBytes()];
 					response.getContent().readBytes(buf);
 					logger.error("Server error:" + new String(buf));
-					transactionCompeleted();
+					transactionCompeleted(false);
 				}
 			}
 			else if (msg instanceof HttpChunk)
 			{
 				HttpChunk chunk = (HttpChunk) e.getMessage();
 				fillResponseBuffer(chunk.getContent());
-				if (chunk.isLast() && transferEncoding)
+				if (chunk.isLast())
 				{
-					transactionCompeleted();
-					// logger.error("##############Last chunk" + " for session:"
-					// + getSession().getSessionID());
+					transactionCompeleted(true);
 				}
 			}
 			else
