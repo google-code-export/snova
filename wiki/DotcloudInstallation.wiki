@@ -1,0 +1,59 @@
+#summary C4 在Dotcloud上的部署配置说明.
+
+= Step 1: 注册Dotcloud帐号，准备Dotcloud Client环境 =
+  * 按照Dotcloud官方的[https://www.dotcloud.com Dotcloud]注册帐号，遵循安装说明[http://docs.dotcloud.com/0.9/firststeps/install/ Installing the CLI]安装Dotcloud Client
+  * 安装完后，命令行下执行以下命令初始化dotcloud client
+  {{{
+       dotcloud setup
+   }}}
+
+= Step 2: 部署Snova C4的服务端到Dotcloud =
+  * 下载`snova-c4-server-[version].war`， 改名为ROOT.war,放在任意空目录中
+  * 下载[http://snova.googlecode.com/svn/trunk/repository/dotcloud.yml dotcloud.yml], 放到和ROOT.war同一个目录下
+  * 在命令行下进入war文件所在目录，依次顺序执行以下的命令,每一行单独执行
+    {{{
+        dotcloud create <app_name>     --创建app，只需执行一次
+        dotcloud push                  --上传app，注意失败后重试一次
+    }}}
+  * 如果是更新C4服务端，注意保留上步的目录，替换ROOT.war后执行dotcloud push即可
+  * 留意执行“dotcloud push”时的输出，一般会显示创建的域名，为 "xx.dotcloud.com", 记下该域名，为配置Client准备（执行heroku list可列出所有app）
+    
+= Step 3: 配置客户端 =
+客户端可选gsnova(Go)或者snova(Java)
+==gsnova(Go)==
+  * 修改gsnova.conf中C4部分，填入之前创建的域名，重启gsnova生效
+    {{{
+     [C4]
+     #Enable改为1，C4才能生效，默认为0关闭
+     Enable=1
+     #修改domain为Step2创建的域名, 可加多个域名
+     WorkerNode[0]=xyz.herokuapp.com
+     WorkerNode[1]=xyz.cloudfoundry.com
+    }}}
+  * 修改gsnova.conf中SPAC下默认的Proxy实现为C4
+    {{{    
+     [SPAC]
+     Enable=1
+     #默认Proxy实现，初始为GAE
+     Default=C4
+    }}}
+==snova(Java)==
+  * 从snova-0.12.0120开始自动集成c4 plugin，无需单独安装
+  * 修改`<snova>/plugins/c4/conf/c4-client.conf`
+    {{{
+       [C4]
+       #修改domain为Step2创建的域名, 可加多个域名
+       WorkerNode[0]=xyz.herokuapp.com
+       WorkerNode[1]=xyz.cloudfoundry.com
+    }}}
+  * 修改`<snova>/conf/snova.conf`，将C4改为默认proxy实现(可选)
+   {{{
+      [Framework]
+      .........
+      ##Can choose in plugins, default is GAE
+      ProxyService=C4
+    }}}
+
+= Step 5: 与SPAC集成（可选） =
+  * 在SPAC的解释语言中，heroku被定义为$HEROKU="Heroku"
+  * 参考SPAC的说明[http://code.google.com/p/snova/wiki/SpecialProxyAutoConfig SpecialProxyAutoConfig]修改`SelectProxy`方法打造自己的proxy环境
