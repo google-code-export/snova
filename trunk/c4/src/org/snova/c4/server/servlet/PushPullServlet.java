@@ -20,8 +20,6 @@ import org.arch.event.Event;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.c4.common.C4Constants;
-import org.snova.c4.common.C4PluginVersion;
-import org.snova.c4.server.session.RemoteProxySession;
 import org.snova.c4.server.session.RemoteProxySessionV2;
 
 /**
@@ -98,7 +96,7 @@ public class PushPullServlet extends HttpServlet
 		{
 			supportChunk = false;
 		}
-
+		
 		long deadline = begin + timeout * 1000;
 		boolean sentData = false;
 		HashSet<RemoteProxySessionV2> ss = new HashSet<RemoteProxySessionV2>();

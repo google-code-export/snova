@@ -41,10 +41,8 @@ public class LauncherServer
 		context.setContextPath("/");
 		server.setHandler(context);
 		context.addServlet(new ServletHolder(new IndexServlet()), "/*");
-		context.addServlet(new ServletHolder(new InvokeServlet()), "/invoke");
 		context.addServlet(new ServletHolder(new PushPullServlet()), "/invoke2");
 		context.addServlet(new ServletHolder(new DNSServlet()), "/dns");
-		context.addServlet(new ServletHolder(new RSocketHeartBeatServlet()), "/rsocket");
 		QueuedThreadPool pool = new QueuedThreadPool(30);
 		pool.setMaxIdleTimeMs(30000);
 		//server.setConnectors(arg0)
