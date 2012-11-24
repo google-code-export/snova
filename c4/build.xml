@@ -25,11 +25,13 @@
 		<mkdir dir="${clientclasses}" />
 		<mkdir dir="${distroot}" />
 		<mkdir dir="${warclasses}" />
-		<echo message="package org.snova.c4.common;
+		<echo
+			message="package org.snova.c4.common;
 			public class C4PluginVersion
 			{
 			   public static final String value = &quot;${version}&quot;;
-			}" file="${srcroot}/${versionfile}" />
+			}"
+			file="${srcroot}/${versionfile}" />
 	</target>
 
 	<target name="compile-client" depends="prepare">
@@ -66,7 +68,6 @@
 				</fileset>
 				<pathelement path="${root}/../framework/lib/framework.jar" />
 				<pathelement path="${root}/../gae/lib/geronimo-servlet_2.5_spec-1.2.jar" />
-				<pathelement path="${root}/../framework/lib/jboss-netty.jar" />
 				<pathelement path="${root}/../framework/lib/arch.jar" />
 				<pathelement path="${root}/../framework/lib/slf4j-api-1.6.4.jar" />
 			</classpath>
@@ -88,7 +89,6 @@
 	<target name="war" depends="compile">
 		<copy todir="${warlib}" file="${root}/../framework/lib/framework.jar" />
 		<copy todir="${warlib}" file="${root}/../framework/lib/arch.jar" />
-		<copy todir="${warlib}" file="${root}/../framework/lib/netty-3.2.6.Final.jar" />
 		<copy todir="${warlib}" file="${root}/../framework/lib/slf4j-api-1.6.4.jar" />
 
 		<zip destfile="${project_name}-server-${version}.war" basedir="${war}" />
@@ -96,7 +96,8 @@
 
 	<target name="herokupackage" depends="compile">
 		<property name="herokurelease" value="${root}/heroku-release" />
-		<property name="herokuserverdir" value="${herokurelease}/snova-heroku-server-${version}" />
+		<property name="herokuserverdir"
+			value="${herokurelease}/snova-heroku-server-${version}" />
 		<mkdir dir="${herokuserverdir}" />
 		<mkdir dir="${herokuserverdir}/target" />
 		<mkdir dir="${herokuserverdir}/static" />
@@ -105,7 +106,8 @@
 		<mkdir dir="${herokurepo}/arch/1.0" />
 		<mkdir dir="${herokurepo}/framework/1.0" />
 		<copy tofile="${herokurepo}/arch/1.0/arch-1.0.jar" file="${root}/../framework/lib/arch.jar" />
-		<copy tofile="${herokurepo}/framework/1.0/framework-1.0.jar" file="${root}/../framework/lib/framework.jar" />
+		<copy tofile="${herokurepo}/framework/1.0/framework-1.0.jar"
+			file="${root}/../framework/lib/framework.jar" />
 		<mkdir dir="${herokusrc}" />
 		<copy todir="${herokusrc}">
 			<fileset dir="${srcroot}">
@@ -129,7 +131,8 @@
 				<include name="*" />
 			</fileset>
 		</copy>
-		<zip destfile="${project_name}-heroku-server-${version}.zip" basedir="${herokurelease}" />
+		<zip destfile="${project_name}-heroku-server-${version}.zip"
+			basedir="${herokurelease}" />
 		<delete dir="${herokurelease}" />
 	</target>
 
@@ -148,11 +151,8 @@
 		<copy todir="${releaseprojectdir}/conf">
 			<fileset dir="${conf}" />
 		</copy>
-		<!--
-		<copy todir="${releaseprojectdir}/bin">
-			<fileset dir="${shell}" />
-		</copy>
-		-->
+		<!-- <copy todir="${releaseprojectdir}/bin"> <fileset dir="${shell}" /> 
+			</copy> -->
 		<copy todir="${releaseprojectdir}" file="${root}/plugin.xml" />
 		<copy todir="${releaseprojectdir}" file="${root}/readme.txt" />
 		<copy todir="${releaseprojectdir}" file="${root}/changelog.txt" />

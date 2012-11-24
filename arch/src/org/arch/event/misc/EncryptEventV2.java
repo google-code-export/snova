@@ -25,9 +25,6 @@ import org.arch.event.EventVersion;
 @EventVersion(2)
 public class EncryptEventV2 extends Event
 {
-	//protected static Logger logger = LoggerFactory
-	//        .getLogger(EncryptEvent.class);
-
 	public EncryptEventV2()
 	{
 	}
