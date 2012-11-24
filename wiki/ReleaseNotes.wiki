@@ -4,6 +4,10 @@
 _You can download the latest version of the Snova/GSnova [http://code.google.com/p/snova/downloads/list here]
 
 Snova/GSnova - Release Notes
+===Version 0.19.1 - (2012.11.24)===
+ * `[C4]`: 快速关闭主动断开的连接
+ * 默认设置的优化
+
 ===Version 0.19.0 - (2012.11.23)===
  * `[C4]`: 重构，性能提高两倍以上(Server需要重新部署）
  * 一些Bug fix以及默认设置的优化
