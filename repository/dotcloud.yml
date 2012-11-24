@@ -1,0 +1,6 @@
+www:
+  type: java
+  config:
+    java_initial_heap_size: 64
+    jetty_version: jetty-7
+    java_version: java-7
