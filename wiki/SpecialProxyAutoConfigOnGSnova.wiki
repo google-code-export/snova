@@ -68,6 +68,8 @@ gsnova也提供一个spac（SpecialProxyAutoConfig）用于更复杂的PAC场景
    * 目前Proxy实现用特定名称代替，包括：
    ===`GoogleHttps/GoogleHttp/Google`===
       ** 含义为直接连接Google的站点中转代理请求
+   ===Direct===
+      ** 直接访问，不经过任何代理
    ===GAE===
       ** 选择GAE的代理实现
    ===C4===
