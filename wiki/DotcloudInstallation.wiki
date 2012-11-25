@@ -1,4 +1,5 @@
 #summary C4 在Dotcloud上的部署配置说明.
+#labels Featured
 
 = Step 1: 注册Dotcloud帐号，准备Dotcloud Client环境 =
   * 按照Dotcloud官方的[https://www.dotcloud.com Dotcloud]注册帐号，遵循安装说明[http://docs.dotcloud.com/0.9/firststeps/install/ Installing the CLI]安装Dotcloud Client
