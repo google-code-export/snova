@@ -95,7 +95,7 @@ gsnova也提供一个spac（SpecialProxyAutoConfig）用于更复杂的PAC场景
  ==Proxy属性==
    * Range
      自动注入Range头，多并发下载
-   * RedirectHttps
+   * `RedirectHttps`
      自动重定向至https
 
 = 限制/不足 =
