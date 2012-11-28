@@ -32,7 +32,6 @@
        * 执行appcfg.cmd/appcfg.sh update war上传, 注意在解压后进入的目录执行(appcfg在'<Google App Engine Java SDK>/bin'下 )
 
     
-    
 = Step 5: 配置客户端 =
 Client可选gsnova(Go)或者snova(Java).
 ==gsnova(Go)==
@@ -44,6 +43,9 @@ Client可选gsnova(Go)或者snova(Java).
       WorkerNode[0]=myappid1
       WorkerNode[1]=myappid2
     }}}
+  * HTTPS站点代理需要导入伪造的证书。伪造证书为cert/Fake-ACRoot-Certificate.cer
+  * 如果不配置appid的话，client会到master node上获取数个共享的appid用于自身启动，注意—— 共享的appid只能用于匿名用户使用（匿名用户的概念看这里[http://code.google.com/p/hyk-proxy/wiki/Authorization Authorization]）
+  * 不支持XMPP
 ==snova(Java)==
   * Framework
         Framework的配置仅有两三项，具体涉及proxy的配置均在相应plugin的配置中;目前均在conf/snova.conf中（GUI启动则在Config对话框中配置）,简要说明如下：
@@ -82,25 +84,26 @@ Client可选gsnova(Go)或者snova(Java).
         {{{
           WorkerNode[0]=root:passwd@appid1
         }}}
+       * HTTPS站点代理需要导入伪造的证书。伪造证书为conf/Fake-ACRoot-Certificate.cer
        * 如果不配置appid的话，client会到master node上获取数个共享的appid用于自身启动，注意—— 共享的appid只能用于匿名用户使用（匿名用户的概念看这里[http://code.google.com/p/hyk-proxy/wiki/Authorization Authorization]）
-       * `XMPP下Account`为XMPP账户，是可选配置，在HTTP无法直连情况下可启用，目前可配置GTALK/jabber.org/OVI等几乎所有XMPP帐号（若有不支持的XMPP account，请提交[http://code.google.com/p/snova/issues/list ISSUE]）, eg:
-        {{{
-           [XMPP]
-           Account[0]=user:passwd
-        }}}
-       GUI方式则需要在Connection Tab下配置
-         http://hyk-proxy.googlecode.com/svn/wiki/images/xmpp.png
-       * XMPP账户可配置多个，此情况下代理过程中采用轮询策略选择,eg:
-        {{{
-         [XMPP]
-         Account[0]=user:passwd
-         Account[1]=user:passwd[#serverhost:serverport][/oldssl]
-        }}}
-       * XMPP模式仅在`ConnectionMode`模式为XMPP（`ConnectionMode=XMPP`）情况下生效
-       * `Compressor=Snappy`压缩算法，注意Go服务端只支持Snappy实现，而Java服务端支持LZF/FastLZ/QuickLZ/Snappy
-       * `ConcurrentRangeFetchWorker=3` 在下载文件/观看视频时生效，含义为并发的下载线程数，可以任意调整，建议在1～5之间调整
-       * `FetchLimitSize=512000` 在下载文件/观看视频时生效，每次事务获取的大文件部分的大小，默认512KB
-       * 配置多AppID情况下若需要将访问一个站点的请求绑定到指定AppID，则需要配置AppIdBinding
+       * 以下是额外的设置，仅供参考，默认不用修改 
+             ** `XMPP下Account`为XMPP账户，是可选配置，在HTTP无法直连情况下可启用，目前可配置GTALK/jabber.org/OVI等几乎所有XMPP帐号（若有不支持的XMPP account，请提交[http://code.google.com/p/snova/issues/list ISSUE]）, eg:
+             {{{
+                 [XMPP]
+                 Account[0]=user:passwd
+             }}}
+             GUI方式则需要在Connection Tab下配置
+             http://hyk-proxy.googlecode.com/svn/wiki/images/xmpp.png
+           ** XMPP账户可配置多个，此情况下代理过程中采用轮询策略选择,eg:
+            {{{
+                [XMPP]
+                Account[0]=user:passwd
+               Account[1]=user:passwd[#serverhost:serverport][/oldssl]
+            }}}
+          ** XMPP模式仅在`ConnectionMode`模式为XMPP（`ConnectionMode=XMPP`）情况下生效
+          ** `ConcurrentRangeFetchWorker=3` 在下载文件/观看视频时生效，含义为并发的下载线程数，可以任意调整，建议在1～5之间调整
+          ** `FetchLimitSize=512000` 在下载文件/观看视频时生效，每次事务获取的大文件部分的大小，默认512KB
+          ** 配置多AppID情况下若需要将访问一个站点的请求绑定到指定AppID，则需要配置AppIdBinding
          {{{
             [AppIdBinding]
             #站点域名可用|,;隔开
