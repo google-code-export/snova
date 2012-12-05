@@ -1,17 +1,17 @@
 #summary C4 Plugin在Appfog上的部署配置说明.
 #labels Featured
 
-= Step 1: 准备Heroku Client环境 =
-按照Appfog注册账号，并按照官方的[https://docs.appfog.com/getting-started/af-cli AF Command Line Tool]下载安装appfog的命令行工具。
+= Step 1: 准备Appfog账号以及安装Client环境 =
+到[http://www.appfog.com/ Appfog]注册账号，并按照官方的[https://docs.appfog.com/getting-started/af-cli AF Command Line Tool]说明下载安装appfog的命令行工具。
 
 = Step 2: 部署Snova C4的服务端到Appfog =
   * 下载`snova-c4-server-[version].war`， 放在任意地方
-  * 在命令行下war文件所在目录，依次顺序执行以下的命令,每一行单独执行
+  * 在命令行下进入war文件所在目录，依次顺序执行以下的命令,每一行单独执行
     {{{
        af login
        af push <appname> --path ./snova-c4-server-0.19.0.war  
     }}}
-  * 执行af push命令后会出现下面输出，参考下面输入选择（注意， appname用xxx代替了）
+  * 执行af push命令后会出现下面输出，参考下面输入选择（注意， 以下实际appname用xxx代替， 内存可选择更大的256M或者更高，以提高部署的app性能，下面选择128M仅为示范）
      {{{
        Detected a Java Web Application, is this correct? [Yn]: Y
       1: AWS US East - Virginia
