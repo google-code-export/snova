@@ -1,10 +1,10 @@
 [
   {
-    "URL" : ["www.google.*/imgres"],
+    "URL" : ["www.google.*/imgres", "www.google.*/alerts"],
     "Proxy":["Direct", "Default"]
   },
   {
-    "Host" : ["feedproxy.google.com"],
+    "Host" : ["feedproxy.google.com", "picasa.google.com", "books.google.com"],
     "Proxy":["Google", "Default"]
   },
   {
@@ -12,7 +12,7 @@
     "Proxy":["GoogleHttps", "Direct", "Default"]
   },
   {
-    "Host" : ["*.doubleclick.net*", "*.google-analytics.com*", "*.blogger.com", "*.google.co.*"],
+    "Host" : ["*.doubleclick.net*", "*.google-analytics.com", "*.blogger.com", "*.google.co.*"],
     "Proxy":["GoogleHttps", "Direct", "Default"]
   },
   {
@@ -25,16 +25,12 @@
   },
   {
     "Protocol" : "http",
-    "Host": ["twitter.com", "www.facebook.com"],
+    "Host": ["twitter.com", "(www.)?facebook.com"],
     "Attr":  ["RedirectHttps"]
   },
   {
     "Protocol" : "https",
     "Host": ["twitter.com"],
     "Proxy": ["Default"]
-  },
-  {
-    "Filter" : ["!IsBlockedByGFW"],
-    "Proxy":["Direct", "Default"]
   }
 ]
