@@ -14,19 +14,21 @@
 = Step 3: 部署服务到`OpenShift` =
   * 将`snova-c4-server-[version].war`放到任意的空目录下，然后在命令行下进入该目录，逐个执行下面的命令
     {{{
-      rhc-create-domain -n <domainName> -l <yourId> -p <yourPassword>  创建主域名， 部署新应用是这一步可不执行
-      rhc-create-app -a <appName> -t jbossas-7.0 -p <yourPassword>  创建app
-      mv snova-c4-server-[version].war deployments/ROOT.war
-      git rm -r src pom.xml
-      git commit –m “delete”
-      git push                         以上三步重新部署同一个app时可不执行
-      git init 
-      git add .
-      git commit –m “deploy”
-      git push
+rhc setup        --登录
+rhc-create-domain -n <domainName>  --创建主域名， 部署新应用是这一步可不执行
+rhc-create-app -a <appname> -t jbossews-1.0  --创建app,执行后会在当前目录下创建一个appname的目录名；注意保留此目录用于以后更新
+
+cd <appname>
+mv snova-c4-server-[version].war deployments/ROOT.war
+--上一步将snova-c4-server-[version].war改名为ROOT.war, 移动到deployments目录下， windows用户参考说明操作 
+
+git rm -r src pom.xml   此步重新部署同一个app时可不执行
+git add .
+git commit –m “deploy”
+git push
 
     }}}
- * 浏览器中输入`<yourdomain>.rhcloud.com`， 查看是否部署成功，否则检查上述步骤是否执行成功
+ * 浏览器中输入`<appname>-<domainName>.rhcloud.com`， 查看是否部署成功，否则检查上述步骤是否执行成功
 
 = Step 4: 配置客户端 =
 客户端可选gsnova(Go)或者snova(Java)
