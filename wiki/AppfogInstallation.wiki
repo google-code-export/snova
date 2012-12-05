@@ -11,7 +11,7 @@
        af login
        af push <appname> --path ./snova-c4-server-0.19.0.war  
     }}}
-  * 执行af push命令后会出现下面输出，参考下面输入选择（注意， 以下实际appname用xxx代替， 内存可选择更大的256M或者更高，以提高部署的app性能，下面选择128M仅为示范）
+  * 执行af push命令后会出现下面输出，参考下面输入选择（注意， 以下实际appname用xxx代替， 内存可选择更大的256M或者更高，以提高部署的app性能，下面选择512M仅为示范）
      {{{
        Detected a Java Web Application, is this correct? [Yn]: Y
       1: AWS US East - Virginia
@@ -21,7 +21,7 @@
       5: HP AZ 2 - Las Vegas
       Select Infrastructure: 3
       Application Deployed URL [xxx.ap01.aws.af.cm]: 
-      Memory reservation (128M, 256M, 512M, 1G, 2G) [512M]: 128M
+      Memory reservation (128M, 256M, 512M, 1G, 2G) [512M]: 512M
       How many instances? [1]: 
       Create services to bind to 'snova'? [yN]: n
       Would you like to save this configuration? [yN]: n
