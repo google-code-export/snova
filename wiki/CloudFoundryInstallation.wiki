@@ -14,26 +14,48 @@
 = Step 3: 部署服务到`CloundFoundry` =
   * 将`snova-c4-server-[version].war`放到任意的空目录下，然后在命令行下进入该目录，逐个执行下面的三行命令。
     {{{
-       vmc target api.cloudfoundry.com
-       vmc login
-       vmc push <appname>  —— 若是更新已有的app，执行vmc update <appname>；执行此处appname为任意名称，为域名一部分，此命令执行后有类似下面的交互内容，参照下面的输入Y/N
-        Would you like to deploy from the current directory? [Yn]: Y
-        Application Deployed URL [<appname>.cloudfoundry.com]: <回车>
-        Detected a Java Web Application, is this correct? [Yn]: Y
-        Memory Reservation (64M, 128M, 256M, 512M, 1G, 2G) [512M]:   <回车>
-        Creating Application: OK
-        Would you like to bind any services to '<appname>'? [yN]: n
-        Uploading Application:
-        Checking for available resources: OK
-        Processing resources: OK
-        Packing application: OK
-        Uploading (843K): OK
-        Push Status: OK
-        Staging Application: OK
-        Starting Application: OK
+vmc target api.cloudfoundry.com
+vmc login
+vmc push <appnamexxx>  ——执行此处appnamexxx为任意名称，为域名一部分，此命令执行后有类似下面的交互内容，参照下面的输入选择；更新app亦执行此命令。
+
+user@ubuntu:~/snova-deploy$ vmc push appnamexxx
+Instances> 1
+
+1: java_web
+2: other
+Framework> 1       
+
+1: java
+2: java7
+3: other
+Runtime> 1
+
+1: 64M
+2: 128M
+3: 256M
+4: 512M
+Memory Limit> 512M
+
+Creating appnamexxx... OK
+
+1: appnamexxx.cloudfoundry.com
+2: none
+URL> appnamexxx.cloudfoundry.com
+
+Updating appnamexxx... OK
+
+Create services for application?> n
+
+Bind other services to application?> n
+
+Save configuration?> n
+
+Uploading appnamexxx... OK
+Starting appnamexxx... OK
+Checking appnamexxx... OK
 
     }}}
- * 浏览器中输入`<appname>.cloundfoundry.com`， 查看是否部署成功，否则检查上述步骤是否执行成功
+ * 浏览器中输入`<appnamexxx>.cloundfoundry.com`， 查看是否部署成功，否则检查上述步骤是否执行成功
 
 = Step 4: 配置客户端 =
 客户端可选gsnova(Go)或者snova(Java)
