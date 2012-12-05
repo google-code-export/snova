@@ -3,6 +3,7 @@
 
 = Step 1: 准备Appfog账号以及安装Client环境 =
 到[http://www.appfog.com/ Appfog]注册账号，并按照官方的[https://docs.appfog.com/getting-started/af-cli AF Command Line Tool]说明下载安装appfog的命令行工具。
+注意：Appfog部署C4后的效果较差，问题不少，愿意研究的可以尝试
 
 = Step 2: 部署Snova C4的服务端到Appfog =
   * 下载`snova-c4-server-[version].war`， 放在任意地方
@@ -11,7 +12,7 @@
        af login
        af push <appname> --path ./snova-c4-server-0.19.0.war  
     }}}
-  * 执行af push命令后会出现下面输出，参考下面输入选择（注意， 以下实际appname用xxx代替， 内存可选择更大的256M或者更高，以提高部署的app性能，下面选择512M仅为示范）
+  * 执行af push命令后会出现下面输出，参考下面输入选择（注意， 以下实际appname用xxx代替， 内存可选择更高，以提高部署的app性能，下面选择512M仅为示范）
      {{{
        Detected a Java Web Application, is this correct? [Yn]: Y
       1: AWS US East - Virginia
