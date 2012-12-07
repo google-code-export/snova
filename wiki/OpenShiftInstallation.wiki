@@ -19,8 +19,8 @@ rhc-create-domain -n <domainName>  --创建主域名， 部署新应用是这一
 rhc-create-app -a <appname> -t jbossews-1.0  --创建app,执行后会在当前目录下创建一个appname的目录名；注意保留此目录用于以后更新
 
 cd <appname>
-mv snova-c4-server-[version].war deployments/ROOT.war
---上一步将snova-c4-server-[version].war改名为ROOT.war, 移动到deployments目录下， windows用户参考说明操作 
+mv snova-c4-server-[version].war webapps/ROOT.war
+--上一步将snova-c4-server-[version].war改名为ROOT.war, 移动到webapps目录下， windows用户参考说明操作 
 
 git rm -r src pom.xml   此步重新部署同一个app时可不执行
 git add .
