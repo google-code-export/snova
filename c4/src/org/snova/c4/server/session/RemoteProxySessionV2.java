@@ -5,6 +5,7 @@ package org.snova.c4.server.session;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
@@ -57,22 +58,15 @@ public class RemoteProxySessionV2
 		}
 	}
 	
-	public boolean extractEventResponses(Buffer buf, int maxSize,
+	public void extractEventResponses(Buffer buf, int maxSize,
 	        LinkedList<Event> evs)
 	{
-		boolean containsCloseEvent = false;
 		while (!sendEvents.isEmpty() && buf.readableBytes() <= maxSize)
 		{
 			Event ev = sendEvents.removeFirst();
 			ev.encode(buf);
 			evs.add(ev);
-			ev = extractEvent(ev);
-			if (Event.getTypeVersion(ev.getClass()).type == C4Constants.EVENT_TCP_CONNECTION_TYPE)
-			{
-				containsCloseEvent = true;
-			}
 		}
-		return containsCloseEvent;
 	}
 	
 	public void requeueEvents(LinkedList<Event> evs)
@@ -181,9 +175,10 @@ public class RemoteProxySessionV2
 		}
 	}
 	
-	public static void dispatchEvent(String user, final Buffer content,
-	        Set<RemoteProxySessionV2> ss) throws Exception
+	public static RemoteProxySessionV2 dispatchEvent(String user,
+	        final Buffer content) throws Exception
 	{
+		RemoteProxySessionV2 ret = null;
 		while (content.readable())
 		{
 			Event event = EventDispatcher.getSingletonInstance().parse(content);
@@ -198,9 +193,13 @@ public class RemoteProxySessionV2
 			{
 				RemoteProxySessionV2 s = getSession(user, event);
 				s.handleEvent(tv, event);
-				ss.add(s);
+				if (null != s)
+				{
+					ret = s;
+				}
 			}
 		}
+		return ret;
 	}
 	
 	private boolean handleEvent(TypeVersion tv, Event ev)
@@ -299,8 +298,9 @@ public class RemoteProxySessionV2
 		try
 		{
 			System.out.println("Session[" + sessionId + "]####connect " + addr);
-			client = SocketChannel.open(new InetSocketAddress(host, port));
+			// client = SocketChannel.open(new InetSocketAddress(host, port));
 			// client.configureBlocking(true);
+			client = new Socket(host, port);
 			System.out.println("Session[" + sessionId + "]####connect success");
 		}
 		catch (IOException e)
@@ -319,12 +319,13 @@ public class RemoteProxySessionV2
 		{
 			try
 			{
-				//ByteBuffer buffer = ByteBuffer.allocate(maxread);
+				closing = false;
+				// ByteBuffer buffer = ByteBuffer.allocate(maxread);
 				byte[] buffer = new byte[maxread];
-				client.socket().setSoTimeout(timeout * 1000);
+				client.setSoTimeout(timeout * 1000);
 				// System.out.println("Session[" + sessionId +
 				// "]start Read at");
-				int n = client.socket().getInputStream().read(buffer);
+				int n = client.getInputStream().read(buffer);
 				// System.out.println("Session[" + sessionId + "]####Read " + n
 				// + " for " + remoteAddr);
 				if (n < 0)
@@ -363,7 +364,7 @@ public class RemoteProxySessionV2
 		{
 			try
 			{
-				client.write(ByteBuffer.wrap(content));
+				client.getOutputStream().write(content);
 				return true;
 			}
 			catch (IOException e)
@@ -393,7 +394,15 @@ public class RemoteProxySessionV2
 			ev.addr = remoteAddr;
 			ev.status = SocketConnectionEvent.TCP_CONN_CLOSED;
 			offerSendEvent(ev);
+			closing = true;
 		}
+	}
+	
+	public boolean isClosing()
+	{
+		boolean ret = closing;
+		closing = false;
+		return ret;
 	}
 	
 	RemoteProxySessionV2(String user, int hash)
@@ -402,10 +411,11 @@ public class RemoteProxySessionV2
 		this.sessionId = hash;
 	}
 	
-	private int	                   sessionId;
-	private int	                   sequence;
-	private String	               method;
-	private String	               user;
-	private String	               remoteAddr;
-	private volatile SocketChannel	client	= null;
+	private int	            sessionId;
+	private int	            sequence;
+	private String	        method;
+	private String	        user;
+	private String	        remoteAddr;
+	private volatile Socket	client	= null;
+	private boolean	        closing	= false;
 }

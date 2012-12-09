@@ -99,7 +99,7 @@ public class PushPullServlet extends HttpServlet
 		
 		long deadline = begin + timeout * 1000;
 		boolean sentData = false;
-		HashSet<RemoteProxySessionV2> ss = new HashSet<RemoteProxySessionV2>();
+		RemoteProxySessionV2 currentSession = null;
 		try
 		{
 			int bodylen = req.getContentLength();
@@ -114,24 +114,20 @@ public class PushPullServlet extends HttpServlet
 				}
 				if (len > 0)
 				{
-					RemoteProxySessionV2.dispatchEvent(userToken, content, ss);
+					currentSession = RemoteProxySessionV2.dispatchEvent(userToken, content);
 				}
 			}
 			
-			System.out.println("Process role:" + role + " session size:"
-			        + ss.size());
+			System.out.println("Process role:" + role);
 			
 			LinkedList<Event> evs = new LinkedList<Event>();
-			RemoteProxySessionV2 session = null;
-			boolean containsCloseEvent = false;
 			do
 			{
 				evs.clear();
-				for (RemoteProxySessionV2 s : ss)
+				if(null != currentSession)
 				{
-					containsCloseEvent = s.extractEventResponses(buf, maxRead,
+					currentSession.extractEventResponses(buf, maxRead,
 					        evs);
-					session = s;
 				}
 				if (isPull)
 				{
@@ -151,7 +147,7 @@ public class PushPullServlet extends HttpServlet
 					{
 						Thread.sleep(1);
 					}
-					if (containsCloseEvent)
+					if (null != currentSession && currentSession.isClosing())
 					{
 						break;
 					}
@@ -159,15 +155,15 @@ public class PushPullServlet extends HttpServlet
 					{
 						break;
 					}
-					for (RemoteProxySessionV2 s : ss)
+					int timeoutsec = (int) ((deadline - System
+					        .currentTimeMillis()) / 1000);
+					if (timeoutsec == 0)
 					{
-						int timeoutsec = (int) ((deadline - System
-						        .currentTimeMillis()) / 1000);
-						if (timeoutsec == 0)
-						{
-							break;
-						}
-						s.readClient(maxRead, timeoutsec);
+						break;
+					}
+					if(null != currentSession)
+					{
+						currentSession.readClient(maxRead, timeoutsec);
 					}
 					if (System.currentTimeMillis() >= deadline)
 					{
@@ -195,9 +191,9 @@ public class PushPullServlet extends HttpServlet
 				logger.error("Requeue events since write " + size
 				        + " bytes while exception occured.", e);
 				e.printStackTrace();
-				if (null != session)
+				if (null != currentSession)
 				{
-					session.requeueEvents(evs);
+					currentSession.requeueEvents(evs);
 				}
 				buf.clear();
 				resp.getOutputStream().close();
