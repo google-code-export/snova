@@ -4,6 +4,14 @@
 _You can download the latest version of the Snova/GSnova [http://code.google.com/p/snova/downloads/list here]
 
 Snova/GSnova - Release Notes
+===Version 0.19.3 - (2012.12.09)===
+ * GAE/C4/SSH的proxy实现单独绑定无SPAC支持的端口，分别为48101/48102/48103
+ * `[C4]`: 支持NodeJS PaaS 平台，优化了Java的Server实现
+ * `[C4]`: 支持Https连接到server
+ * `[GAE]`: 优化连接管理
+ * `[SPAC]`:  cloud_spac.json & cloud_hosts.conf强制在启动时更新，用户可编辑user_spac.json, user_hosts.conf覆盖cloud配置
+ * 一些Bug fix以及默认设置的优化
+
 ===Version 0.19.2 - (2012.12.02)===
  * `[SPAC]`: 修改默认IP库为apnic
  * `[C4]`: 优化HTTP连接管理
