@@ -18,9 +18,10 @@
   * 在命令行下进入zip解压后所在目录，依次顺序执行以下的命令,每一行单独执行
     {{{
        heroku login
-       heroku create 
+       git init
        git add .
        git commit -m "init"
+       heroku create               //此步创建app
        git push heroku master 
     }}}
   * 留意执行“heroku create”时的输出，一般会显示创建的域名，为 "xx.herokuapp.com", 记下该域名，为配置Client准备（执行heroku apps可列出所有app）
@@ -56,7 +57,7 @@ git push
   * 参考官方说明安装命令行工具vmc，注意安装依赖ruby以及gem的安装。   [http://start.cloudfoundry.com/tools/vmc/installing-vmc.html  vmc安装]
 
 === Step 2: 部署服务到`CloundFoundry` ===
-  * 将`snova-c4-nodejs-server-[version].zip`解压到任意的空目录下，然后在命令行下进入该目录，逐个执行下面的三行命令。
+  * 将`snova-c4-nodejs-server-[version].zip`解压到任意的空目录下，然后在命令行下进入该目录，逐个执行下面的三行命令。注意要求node 0.6以上
     {{{
 vmc target api.cloudfoundry.com
 vmc login
