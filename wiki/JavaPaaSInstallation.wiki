@@ -50,9 +50,9 @@ git push
  * 浏览器中输入`<appname>-<domainName>.rhcloud.com`， 查看是否部署成功，否则检查上述步骤是否执行成功
 
 ----
-== `CloundFoundry` ==
-=== Step 1: 注册`CloundFoundry`环境，安装`CloundFoundry`部署工具 ===
-  * 到官方链接[https://my.cloudfoundry.com/signup CloundFoundry]注册帐号， 注意，注册不是马上成功，一般第二天才会收到注册成功的邮件，其中包含用户名密码
+== `CloudFoundry` ==
+=== Step 1: 注册`CloudFoundry`环境，安装`CloudFoundry`部署工具 ===
+  * 到官方链接[https://my.cloudfoundry.com/signup CloudFoundry]注册帐号， 注意，注册不是马上成功，一般第二天才会收到注册成功的邮件，其中包含用户名密码
   * 参考官方说明安装命令行工具vmc，注意安装依赖ruby以及gem的安装。   [http://start.cloudfoundry.com/tools/vmc/installing-vmc.html  vmc安装]
 
 === Step 2: 部署服务到`CloundFoundry` ===
@@ -99,7 +99,7 @@ Starting appnamexxx... OK
 Checking appnamexxx... OK
 
     }}}
- * 浏览器中输入`<appnamexxx>.cloundfoundry.com`， 查看是否部署成功，否则检查上述步骤是否执行成功
+ * 浏览器中输入`<appnamexxx>.cloudfoundry.com`， 查看是否部署成功，否则检查上述步骤是否执行成功
 
 ----
 
