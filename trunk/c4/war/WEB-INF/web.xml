@@ -6,15 +6,21 @@ http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
 	version="2.5">
 
 	<servlet>
-		<servlet-name>HttpInvoke</servlet-name>
-		<servlet-class>org.snova.c4.server.servlet.PushPullServlet</servlet-class>
+		<servlet-name>Push</servlet-name>
+		<servlet-class>org.snova.c4.server.servlet.PushServlet</servlet-class>
+	</servlet>
+
+	<servlet>
+		<servlet-name>Test</servlet-name>
+		<servlet-class>org.snova.c4.server.servlet.TestServlet</servlet-class>
 	</servlet>
 
 	<servlet>
 		<servlet-name>Index</servlet-name>
-		<servlet-class>org.snova.c4.server.servlet.IndexServlet</servlet-class>
+		<servlet-class>org.snova.c4.server.servlet.IndexServlet
+		</servlet-class>
 	</servlet>
-	
+
 	<servlet>
 		<servlet-name>DNSQuery</servlet-name>
 		<servlet-class>org.snova.httpdns.DNSServlet</servlet-class>
@@ -25,8 +31,16 @@ http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
 		<url-pattern>/dns</url-pattern>
 	</servlet-mapping>
 	<servlet-mapping>
-		<servlet-name>HttpInvoke</servlet-name>
-		<url-pattern>/invoke2</url-pattern>
+		<servlet-name>Push</servlet-name>
+		<url-pattern>/push</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>Pull</servlet-name>
+		<url-pattern>/pull</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>Test</servlet-name>
+		<url-pattern>/test</url-pattern>
 	</servlet-mapping>
 
 	<servlet-mapping>
