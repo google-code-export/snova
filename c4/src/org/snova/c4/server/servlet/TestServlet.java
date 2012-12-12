@@ -25,5 +25,6 @@ public class TestServlet extends HttpServlet
 	        throws ServletException, IOException
 	{
 		resp.setStatus(200);
+		resp.getOutputStream().close();
 	}
 }
