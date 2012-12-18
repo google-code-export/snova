@@ -11,6 +11,7 @@ package org.arch.event.misc;
 
 import org.arch.buffer.Buffer;
 import org.arch.buffer.BufferHelper;
+import org.arch.encrypt.RC4Encrypt;
 import org.arch.encrypt.SimpleEncrypt;
 import org.arch.event.Event;
 import org.arch.event.EventConstants;
@@ -25,22 +26,19 @@ import org.arch.event.EventVersion;
 @EventVersion(1)
 public class EncryptEvent extends Event
 {
-	//protected static Logger logger = LoggerFactory
-	//        .getLogger(EncryptEvent.class);
-
 	public EncryptEvent()
 	{
 	}
-
+	
 	public EncryptEvent(EncryptType type, Event ev)
 	{
 		this.type = type;
 		this.ev = ev;
 	}
-
-	public EncryptType type;
-	public Event ev;
-
+	
+	public EncryptType	type;
+	public Event	   ev;
+	
 	@Override
 	protected boolean onDecode(Buffer buffer)
 	{
@@ -58,6 +56,12 @@ public class EncryptEvent extends Event
 					content = se1.decrypt(buffer);
 					break;
 				}
+				case RC4:
+				{
+					RC4Encrypt rc4 = new RC4Encrypt();
+					content = rc4.decrypt(buffer);
+					break;
+				}
 				default:
 				{
 					break;
@@ -68,11 +72,12 @@ public class EncryptEvent extends Event
 		}
 		catch (Exception e)
 		{
-			//logger.error("Failed to decode encrypt event while encrypt type:" +type , e);
+			// logger.error("Failed to decode encrypt event while encrypt type:"
+			// +type , e);
 			return false;
 		}
 	}
-
+	
 	@Override
 	protected boolean onEncode(Buffer buffer)
 	{
@@ -85,6 +90,12 @@ public class EncryptEvent extends Event
 			{
 				SimpleEncrypt se1 = new SimpleEncrypt();
 				se1.encrypt(content);
+				break;
+			}
+			case RC4:
+			{
+				RC4Encrypt rc4 = new RC4Encrypt();
+				content = rc4.encrypt(buffer);
 				break;
 			}
 			default:

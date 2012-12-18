@@ -9,22 +9,24 @@ package org.arch.event.misc;
  */
 public enum EncryptType
 {
-	NONE(0), SE1(1);
-
-	int value;
-
+	NONE(0), SE1(1), RC4(2);
+	
+	int	value;
+	
 	EncryptType(int v)
 	{
 		this.value = v;
 	}
+	
 	public int getValue()
-    {
-	    return value;
-    }
+	{
+		return value;
+	}
 	
 	public static EncryptType fromInt(int v)
 	{
-		if(v > SE1.value) return null;
+		if (v > RC4.value)
+			return null;
 		return values()[v];
 	}
 }

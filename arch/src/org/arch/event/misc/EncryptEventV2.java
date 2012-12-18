@@ -11,6 +11,7 @@ package org.arch.event.misc;
 
 import org.arch.buffer.Buffer;
 import org.arch.buffer.BufferHelper;
+import org.arch.encrypt.RC4Encrypt;
 import org.arch.encrypt.SimpleEncrypt;
 import org.arch.event.Event;
 import org.arch.event.EventConstants;
@@ -28,16 +29,16 @@ public class EncryptEventV2 extends Event
 	public EncryptEventV2()
 	{
 	}
-
+	
 	public EncryptEventV2(EncryptType type, Event ev)
 	{
 		this.type = type;
 		this.ev = ev;
 	}
-
-	public EncryptType type;
-	public Event ev;
-
+	
+	public EncryptType	type;
+	public Event	   ev;
+	
 	@Override
 	protected boolean onDecode(Buffer buffer)
 	{
@@ -49,13 +50,21 @@ public class EncryptEventV2 extends Event
 			int size = BufferHelper.readVarInt(buffer);
 			
 			Buffer content = buffer;
-			//System.out.println("Type is "+ t + ", and size is " + size +", and buffer rest" + content.readableBytes());
 			switch (type)
 			{
 				case SE1:
 				{
 					SimpleEncrypt se1 = new SimpleEncrypt();
-					se1.decrypt(buffer.getRawBuffer(), buffer.getReadIndex(), size);
+					se1.decrypt(buffer.getRawBuffer(), buffer.getReadIndex(),
+					        size);
+					break;
+				}
+				case RC4:
+				{
+					RC4Encrypt rc4 = new RC4Encrypt();
+					byte[] dst = rc4.decrypt(buffer.getRawBuffer(),
+					        buffer.getReadIndex(), size);
+					content = Buffer.wrapReadableContent(dst);
 					break;
 				}
 				default:
@@ -69,11 +78,12 @@ public class EncryptEventV2 extends Event
 		catch (Exception e)
 		{
 			e.printStackTrace();
-			//logger.error("Failed to decode encrypt event while encrypt type:" +type , e);
+			// logger.error("Failed to decode encrypt event while encrypt type:"
+			// +type , e);
 			return false;
 		}
 	}
-
+	
 	@Override
 	protected boolean onEncode(Buffer buffer)
 	{
@@ -88,14 +98,18 @@ public class EncryptEventV2 extends Event
 				se1.encrypt(content);
 				break;
 			}
+			case RC4:
+			{
+				RC4Encrypt rc4 = new RC4Encrypt();
+				content = rc4.encrypt(content);
+				break;
+			}
 			default:
 			{
 				break;
 			}
 		}
 		BufferHelper.writeVarInt(buffer, content.readableBytes());
-
-		//System.out.println("Write Type is "+ type.getValue() + ", and size is " + content.readableBytes());
 		buffer.write(content, content.readableBytes());
 		return true;
 	}
