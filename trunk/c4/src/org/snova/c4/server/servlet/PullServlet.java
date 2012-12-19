@@ -26,7 +26,7 @@ import org.snova.c4.server.session.RemoteProxySessionV2;
  * @author wqy
  * 
  */
-public class PushPullServlet extends HttpServlet
+public class PullServlet extends HttpServlet
 {
 	protected Logger	logger	= LoggerFactory.getLogger(getClass());
 	
@@ -87,15 +87,8 @@ public class PushPullServlet extends HttpServlet
 			userToken = "";
 		}
 		String[] misc = miscInfo.split("_");
-		String role = misc[0];
-		int timeout = Integer.parseInt(misc[1]);
-		int maxRead = Integer.parseInt(misc[2]);
-		boolean isPull = role != null && role.equals("pull");
-		boolean supportChunk = true;
-		if (misc.length > 3)
-		{
-			supportChunk = false;
-		}
+		int timeout = Integer.parseInt(misc[0]);
+		int maxRead = Integer.parseInt(misc[1]);
 		
 		long deadline = begin + timeout * 1000;
 		boolean sentData = false;
@@ -118,8 +111,6 @@ public class PushPullServlet extends HttpServlet
 				}
 			}
 			
-			System.out.println("Process role:" + role);
-			
 			LinkedList<Event> evs = new LinkedList<Event>();
 			do
 			{
@@ -129,62 +120,46 @@ public class PushPullServlet extends HttpServlet
 					currentSession.extractEventResponses(buf, maxRead,
 					        evs);
 				}
-				if (isPull)
+				if (buf.readableBytes() > 0)
 				{
-					if (buf.readableBytes() > 0)
-					{
-						if (supportChunk)
-						{
-							flushContent(resp, buf);
-							buf.clear();
-						}
-						else
-						{
-							break;
-						}
-					}
-					else
-					{
-						Thread.sleep(1);
-					}
-					if (null != currentSession && currentSession.isClosing())
-					{
-						break;
-					}
-					if (System.currentTimeMillis() >= deadline)
-					{
-						break;
-					}
-					int timeoutsec = (int) ((deadline - System
-					        .currentTimeMillis()) / 1000);
-					if (timeoutsec == 0)
-					{
-						break;
-					}
-					if(null != currentSession)
-					{
-						currentSession.readClient(maxRead, timeoutsec);
-					}
-					if (System.currentTimeMillis() >= deadline)
-					{
-						break;
-					}
+					flushContent(resp, buf);
+					buf.clear();
+					sentData = true;
+				}
+				else
+				{
+					Thread.sleep(1);
+				}
+				if (null != currentSession && currentSession.isClosing())
+				{
+					break;
+				}
+				if (System.currentTimeMillis() >= deadline)
+				{
+					break;
+				}
+				int timeoutsec = (int) ((deadline - System
+				        .currentTimeMillis()) / 1000);
+				if (timeoutsec == 0)
+				{
+					break;
+				}
+				if(null != currentSession)
+				{
+					currentSession.readClient(maxRead, timeoutsec);
+				}
+				if (System.currentTimeMillis() >= deadline)
+				{
+					break;
 				}
 				
-			} while (isPull);
+			} while (true);
 			
 			int size = buf.readableBytes();
 			try
 			{
 				sentData = true;
-				if (!isPull || !supportChunk)
-				{
-					send(resp, buf);
-				}
-				else
-				{
-					resp.getOutputStream().close();
-				}
+				resp.getOutputStream().close();
 			}
 			catch (Exception e)
 			{
@@ -204,13 +179,11 @@ public class PushPullServlet extends HttpServlet
 			resp.setStatus(400);
 			e.printStackTrace();
 			e.printStackTrace(new PrintStream(resp.getOutputStream()));
-			// logger.warn("Failed to process message", e);
 		}
 		if (!sentData)
 		{
 			resp.setStatus(200);
 			resp.setContentLength(0);
 		}
-		// resp.getOutputStream().close();
 	}
 }
