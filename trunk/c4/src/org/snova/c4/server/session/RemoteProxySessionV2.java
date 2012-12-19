@@ -137,7 +137,8 @@ public class RemoteProxySessionV2
 	{
 		if (sessionTable.get(session.user) != null)
 		{
-			sessionTable.get(session.user).remove(session.sessionId).close();
+			sessionTable.get(session.user).remove(session.sessionId)
+			        .close(null, null);
 		}
 	}
 
@@ -165,7 +166,7 @@ public class RemoteProxySessionV2
 		{
 			for (Map.Entry<Integer, RemoteProxySessionV2> entry : ss.entrySet())
 			{
-				entry.getValue().close();
+				entry.getValue().close(null, null);
 			}
 			ss.clear();
 		}
@@ -226,7 +227,7 @@ public class RemoteProxySessionV2
 				SocketConnectionEvent event = (SocketConnectionEvent) ev;
 				if (event.status == SocketConnectionEvent.TCP_CONN_CLOSED)
 				{
-					close();
+					close(client, remoteAddr);
 					destorySession(this);
 				}
 				break;
@@ -321,22 +322,20 @@ public class RemoteProxySessionV2
 
 	public boolean readClient(int maxread, int timeout)
 	{
+
 		if (null != client)
 		{
+			Socket sock = client;
+			String remote = remoteAddr;
 			try
 			{
 				closing = false;
-				// ByteBuffer buffer = ByteBuffer.allocate(maxread);
 				byte[] buffer = new byte[maxread];
-				client.setSoTimeout(timeout * 1000);
-				// System.out.println("Session[" + sessionId +
-				// "]start Read at");
-				int n = client.getInputStream().read(buffer);
-				// System.out.println("Session[" + sessionId + "]####Read " + n
-				// + " for " + remoteAddr);
+				sock.setSoTimeout(timeout * 1000);
+				int n = sock.getInputStream().read(buffer);
 				if (n < 0)
 				{
-					close();
+					close(sock, remote);
 					return false;
 				}
 				if (n > 0)
@@ -357,7 +356,7 @@ public class RemoteProxySessionV2
 			}
 			catch (IOException e)
 			{
-				close();
+				close(sock, remote);
 				return false;
 			}
 		}
@@ -375,31 +374,39 @@ public class RemoteProxySessionV2
 			}
 			catch (IOException e)
 			{
-				close();
+				close(client, remoteAddr);
 				return false;
 			}
 		}
 		return false;
 	}
 
-	void close()
+	void close(Socket sock, String addr)
 	{
-		if (null != client)
+		if (null == sock && null == addr)
+		{
+			sock = client;
+			addr = remoteAddr;
+		}
+		if (null != sock)
 		{
 			try
 			{
-				client.close();
+				sock.close();
 			}
 			catch (IOException e)
 			{
 				e.printStackTrace();
 			}
-			client = null;
 			SocketConnectionEvent ev = new SocketConnectionEvent();
 			ev.setHash(sessionId);
-			ev.addr = remoteAddr;
+			ev.addr = addr;
 			ev.status = SocketConnectionEvent.TCP_CONN_CLOSED;
 			offerSendEvent(ev);
+			if (sock == client)
+			{
+				client = null;
+			}
 			closing = true;
 		}
 	}
