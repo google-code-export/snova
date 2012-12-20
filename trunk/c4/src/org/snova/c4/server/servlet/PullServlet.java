@@ -28,8 +28,8 @@ import org.snova.c4.server.session.RemoteProxySessionV2;
  */
 public class PullServlet extends HttpServlet
 {
-	protected Logger	logger	= LoggerFactory.getLogger(getClass());
-	
+	protected Logger logger = LoggerFactory.getLogger(getClass());
+
 	private void writeBytes(HttpServletResponse resp, byte[] buf, int off,
 	        int len) throws IOException
 	{
@@ -48,7 +48,7 @@ public class PullServlet extends HttpServlet
 		}
 		// resp.getOutputStream().close();
 	}
-	
+
 	private void send(HttpServletResponse resp, Buffer buf) throws Exception
 	{
 		resp.setStatus(200);
@@ -57,7 +57,7 @@ public class PullServlet extends HttpServlet
 		writeBytes(resp, buf.getRawBuffer(), buf.getReadIndex(),
 		        buf.readableBytes());
 	}
-	
+
 	private void flushContent(HttpServletResponse resp, Buffer buf)
 	        throws Exception
 	{
@@ -72,7 +72,21 @@ public class PullServlet extends HttpServlet
 		        buf.readableBytes());
 		resp.getOutputStream().flush();
 	}
-	
+
+	private void writeCachedEvents(RemoteProxySessionV2 session,
+	        HttpServletResponse resp, Buffer buf, LinkedList<Event> evs, int maxRead) throws Exception
+	{
+		if (null != session)
+		{
+			session.extractEventResponses(buf, maxRead, evs);
+			if (buf.readableBytes() > 0)
+			{
+				flushContent(resp, buf);
+				buf.clear();
+			}
+		}
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest req, final HttpServletResponse resp)
 	        throws ServletException, IOException
@@ -89,7 +103,7 @@ public class PullServlet extends HttpServlet
 		String[] misc = miscInfo.split("_");
 		int timeout = Integer.parseInt(misc[0]);
 		int maxRead = Integer.parseInt(misc[1]);
-		
+
 		long deadline = begin + timeout * 1000;
 		boolean sentData = false;
 		RemoteProxySessionV2 currentSession = null;
@@ -107,44 +121,36 @@ public class PullServlet extends HttpServlet
 				}
 				if (len > 0)
 				{
-					currentSession = RemoteProxySessionV2.dispatchEvent(userToken, content);
+					currentSession = RemoteProxySessionV2.dispatchEvent(
+					        userToken, content);
 				}
 			}
-			
+
 			LinkedList<Event> evs = new LinkedList<Event>();
 			do
 			{
 				evs.clear();
-				if(null != currentSession)
-				{
-					currentSession.extractEventResponses(buf, maxRead,
-					        evs);
-				}
-				if (buf.readableBytes() > 0)
-				{
-					flushContent(resp, buf);
-					buf.clear();
-					sentData = true;
-				}
-				else
-				{
-					Thread.sleep(1);
-				}
-				if (null != currentSession && currentSession.isClosing())
-				{
-					break;
-				}
 				if (System.currentTimeMillis() >= deadline)
 				{
 					break;
 				}
-				int timeoutsec = (int) ((deadline - System
-				        .currentTimeMillis()) / 1000);
+				writeCachedEvents(currentSession, resp, buf, evs, maxRead);
+				if (!currentSession.isReady())
+				{
+					Thread.sleep(1);
+					continue;
+				}
+				writeCachedEvents(currentSession, resp, buf, evs, maxRead);
+				if (null != currentSession && currentSession.isClosing())
+				{
+					break;
+				}
+				int timeoutsec = (int) ((deadline - System.currentTimeMillis()) / 1000);
 				if (timeoutsec == 0)
 				{
 					break;
 				}
-				if(null != currentSession)
+				if (null != currentSession && currentSession.isReady())
 				{
 					currentSession.readClient(maxRead, timeoutsec);
 				}
@@ -152,9 +158,10 @@ public class PullServlet extends HttpServlet
 				{
 					break;
 				}
-				
-			} while (true);
-			
+
+			}
+			while (true);
+
 			int size = buf.readableBytes();
 			try
 			{

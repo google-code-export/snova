@@ -135,10 +135,6 @@ public abstract class ProxyConnection
 			ev.maxread = cfg.getMaxReadBytes();
 			ev.timeout = cfg.getHTTPRequestTimeout();
 			send(ev);
-//			if (logger.isDebugEnabled())
-//			{
-//				logger.debug("Send pull data request.");
-//			}
 		}
 	}
 
@@ -151,50 +147,7 @@ public abstract class ProxyConnection
 			return;
 		}
 
-		TypeVersion typever = Event.getTypeVersion(ev.getClass());
-
-		switch (typever.type)
-		{
-			case EventConstants.COMPRESS_EVENT_TYPE:
-			{
-				if (typever.version == 1)
-				{
-					handleRecvEvent(((CompressEvent) ev).ev);
-				}
-				else if (typever.version == 2)
-				{
-					handleRecvEvent(((CompressEventV2) ev).ev);
-				}
-
-				return;
-			}
-			case EventConstants.ENCRYPT_EVENT_TYPE:
-			{
-				if (typever.version == 1)
-				{
-					handleRecvEvent(((EncryptEvent) ev).ev);
-				}
-				else if (typever.version == 2)
-				{
-					handleRecvEvent(((EncryptEventV2) ev).ev);
-				}
-				return;
-			}
-			case C4Constants.EVENT_TCP_CHUNK_TYPE:
-			case C4Constants.EVENT_TCP_CONNECTION_TYPE:
-			case HTTPEventContants.HTTP_CHUNK_EVENT_TYPE:
-			case HTTPEventContants.HTTP_RESPONSE_EVENT_TYPE:
-			{
-				break;
-			}
-			default:
-			{
-				logger.error("Unsupported event type:" + typever.type
-				        + " for proxy connection");
-				break;
-			}
-		}
-
+		ev = Event.extractEvent(ev);
 		if (null != session)
 		{
 			session.handleResponse(ev);
@@ -207,13 +160,6 @@ public abstract class ProxyConnection
 				        + ev.getHash()
 				        + "] response event:"
 				        + ev.getClass().getName());
-			}
-			if (typever.type != C4Constants.EVENT_TCP_CONNECTION_TYPE)
-			{
-				SocketConnectionEvent tmp = new SocketConnectionEvent();
-				tmp.status = SocketConnectionEvent.TCP_CONN_CLOSED;
-				tmp.setHash(ev.getHash());
-				send(tmp);
 			}
 		}
 	}
