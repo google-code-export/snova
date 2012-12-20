@@ -48,17 +48,19 @@ import org.snova.framework.util.proxy.ProxyInfo;
  */
 public class HTTPProxyConnection extends ProxyConnection
 {
-	protected Logger logger = LoggerFactory.getLogger(getClass());
-	private ChannelFuture clientChannelFuture = null;
+	protected Logger	        logger	            = LoggerFactory
+	                                                        .getLogger(getClass());
+	private ChannelFuture	    clientChannelFuture	= null;
+	
+	private HttpResponseHandler	responseHandler	    = null;
+	private int	                connectFailedCount	= 0;
 
-	private HttpResponseHandler responseHandler = null;
-	private int connectFailedCount = 0;
-
+	
 	public HTTPProxyConnection(C4ServerAuth auth)
 	{
 		super(auth);
 	}
-
+	
 	protected void doClose()
 	{
 		if (clientChannelFuture != null
@@ -68,7 +70,7 @@ public class HTTPProxyConnection extends ProxyConnection
 		}
 		clientChannelFuture = null;
 	}
-
+	
 	private ChannelFuture connectProxyServer()
 	{
 		ChannelPipeline pipeline = Channels.pipeline();
@@ -89,7 +91,7 @@ public class HTTPProxyConnection extends ProxyConnection
 			connectHost = info.host;
 			connectPort = info.port;
 		}
-
+		
 		connectHost = HostsHelper.getMappingHost(connectHost);
 		if (logger.isDebugEnabled())
 		{
@@ -98,10 +100,10 @@ public class HTTPProxyConnection extends ProxyConnection
 		}
 		ChannelFuture future = channel.connect(new InetSocketAddress(
 		        connectHost, connectPort));
-
+		
 		return future;
 	}
-
+	
 	private synchronized ChannelFuture getRemoteChannelFuture()
 	{
 		if (null == clientChannelFuture
@@ -112,10 +114,16 @@ public class HTTPProxyConnection extends ProxyConnection
 		}
 		return clientChannelFuture;
 	}
-
+	
 	protected void sendContent(Channel ch, final Buffer content)
 	{
-		String url = "http://" + auth.domain + "/invoke2";
+		String path = "/pull";
+		if (!isPullConnection)
+		{
+			path = "/push";
+			
+		}
+		String url = "http://" + auth.domain + path;
 		HttpRequest request = new DefaultHttpRequest(HttpVersion.HTTP_1_1,
 		        HttpMethod.POST, url);
 		request.setHeader("Host", auth.domain);
@@ -140,11 +148,12 @@ public class HTTPProxyConnection extends ProxyConnection
 		        .getInstance().getUserAgent());
 		request.setHeader(HttpHeaders.Names.CONTENT_TYPE,
 		        "application/octet-stream");
-		String role = isPullConnection ? "pull" : "push";
-		request.setHeader(
-		        "C4MiscInfo",
-		        role + "_" + cfg.getHTTPRequestTimeout() + "_"
-		                + cfg.getMaxReadBytes());
+		if (isPullConnection)
+		{
+			request.setHeader("C4MiscInfo", +cfg.getHTTPRequestTimeout() + "_"
+			        + cfg.getMaxReadBytes());
+		}
+		
 		request.setHeader("Content-Length",
 		        String.valueOf(content.readableBytes()));
 		if (content.readableBytes() > 0)
@@ -164,15 +173,23 @@ public class HTTPProxyConnection extends ProxyConnection
 				if (!future.isSuccess())
 				{
 					// retry
-					if(!isPullConnection)
+					content.setReadIndex(0);
+					if (!isPullConnection || pullingWithData)
 					{
-						doSend(content);
-					}	
+						SharedObjectHelper.getGlobalTimer().schedule(new Runnable()
+						{
+							@Override
+							public void run()
+							{
+								doSend(content);
+							}
+						}, 1, TimeUnit.SECONDS);	
+					}
 				}
 			}
 		});
 	}
-
+	
 	protected boolean doSend(final Buffer content)
 	{
 		ChannelFuture remote = getRemoteChannelFuture();
@@ -214,21 +231,21 @@ public class HTTPProxyConnection extends ProxyConnection
 		}
 		return true;
 	}
-
+	
 	class HttpResponseHandler extends SimpleChannelUpstreamHandler
 	{
-		private int responseContentLength = -1;
-		private Buffer resBuffer = new Buffer(0);
-		private boolean hasLenHeader = false;
-		private boolean hasTranferEncoding = false;
-		private boolean unanswered = true;
-		private int wait = 1;
-
+		private int		responseContentLength	= -1;
+		private Buffer	resBuffer		      = new Buffer(0);
+		private boolean	hasLenHeader		  = false;
+		private boolean	hasTranferEncoding		= false;
+		private boolean	unanswered		      = true;
+		private int		wait		          = 1;
+		
 		private void clearBuffer()
 		{
 			resBuffer = new Buffer(0);
 		}
-
+		
 		private void transactionCompeleted(boolean success)
 		{
 			clearBuffer();
@@ -237,25 +254,23 @@ public class HTTPProxyConnection extends ProxyConnection
 				if (success)
 				{
 					wait = 1;
-					pullData();
+					pullData(null);
 				}
-				else
+				else if(!pullingWithData)
 				{
 					SharedObjectHelper.getGlobalTimer().schedule(new Runnable()
 					{
-
 						@Override
 						public void run()
 						{
-							pullData();
-
+							pullData(null);
 						}
 					}, wait, TimeUnit.SECONDS);
 					wait = wait * 2;
 				}
 			}
 		}
-
+		
 		private boolean tryHandleBuffer()
 		{
 			if (responseContentLength == -1)
@@ -294,18 +309,18 @@ public class HTTPProxyConnection extends ProxyConnection
 			}
 			return true;
 		}
-
+		
 		private void fillResponseBuffer(ChannelBuffer buffer)
 		{
 			int contentlen = buffer.readableBytes();
-
+			
 			if (contentlen > 0)
 			{
 				resBuffer.ensureWritableBytes(contentlen);
 				buffer.readBytes(resBuffer.getRawBuffer(),
 				        resBuffer.getWriteIndex(), contentlen);
 				resBuffer.advanceWriteIndex(contentlen);
-
+				
 				if (!hasTranferEncoding)
 				{
 					if (responseContentLength <= resBuffer.readableBytes())
@@ -322,7 +337,7 @@ public class HTTPProxyConnection extends ProxyConnection
 							responseContentLength = -1;
 						}
 					}
-
+					
 				}
 				else
 				{
@@ -331,14 +346,14 @@ public class HTTPProxyConnection extends ProxyConnection
 				}
 			}
 		}
-
+		
 		@Override
 		public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
 		        throws Exception
 		{
 			logger.error("exceptionCaught in HttpResponseHandler", e.getCause());
 		}
-
+		
 		@Override
 		public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e)
 		        throws Exception
@@ -361,7 +376,7 @@ public class HTTPProxyConnection extends ProxyConnection
 				transactionCompeleted(false);
 			}
 		}
-
+		
 		@Override
 		public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
 		        throws Exception

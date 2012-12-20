@@ -35,32 +35,33 @@ import org.snova.framework.util.SharedObjectHelper;
  */
 public abstract class ProxyConnection
 {
-	protected static Logger logger = LoggerFactory
-	        .getLogger(ProxyConnection.class);
-	protected static C4ClientConfiguration cfg = C4ClientConfiguration
-	        .getInstance();
-	protected static ClientSocketChannelFactory clientChannelFactory;
-	protected C4ServerAuth auth = null;
-	protected boolean isPullConnection;
-	protected boolean isRunning;
-
+	protected static Logger	                    logger	        = LoggerFactory
+	                                                                    .getLogger(ProxyConnection.class);
+	protected static C4ClientConfiguration	    cfg	            = C4ClientConfiguration
+	                                                                    .getInstance();
+	protected static ClientSocketChannelFactory	clientChannelFactory;
+	protected C4ServerAuth	                    auth	        = null;
+	protected boolean	                        isPullConnection;
+	protected boolean	                        isRunning;
+	protected boolean	                        pullingWithData	= false;
+	
 	public void setPullConnection(boolean isPullConnection)
 	{
 		this.isPullConnection = isPullConnection;
 	}
-
-	private ProxySession session = null;
-
+	
+	private ProxySession	session	= null;
+	
 	public ProxySession getSession()
 	{
 		return session;
 	}
-
+	
 	public void setSession(ProxySession session)
 	{
 		this.session = session;
 	}
-
+	
 	protected static ClientSocketChannelFactory getClientSocketChannelFactory()
 	{
 		if (null == clientChannelFactory)
@@ -70,63 +71,68 @@ public abstract class ProxyConnection
 				ThreadPoolExecutor workerExecutor = new OrderedMemoryAwareThreadPoolExecutor(
 				        20, 0, 0);
 				SharedObjectHelper.setGlobalThreadPool(workerExecutor);
-
+				
 			}
 			clientChannelFactory = new NioClientSocketChannelFactory(
 			        SharedObjectHelper.getGlobalThreadPool(),
 			        SharedObjectHelper.getGlobalThreadPool());
-
+			
 		}
 		return clientChannelFactory;
 	}
-
+	
 	protected ProxyConnection(C4ServerAuth auth)
 	{
 		this.auth = auth;
 	}
-
+	
 	public C4ServerAuth getC4ServerAuth()
 	{
 		return auth;
 	}
-
+	
 	protected abstract boolean doSend(Buffer msgbuffer);
-
+	
 	protected abstract void doClose();
-
+	
 	public void close()
 	{
 		doClose();
 	}
-
+	
 	public void start()
 	{
 		isRunning = true;
 	}
-
+	
 	public void stop()
 	{
 		isRunning = false;
 	}
-
+	
 	public boolean send(Event event)
 	{
-		if (event instanceof HTTPRequestEvent)
-		{
-			CompressEventV2 tmp = new CompressEventV2(cfg.getCompressor(),
-			        event);
-			tmp.setHash(event.getHash());
-			event = tmp;
-		}
-
 		EncryptEventV2 enc = new EncryptEventV2(cfg.getEncrypter(), event);
 		enc.setHash(event.getHash());
 		Buffer msgbuffer = new Buffer(1024);
 		enc.encode(msgbuffer);
 		return doSend(msgbuffer);
 	}
-
-	public void pullData()
+	
+	public boolean sendEvents(Event[] events)
+	{
+		Buffer msgbuffer = new Buffer(1024);
+		for (int i = 0; i < events.length; i++)
+		{
+			EncryptEventV2 enc = new EncryptEventV2(cfg.getEncrypter(),
+			        events[i]);
+			enc.setHash(events[i].getHash());
+			enc.encode(msgbuffer);
+		}
+		return doSend(msgbuffer);
+	}
+	
+	public void pullData(Event event)
 	{
 		if (isPullConnection && isRunning && null != session)
 		{
@@ -134,10 +140,19 @@ public abstract class ProxyConnection
 			ev.setHash(session.getSessionID());
 			ev.maxread = cfg.getMaxReadBytes();
 			ev.timeout = cfg.getHTTPRequestTimeout();
-			send(ev);
+			if (null == event)
+			{
+				pullingWithData = false;
+				send(ev);
+			}
+			else
+			{
+				pullingWithData = true;
+				sendEvents(new Event[] { event, ev });
+			}
 		}
 	}
-
+	
 	protected void handleRecvEvent(Event ev)
 	{
 		if (null == ev)
@@ -146,7 +161,7 @@ public abstract class ProxyConnection
 			// close();
 			return;
 		}
-
+		
 		ev = Event.extractEvent(ev);
 		if (null != session)
 		{
@@ -163,7 +178,7 @@ public abstract class ProxyConnection
 			}
 		}
 	}
-
+	
 	protected void doRecv(Buffer content)
 	{
 		Event ev = null;
