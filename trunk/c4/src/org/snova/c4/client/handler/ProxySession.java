@@ -27,32 +27,32 @@ import org.snova.framework.config.SimpleSocketAddress;
  */
 public class ProxySession
 {
-	protected static Logger logger = LoggerFactory
-	        .getLogger(ProxySession.class);
-	private ProxyConnectionManager connectionManager = ProxyConnectionManager
-	        .getInstance();
-	private ProxyConnection pushConnection = null;
-	private ProxyConnection pullConnection = null;
-	private Integer sessionID;
-	private String remoteAddr;
-	private Channel localHTTPChannel;
-	private ChannelFuture writeFuture;
-
-	private AtomicInteger sequence = new AtomicInteger(0);
-	private AtomicInteger readSequence = new AtomicInteger(0);
-
+	protected static Logger	       logger	          = LoggerFactory
+	                                                          .getLogger(ProxySession.class);
+	private ProxyConnectionManager	connectionManager	= ProxyConnectionManager
+	                                                          .getInstance();
+	private ProxyConnection	       pushConnection	  = null;
+	private ProxyConnection	       pullConnection	  = null;
+	private Integer	               sessionID;
+	private String	               remoteAddr;
+	private Channel	               localHTTPChannel;
+	private ChannelFuture	       writeFuture;
+	
+	private AtomicInteger	       sequence	          = new AtomicInteger(0);
+	private AtomicInteger	       readSequence	      = new AtomicInteger(0);
+	
 	public ProxySession(Integer id, Channel localChannel)
 	{
 		this.sessionID = id;
 		this.localHTTPChannel = localChannel;
 	}
-
+	
 	public Integer getSessionID()
 	{
 		return sessionID;
 	}
-
-	private void initConnection(HTTPRequestEvent event)
+	
+	private boolean initConnection(HTTPRequestEvent event)
 	{
 		if (null == pushConnection)
 		{
@@ -66,16 +66,25 @@ public class ProxySession
 			pullConnection.setPullConnection(true);
 			pushConnection.start();
 			pullConnection.start();
-			pullConnection.pullData();
+			if (event.getContentLength() == 0)
+			{
+				pullConnection.pullData(event);
+				return true;
+			}
+			else
+			{
+				pullConnection.pullData(null);
+				return false;
+			}			
 		}
+		return false;
 	}
-
-
+	
 	public void handleResponse(final Event res)
 	{
 		doHandleResponse(res);
 	}
-
+	
 	public void doHandleResponse(Event res)
 	{
 		if (logger.isDebugEnabled())
@@ -133,15 +142,18 @@ public class ProxySession
 			}
 		}
 	}
-
+	
 	private void handleConnect(HTTPRequestEvent event)
 	{
 		localHTTPChannel.getPipeline().remove("decoder");
 		localHTTPChannel.getPipeline().remove("encoder");
-		initConnection(event);
-		pushConnection.send(event);
+		if (!initConnection(event))
+		{
+			pushConnection.send(event);
+		}
+		
 	}
-
+	
 	protected SimpleSocketAddress getRemoteAddress(HTTPRequestEvent request)
 	{
 		String host = request.getHeader("Host");
@@ -177,7 +189,7 @@ public class ProxySession
 		}
 		return new SimpleSocketAddress(hostValue, port);
 	}
-
+	
 	public synchronized void handle(HTTPRequestEvent event)
 	{
 		clearStatus();
@@ -195,7 +207,7 @@ public class ProxySession
 			}
 		}
 		readSequence.set(0);
-
+		
 		if (event.method.equalsIgnoreCase(HttpMethod.CONNECT.getName()))
 		{
 			handleConnect(event);
@@ -213,9 +225,11 @@ public class ProxySession
 				int end = event.url.indexOf("/", start);
 				event.url = event.url.substring(end);
 			}
-			initConnection(event);
-			pushConnection.send(event);
-
+			if (!initConnection(event))
+			{
+				pushConnection.send(event);
+			}
+			
 			if (logger.isDebugEnabled())
 			{
 				logger.debug("Session[" + getSessionID() + "] sent request.");
@@ -223,7 +237,7 @@ public class ProxySession
 			}
 		}
 	}
-
+	
 	public synchronized void handle(HTTPChunkEvent event)
 	{
 		if (null != pushConnection)
@@ -242,12 +256,12 @@ public class ProxySession
 			close();
 		}
 	}
-
+	
 	private void clearStatus()
 	{
 		sequence.set(0);
 	}
-
+	
 	public void close()
 	{
 		if (ProxySessionManager.getInstance().getProxySession(getSessionID()) == null)
@@ -274,7 +288,7 @@ public class ProxySession
 		}
 		ProxySessionManager.getInstance().removeSession(this);
 		clearStatus();
-
+		
 		connectionManager.recycleProxyConnection(pushConnection);
 		connectionManager.recycleProxyConnection(pullConnection);
 		pushConnection = null;
