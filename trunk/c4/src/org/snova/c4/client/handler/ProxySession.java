@@ -262,7 +262,7 @@ public class ProxySession
 		sequence.set(0);
 	}
 	
-	public void close()
+	public synchronized void close()
 	{
 		if (ProxySessionManager.getInstance().getProxySession(getSessionID()) == null)
 		{
