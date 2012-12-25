@@ -7,7 +7,7 @@
  * @author yinqiwen [ 2010-1-31 | 10:50:02 AM]
  *
  */
-package org.snova.framework.httpserver;
+package org.snova.framework.server;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
@@ -24,89 +24,38 @@ import org.arch.common.KeyValuePair;
 import org.arch.common.Pair;
 import org.arch.event.Event;
 import org.arch.event.EventDispatcher;
-import org.arch.event.http.HTTPChunkEvent;
 import org.arch.event.http.HTTPConnectionEvent;
 import org.arch.event.http.HTTPRequestEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.snova.framework.config.SnovaConfiguration;
 import org.snova.framework.proxy.LocalProxyHandler;
 import org.snova.framework.proxy.RemoteProxyHandler;
+import org.snova.framework.proxy.RemoteProxyManager;
+import org.snova.framework.proxy.RemoteProxyManagerHolder;
 
 /**
  * @author yinqiwen
  * 
  */
-public class HttpLocalProxyRequestHandler extends
-        ChannelInboundMessageHandlerAdapter<Object> implements
-        LocalProxyHandler
+public class ProxyHandler extends ChannelInboundMessageHandlerAdapter<Object>
+        implements LocalProxyHandler
 {
-	protected Logger logger = LoggerFactory.getLogger(getClass());
-
-	private RemoteProxyHandler remoteHandler = null;
-	private Channel localChannel = null;
-
-	private Integer id;
-
-	private static AtomicInteger seed = new AtomicInteger(1);
-
-	public HttpLocalProxyRequestHandler()
+	protected Logger	         logger	       = LoggerFactory
+	                                                   .getLogger(getClass());
+	
+	private RemoteProxyHandler	 remoteHandler	= null;
+	private Channel	             localChannel	= null;
+	
+	private Integer	             id;
+	
+	private static AtomicInteger	seed	   = new AtomicInteger(1);
+	
+	public ProxyHandler()
 	{
 		id = seed.getAndIncrement();
 	}
-
-	private RemoteProxyHandler getRemoteProxyHandler()
-	{
-		return null;
-	}
-
-	private boolean dispatchEvent(Event event)
-	{
-		Pair<Channel, Integer> attach = new Pair<Channel, Integer>(
-		        localChannel, id);
-		event.setAttachment(attach);
-		try
-		{
-			EventDispatcher.getSingletonInstance().dispatch(event);
-			return true;
-		}
-		catch (Exception ex)
-		{
-			logger.error("Failed to dispatch event.", ex);
-			return false;
-		}
-	}
-
-	private HTTPRequestEvent buildEvent(HttpRequest request)
-	{
-		HTTPRequestEvent event = new HTTPRequestEvent();
-		event.method = request.getMethod().getName();
-		event.url = request.getUri();
-		event.version = request.getProtocolVersion().getText();
-		event.setHash(id);
-		event.setAttachment(request);
-		ByteBuf content = request.getContent();
-		if (null != content)
-		{
-			content.markReaderIndex();
-			int buflen = content.readableBytes();
-			event.content.ensureWritableBytes(content.readableBytes());
-			content.readBytes(event.content.getRawBuffer(),
-			        event.content.getWriteIndex(), content.readableBytes());
-			event.content.advanceWriteIndex(buflen);
-			content.resetReaderIndex();
-		}
-		for (String name : request.getHeaderNames())
-		{
-			for (String value : request.getHeaders(name))
-			{
-				event.headers
-				        .add(new KeyValuePair<String, String>(name, value));
-			}
-
-		}
-		return event;
-	}
-
+	
 	private void handleChunks(Object e)
 	{
 		if (e instanceof HttpChunk)
@@ -129,27 +78,36 @@ public class HttpLocalProxyRequestHandler extends
 			logger.error("Unsupported message type:" + e.getClass());
 		}
 	}
-
+	
 	private void handleHttpRequest(HttpRequest request)
 	{
-
+		if (null == remoteHandler)
+		{
+			String name = SnovaConfiguration.getInstance().getIniProperties()
+			        .getProperty("SPAC", "Default", "GAE");
+			RemoteProxyManager rm = RemoteProxyManagerHolder
+			        .getRemoteProxyManager(name);
+			if (null == rm)
+			{
+				logger.error("No proxy service:" + name + " found.");
+				close();
+				return;
+			}
+			remoteHandler = rm.createProxyHandler();
+		}
+		remoteHandler.handleRequest(this, request);
+		
 	}
-
+	
 	public void close()
 	{
-		Pair<Channel, Integer> attach = new Pair<Channel, Integer>(
-		        localChannel, id);
-		HTTPConnectionEvent event = new HTTPConnectionEvent(
-		        HTTPConnectionEvent.CLOSED);
-		event.setAttachment(attach);
-		dispatchEvent(event);
 		if (localChannel != null && localChannel.isActive())
 		{
 			localChannel.close();
 			localChannel = null;
 		}
 	}
-
+	
 	@Override
 	public void channelInactive(ChannelHandlerContext ctx) throws Exception
 	{
@@ -157,34 +115,22 @@ public class HttpLocalProxyRequestHandler extends
 		{
 			logger.debug("Browser connection[" + id + "]  closed");
 		}
-		close();
+		
 	}
-
+	
 	@Override
 	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
 	        throws Exception
 	{
-		if (cause instanceof ClosedChannelException)
-		{
-			if (logger.isDebugEnabled())
-			{
-				logger.error("Browser connection[" + id + "] exceptionCaught.",
-				        cause);
-			}
-		}
-		else
-		{
-			logger.error("Browser connection[" + id + "] exceptionCaught.",
-			        cause);
-		}
+		logger.error("Browser connection[" + id + "] exceptionCaught.", cause);
 	}
-
+	
 	@Override
 	public void messageReceived(ChannelHandlerContext ctx, Object msg)
 	        throws Exception
 	{
 		localChannel = ctx.channel();
-
+		
 		if (msg instanceof HttpRequest)
 		{
 			HttpRequest request = (HttpRequest) msg;
@@ -195,7 +141,7 @@ public class HttpLocalProxyRequestHandler extends
 			handleChunks(msg);
 		}
 	}
-
+	
 	@Override
 	public void handleResponse(RemoteProxyHandler remote, HttpResponse res)
 	{
@@ -204,7 +150,7 @@ public class HttpLocalProxyRequestHandler extends
 			localChannel.write(res);
 		}
 	}
-
+	
 	@Override
 	public void handleChunk(RemoteProxyHandler remote, HttpChunk chunk)
 	{
@@ -213,7 +159,7 @@ public class HttpLocalProxyRequestHandler extends
 			localChannel.write(chunk);
 		}
 	}
-
+	
 	@Override
 	public void handleRawData(RemoteProxyHandler remote, ByteBuf raw)
 	{
@@ -221,5 +167,11 @@ public class HttpLocalProxyRequestHandler extends
 		{
 			localChannel.write(raw);
 		}
+	}
+	
+	@Override
+	public int getId()
+	{
+		return id;
 	}
 }
