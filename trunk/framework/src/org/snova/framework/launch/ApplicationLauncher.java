@@ -20,8 +20,7 @@ import org.arch.util.PropertiesHelper;
 import org.snova.framework.Snova;
 import org.snova.framework.common.Constants;
 import org.snova.framework.config.SnovaConfiguration;
-import org.snova.framework.plugin.DesktopPluginManager;
-import org.snova.framework.shell.swing.MainFrame;
+//import org.snova.framework.shell.swing.MainFrame;
 import org.snova.framework.trace.TUITrace;
 
 /**
@@ -47,29 +46,30 @@ public class ApplicationLauncher
 			ByteArrayOutputStream bos = new ByteArrayOutputStream();
 			props.store(bos, "");
 			bos.close();
-			LogManager.getLogManager().readConfiguration(new ByteArrayInputStream(bos.toByteArray()));
+			LogManager.getLogManager().readConfiguration(
+			        new ByteArrayInputStream(bos.toByteArray()));
 		}
 	}
 	
 	public static void initLoggerConfig() throws IOException
 	{
-		System.setProperty("java.util.logging.config.class", JDKLoggingConfig.class.getName());
+		System.setProperty("java.util.logging.config.class",
+		        JDKLoggingConfig.class.getName());
 	}
-
+	
 	public static void main(String[] args) throws IOException
 	{
 		initLoggerConfig();
-
+		
 		Snova fr = null;
 		if (args.length == 0 || args[0].equals("cli"))
 		{
-			fr = new Snova(SnovaConfiguration.getInstance(),
-			        DesktopPluginManager.getInstance(), new TUITrace());
+			fr = new Snova(new TUITrace());
 			fr.start();
 		}
-		else if(args[0].equals("gui"))
-		{
-			MainFrame.main(null);
-		}	
+//		else if (args[0].equals("gui"))
+//		{
+//			MainFrame.main(null);
+//		}
 	}
 }

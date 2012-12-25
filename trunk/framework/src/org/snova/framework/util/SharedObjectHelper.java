@@ -28,7 +28,7 @@ public class SharedObjectHelper
 	private static EventLoopGroup eventLoop;
 	public static EventLoopGroup getEventLoop()
     {
-		if(null != eventLoop)
+		if(null == eventLoop)
 		{
 			eventLoop = new NioEventLoopGroup();
 		}

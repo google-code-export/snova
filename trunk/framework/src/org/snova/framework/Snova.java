@@ -9,39 +9,33 @@
  */
 package org.snova.framework;
 
-import java.util.concurrent.ThreadPoolExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.framework.config.SnovaConfiguration;
-import org.snova.framework.httpserver.HttpLocalProxyServer;
-import org.snova.framework.plugin.PluginManager;
+import org.snova.framework.proxy.gae.GAE;
+import org.snova.framework.server.ProxyServer;
 import org.snova.framework.trace.Trace;
 import org.snova.framework.util.SharedObjectHelper;
+import org.snova.http.client.common.SimpleSocketAddress;
 
 /**
  *
  */
 public class Snova
 {
-	protected Logger logger = LoggerFactory.getLogger(getClass());
-
-	private HttpLocalProxyServer server;
-
-	private boolean isStarted = false;
-	private SnovaConfiguration config;
-	private PluginManager pm;
-
-	public Snova(SnovaConfiguration config, PluginManager pm, Trace trace)
+	protected Logger	logger	  = LoggerFactory.getLogger(getClass());
+	private ProxyServer	server;
+	private boolean	    isStarted	= false;
+	
+	public Snova(Trace trace)
 	{
-		this.config = config;
 		SharedObjectHelper.setTrace(trace);
-
-		pm.loadPlugins();
-		pm.activatePlugins();
-		this.pm = pm;
-
+		if(!GAE.init())
+		{
+			
+		}
 	}
-
+	
 	public void stop()
 	{
 		try
@@ -51,41 +45,39 @@ public class Snova
 				server.close();
 				server = null;
 			}
-			pm.stopPlugins();
 			isStarted = false;
 		}
 		catch (Exception e)
 		{
 			logger.error("Failed to stop framework.", e);
 		}
-
+		
 	}
-
+	
 	public boolean isStarted()
 	{
 		return isStarted;
 	}
-
+	
 	public boolean start()
 	{
-		return restart(config);
+		return restart();
 	}
-
-	public boolean restart(SnovaConfiguration cfg)
+	
+	public boolean restart()
 	{
 		try
 		{
 			stop();
-			pm.startPlugins();
-			this.config = cfg;
-			// CoreConfiguration config= CoreConfiguration.getInstance();
-			server = new HttpLocalProxyServer(cfg.getLocalProxyServerAddress(),
-			        SharedObjectHelper.getGlobalThreadPool());
-
+			String listen = SnovaConfiguration.getInstance().getIniProperties()
+			        .getProperty("LocalServer", "Listen");
+			SimpleSocketAddress address = new SimpleSocketAddress("0.0.0.0",
+			        48110);
+			server = new ProxyServer(address);
+			
 			SharedObjectHelper.getTrace().info(
-			        "Local HTTP(S) Server Running...\nat "
-			                + cfg.getLocalProxyServerAddress());
-
+			        "Local HTTP(S) Server Running...\nat " + listen);
+			
 			isStarted = true;
 			return true;
 		}

@@ -28,7 +28,6 @@ import java.util.concurrent.Future;
 import org.arch.util.FileHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.snova.framework.common.AppData;
 import org.snova.framework.config.SnovaConfiguration;
 import org.snova.framework.plugin.DesktopPluginManager;
 import org.snova.framework.plugin.DesktopPluginManager.InstalledPlugin;

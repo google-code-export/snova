@@ -14,10 +14,10 @@ import io.netty.handler.codec.http.HttpRequest;
 public interface RemoteProxyHandler
 {
 	public void handleRequest(LocalProxyHandler local, HttpRequest req);
-
+	
 	public void handleChunk(LocalProxyHandler local, HttpChunk chunk);
-
+	
 	public void handleRawData(LocalProxyHandler local, ByteBuf raw);
-
+	
 	public void close();
 }
