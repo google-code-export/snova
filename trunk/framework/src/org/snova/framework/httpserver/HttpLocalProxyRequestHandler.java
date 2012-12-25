@@ -114,14 +114,14 @@ public class HttpLocalProxyRequestHandler extends
 			HttpChunk chunk = (HttpChunk) e;
 			if (null != remoteHandler)
 			{
-				remoteHandler.handleChunk(chunk);
+				remoteHandler.handleChunk(this, chunk);
 			}
 		}
 		else if (e instanceof ByteBuf)
 		{
 			if (null != remoteHandler)
 			{
-				remoteHandler.handleRawData((ByteBuf) e);
+				remoteHandler.handleRawData(this, (ByteBuf) e);
 			}
 		}
 		else
@@ -197,7 +197,7 @@ public class HttpLocalProxyRequestHandler extends
 	}
 
 	@Override
-	public void handleResponse(HttpResponse res)
+	public void handleResponse(RemoteProxyHandler remote, HttpResponse res)
 	{
 		if (null != localChannel)
 		{
@@ -206,11 +206,20 @@ public class HttpLocalProxyRequestHandler extends
 	}
 
 	@Override
-	public void handleChunk(HttpChunk chunk)
+	public void handleChunk(RemoteProxyHandler remote, HttpChunk chunk)
 	{
 		if (null != localChannel)
 		{
 			localChannel.write(chunk);
+		}
+	}
+
+	@Override
+	public void handleRawData(RemoteProxyHandler remote, ByteBuf raw)
+	{
+		if (null != localChannel)
+		{
+			localChannel.write(raw);
 		}
 	}
 }
