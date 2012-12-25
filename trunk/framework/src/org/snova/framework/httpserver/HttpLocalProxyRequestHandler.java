@@ -9,6 +9,14 @@
  */
 package org.snova.framework.httpserver;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundMessageHandlerAdapter;
+import io.netty.handler.codec.http.HttpChunk;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpResponse;
+
 import java.nio.channels.ClosedChannelException;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -19,27 +27,22 @@ import org.arch.event.EventDispatcher;
 import org.arch.event.http.HTTPChunkEvent;
 import org.arch.event.http.HTTPConnectionEvent;
 import org.arch.event.http.HTTPRequestEvent;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
-import org.jboss.netty.handler.codec.http.HttpChunk;
-import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.snova.framework.proxy.LocalProxyHandler;
+import org.snova.framework.proxy.RemoteProxyHandler;
 
 /**
  * @author yinqiwen
  * 
  */
-//@ChannelPipelineCoverage("one")
-public class HttpLocalProxyRequestHandler extends SimpleChannelUpstreamHandler
+public class HttpLocalProxyRequestHandler extends
+        ChannelInboundMessageHandlerAdapter<Object> implements
+        LocalProxyHandler
 {
 	protected Logger logger = LoggerFactory.getLogger(getClass());
 
+	private RemoteProxyHandler remoteHandler = null;
 	private Channel localChannel = null;
 
 	private Integer id;
@@ -49,11 +52,11 @@ public class HttpLocalProxyRequestHandler extends SimpleChannelUpstreamHandler
 	public HttpLocalProxyRequestHandler()
 	{
 		id = seed.getAndIncrement();
-		if (logger.isDebugEnabled())
-		{
-			logger.debug("HttpLocalProxyRequestHandler instance created with ID:"
-			        + id);
-		}
+	}
+
+	private RemoteProxyHandler getRemoteProxyHandler()
+	{
+		return null;
 	}
 
 	private boolean dispatchEvent(Event event)
@@ -80,14 +83,17 @@ public class HttpLocalProxyRequestHandler extends SimpleChannelUpstreamHandler
 		event.url = request.getUri();
 		event.version = request.getProtocolVersion().getText();
 		event.setHash(id);
-		ChannelBuffer content = request.getContent();
+		event.setAttachment(request);
+		ByteBuf content = request.getContent();
 		if (null != content)
 		{
+			content.markReaderIndex();
 			int buflen = content.readableBytes();
 			event.content.ensureWritableBytes(content.readableBytes());
 			content.readBytes(event.content.getRawBuffer(),
 			        event.content.getWriteIndex(), content.readableBytes());
 			event.content.advanceWriteIndex(buflen);
+			content.resetReaderIndex();
 		}
 		for (String name : request.getHeaderNames())
 		{
@@ -98,95 +104,35 @@ public class HttpLocalProxyRequestHandler extends SimpleChannelUpstreamHandler
 			}
 
 		}
-		// for (Map.Entry<String, String> header : request.getHeaders())
-		// {
-		// event.headers.add(new KeyValuePair<String, String>(header.getKey(),
-		// header.getValue()));
-		// }
 		return event;
 	}
 
-	private void handleChunks(MessageEvent e)
+	private void handleChunks(Object e)
 	{
-		HTTPChunkEvent event = new HTTPChunkEvent();
-		ChannelBuffer content = null;
-		if (e.getMessage() instanceof HttpChunk)
+		if (e instanceof HttpChunk)
 		{
-			HttpChunk chunk = (HttpChunk) e.getMessage();
-			content = chunk.getContent();
-		}
-		else if (e.getMessage() instanceof ChannelBuffer)
-		{
-			content = (ChannelBuffer) e.getMessage();
-		}
-		if (null != content && content.readable())
-		{
-			event.content = new byte[content.readableBytes()];
-			content.readBytes(event.content);
-			event.setHash(id);
-			dispatchEvent(event);
-		}
-	}
-
-	private void handleHttpRequest(HttpRequest request, MessageEvent e)
-	{
-//		if(logger.isDebugEnabled())
-//		{
-//			logger.debug("Local server received a request:" + request);
-//		}
-		HTTPRequestEvent event = buildEvent(request);
-		if (!dispatchEvent(event))
-		{
-			localChannel.close();
-		}
-	}
-
-	@Override
-	public void messageReceived(ChannelHandlerContext ctx, final MessageEvent e)
-	        throws Exception
-	{
-		localChannel = e.getChannel();
-
-		if (e.getMessage() instanceof HttpRequest)
-		{
-			HttpRequest request = (HttpRequest) e.getMessage();
-			handleHttpRequest(request, e);
-		}
-		else
-		{
-			handleChunks(e);
-		}
-	}
-
-	@Override
-	public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e)
-	        throws Exception
-	{
-		if(logger.isDebugEnabled())
-		{
-			logger.debug("Browser connection[" +id + "]  closed");
-		}
-		//super.channelClosed(ctx, e);
-		close();
-	}
-
-	@Override
-	public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
-	        throws Exception
-	{
-		if(e.getCause() instanceof ClosedChannelException)
-		{
-			if(logger.isDebugEnabled())
+			HttpChunk chunk = (HttpChunk) e;
+			if (null != remoteHandler)
 			{
-				logger.error("Browser connection[" + id+"] exceptionCaught.", e.getCause());
+				remoteHandler.handleChunk(chunk);
+			}
+		}
+		else if (e instanceof ByteBuf)
+		{
+			if (null != remoteHandler)
+			{
+				remoteHandler.handleRawData((ByteBuf) e);
 			}
 		}
 		else
 		{
-			logger.error("Browser connection[" + id+"] exceptionCaught.", e.getCause());
+			logger.error("Unsupported message type:" + e.getClass());
 		}
-		
-		//close();
+	}
+
+	private void handleHttpRequest(HttpRequest request)
+	{
+
 	}
 
 	public void close()
@@ -197,11 +143,74 @@ public class HttpLocalProxyRequestHandler extends SimpleChannelUpstreamHandler
 		        HTTPConnectionEvent.CLOSED);
 		event.setAttachment(attach);
 		dispatchEvent(event);
-		if (localChannel != null && localChannel.isConnected())
+		if (localChannel != null && localChannel.isActive())
 		{
 			localChannel.close();
 			localChannel = null;
 		}
 	}
 
+	@Override
+	public void channelInactive(ChannelHandlerContext ctx) throws Exception
+	{
+		if (logger.isDebugEnabled())
+		{
+			logger.debug("Browser connection[" + id + "]  closed");
+		}
+		close();
+	}
+
+	@Override
+	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
+	        throws Exception
+	{
+		if (cause instanceof ClosedChannelException)
+		{
+			if (logger.isDebugEnabled())
+			{
+				logger.error("Browser connection[" + id + "] exceptionCaught.",
+				        cause);
+			}
+		}
+		else
+		{
+			logger.error("Browser connection[" + id + "] exceptionCaught.",
+			        cause);
+		}
+	}
+
+	@Override
+	public void messageReceived(ChannelHandlerContext ctx, Object msg)
+	        throws Exception
+	{
+		localChannel = ctx.channel();
+
+		if (msg instanceof HttpRequest)
+		{
+			HttpRequest request = (HttpRequest) msg;
+			handleHttpRequest(request);
+		}
+		else
+		{
+			handleChunks(msg);
+		}
+	}
+
+	@Override
+	public void handleResponse(HttpResponse res)
+	{
+		if (null != localChannel)
+		{
+			localChannel.write(res);
+		}
+	}
+
+	@Override
+	public void handleChunk(HttpChunk chunk)
+	{
+		if (null != localChannel)
+		{
+			localChannel.write(chunk);
+		}
+	}
 }

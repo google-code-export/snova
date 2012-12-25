@@ -24,7 +24,7 @@ import org.arch.common.Pair;
 import org.arch.event.EventDispatcher;
 import org.arch.event.NamedEventHandler;
 import org.snova.framework.common.Constants;
-import org.snova.framework.config.DesktopFrameworkConfiguration;
+import org.snova.framework.config.SnovaConfiguration;
 
 /**
  * 
@@ -46,7 +46,7 @@ public class SysTray
 	{
 		for(Pair<JMenuItem, String> item:list)
 		{
-			if(item.second.endsWith(DesktopFrameworkConfiguration.getInstance().getProxyEventHandler()))
+			if(item.second.endsWith(SnovaConfiguration.getInstance().getProxyEventHandler()))
 			{
 				item.first.setIcon(ImageUtil.OK);
 			}
@@ -107,8 +107,8 @@ public class SysTray
 			{
 				public void actionPerformed(ActionEvent e)
 				{
-					DesktopFrameworkConfiguration.getInstance().setProxyService(handlerName);
-					DesktopFrameworkConfiguration.getInstance().save();
+					SnovaConfiguration.getInstance().setProxyService(handlerName);
+					SnovaConfiguration.getInstance().save();
 					updateProxyServiceMenus(serviceMemus);
 				}
 			});

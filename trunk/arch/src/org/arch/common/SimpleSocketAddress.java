@@ -7,18 +7,15 @@
  * @author wqy [ 2010-8-12 | 07:43:13 PM ]
  *
  */
-package org.snova.framework.config;
-
-import javax.xml.bind.annotation.XmlAttribute;
+package org.arch.common;
 
 /**
  *
  */
 public class SimpleSocketAddress
 {
-	@XmlAttribute
+
 	public String	host;
-	@XmlAttribute
 	public int	  port;
 	
 	public SimpleSocketAddress()

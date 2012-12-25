@@ -34,10 +34,10 @@ import javax.xml.bind.Unmarshaller;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.snova.framework.Framework;
+import org.snova.framework.Snova;
 import org.snova.framework.common.Constants;
 import org.snova.framework.common.Version;
-import org.snova.framework.config.DesktopFrameworkConfiguration;
+import org.snova.framework.config.SnovaConfiguration;
 import org.snova.framework.config.SimpleSocketAddress;
 import org.snova.framework.plugin.DesktopPluginManager;
 import org.snova.framework.plugin.DesktopPluginManager.InstalledPlugin;
@@ -81,7 +81,7 @@ public class MainFrame extends javax.swing.JFrame
 		initComponents();
 		//end = System.currentTimeMillis();
 		//System.out.println("Cost " + (end -start) + "ms");
-		fm = new Framework(DesktopFrameworkConfiguration.getInstance(),
+		fm = new Snova(SnovaConfiguration.getInstance(),
 		        DesktopPluginManager.getInstance(), new GUITrace());
 		this.setTitle(Constants.PROJECT_NAME + " V" + Version.value);
 		this.setIconImage(ImageUtil.FLAG.getImage());
@@ -152,7 +152,7 @@ public class MainFrame extends javax.swing.JFrame
 		catch (Exception e)
 		{
 			logger.error("Failed to retrive desc file:" + url, e);
-			DesktopFrameworkConfiguration conf = DesktopFrameworkConfiguration
+			SnovaConfiguration conf = SnovaConfiguration
 			        .getInstance();
 			SimpleSocketAddress localServAddr = conf
 			        .getLocalProxyServerAddress();
@@ -176,7 +176,7 @@ public class MainFrame extends javax.swing.JFrame
 	
 	static ProductReleaseDetail getProductUpdateDetail() throws Exception
 	{
-		DesktopFrameworkConfiguration conf = DesktopFrameworkConfiguration
+		SnovaConfiguration conf = SnovaConfiguration
 		        .getInstance();
 		URLConnection updateConn = openRemoteDescriptionFile(conf
 		        .getPluginRepository());
@@ -636,7 +636,7 @@ public class MainFrame extends javax.swing.JFrame
 	private JPanel	                availablePluginsUIPanel;
 	private boolean	                hasStarted	= false;
 	private FrameworkConfigDialog	config;
-	private Framework	            fm;
+	private Snova	            fm;
 	private DesktopPluginManager	pm	       = DesktopPluginManager
 	                                                   .getInstance();
 	protected static Logger	        logger	   = LoggerFactory
