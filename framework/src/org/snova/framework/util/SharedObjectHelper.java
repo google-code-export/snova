@@ -9,6 +9,9 @@
  */
 package org.snova.framework.util;
 
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.socket.nio.NioEventLoopGroup;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -22,6 +25,17 @@ import org.snova.framework.trace.Trace;
 public class SharedObjectHelper
 {
 	private static ExecutorService  globalThreadPool;
+	private static EventLoopGroup eventLoop;
+	public static EventLoopGroup getEventLoop()
+    {
+		if(null != eventLoop)
+		{
+			eventLoop = new NioEventLoopGroup();
+		}
+    	return eventLoop;
+    }
+
+
 	private static ScheduledExecutorService globalTimer;
 	public static ScheduledExecutorService getGlobalTimer()
     {

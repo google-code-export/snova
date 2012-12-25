@@ -29,13 +29,13 @@ import org.arch.util.FileHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.framework.common.AppData;
-import org.snova.framework.config.DesktopFrameworkConfiguration;
-import org.snova.framework.config.SimpleSocketAddress;
+import org.snova.framework.config.SnovaConfiguration;
 import org.snova.framework.plugin.DesktopPluginManager;
 import org.snova.framework.plugin.DesktopPluginManager.InstalledPlugin;
 import org.snova.framework.plugin.PluginManager;
 import org.snova.framework.plugin.ProductReleaseDetail.PluginReleaseDetail;
 import org.snova.framework.util.SharedObjectHelper;
+import org.snova.http.client.common.SimpleSocketAddress;
 
 /**
  * 
@@ -99,7 +99,7 @@ public class AvalablePluginPanel extends javax.swing.JPanel
 		catch (Exception e)
 		{
 			logger.error("Failed to download file:" + url, e);
-			DesktopFrameworkConfiguration conf = DesktopFrameworkConfiguration
+			SnovaConfiguration conf = SnovaConfiguration
 			        .getInstance();
 			SimpleSocketAddress localServAddr = conf
 			        .getLocalProxyServerAddress();

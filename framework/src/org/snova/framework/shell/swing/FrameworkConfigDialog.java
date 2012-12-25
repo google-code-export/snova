@@ -20,7 +20,7 @@ import org.arch.event.EventDispatcher;
 import org.arch.event.NamedEventHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.snova.framework.config.DesktopFrameworkConfiguration;
+import org.snova.framework.config.SnovaConfiguration;
 import org.snova.framework.config.SimpleSocketAddress;
 import org.snova.framework.util.PreferenceHelper;
 
@@ -50,7 +50,7 @@ public class FrameworkConfigDialog extends javax.swing.JDialog
 	
 	private void setDefaultValueFromConfig()
 	{
-		DesktopFrameworkConfiguration cfg = DesktopFrameworkConfiguration
+		SnovaConfiguration cfg = SnovaConfiguration
 		        .getInstance();
 		SimpleSocketAddress addr = cfg.getLocalProxyServerAddress();
 		localServerHostText.setText(addr.host);
@@ -345,7 +345,7 @@ public class FrameworkConfigDialog extends javax.swing.JDialog
 	{// GEN-FIRST:event_applyButtonActionPerformed
 		try
 		{
-			DesktopFrameworkConfiguration cfg = DesktopFrameworkConfiguration
+			SnovaConfiguration cfg = SnovaConfiguration
 			        .getInstance();
 			cfg.getLocalProxyServerAddress().host = localServerHostText
 			        .getText();
