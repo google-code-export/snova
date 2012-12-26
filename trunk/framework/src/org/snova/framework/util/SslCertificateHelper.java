@@ -55,49 +55,50 @@ import org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
 import org.bouncycastle.x509.extension.SubjectKeyIdentifierStructure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.snova.framework.config.SnovaConfiguration;
 
 /**
  *
  */
 public class SslCertificateHelper
 {
-	protected static Logger	     logger	           = LoggerFactory
-	                                                       .getLogger(SslCertificateHelper.class);
+	protected static Logger logger = LoggerFactory
+	        .getLogger(SslCertificateHelper.class);
 	static
 	{
 		Security.addProvider(new BouncyCastleProvider());
-		
+
 	}
-	
-	static PrivateKey	         caPriKey;
-	static X509Certificate	     caCert;
-	static Map<String, KeyStore>	kstCache	   = new WeakHashMap<String, KeyStore>();
-	public static final String	 KS_PASS	       = "hyk-proxy";
-	public static final String	 CA_ALIAS	       = "RootCAPriKey";
-	public static final String	 CLIENT_CERT_ALIAS	= "FakeCertForClient";
-	public static final String	 CA_FILE	       = "RootKeyStore.kst";
-	
+
+	static PrivateKey caPriKey;
+	static X509Certificate caCert;
+	static Map<String, KeyStore> kstCache = new WeakHashMap<String, KeyStore>();
+	public static final String KS_PASS = "hyk-proxy";
+	public static final String CA_ALIAS = "RootCAPriKey";
+	public static final String CLIENT_CERT_ALIAS = "FakeCertForClient";
+	public static final String CA_FILE = "RootKeyStore.kst";
+
 	private static void addFilesToExistingZip(File zipFile, File[] files)
 	        throws IOException
 	{
 		// get a temp file
-		
+
 	}
-	
+
 	public static PrivateKey getFakeRootCAPrivateKey()
 	{
 		loadFakeRootCA();
 		return caPriKey;
 	}
-	
+
 	public static X509Certificate getFakeRootCAX509Certificate()
 	{
 		loadFakeRootCA();
 		return caCert;
 	}
-	
-	private static final byte[]	BUFFER	= new byte[4096];
-	
+
+	private static final byte[] BUFFER = new byte[4096];
+
 	/**
 	 * copy input to output stream - available in several StreamUtils or Streams
 	 * classes
@@ -111,10 +112,11 @@ public class SslCertificateHelper
 			output.write(BUFFER, 0, bytesRead);
 		}
 	}
-	
+
 	private static File getFakeSSLCertFile(String host)
 	{
-		File confhome = new File(AppData.GetFakeSSLCertHome(), "cert");
+		SnovaConfiguration cfg = SnovaConfiguration.getInstance();
+		File confhome = new File(cfg.getHome(), "cert");
 		if (!confhome.exists())
 		{
 			confhome.mkdir();
@@ -122,33 +124,34 @@ public class SslCertificateHelper
 		File file = new File(confhome, host + ".kst");
 		return file;
 	}
-	
+
 	private static boolean loadFakeRootCA()
 	{
 		if (null == caPriKey || null == caCert)
 		{
 			try
 			{
+				SnovaConfiguration cfg = SnovaConfiguration.getInstance();
 				KeyStore ks = KeyStore.getInstance("JKS");
 				FileInputStream fis = new FileInputStream(new File(
-				        AppData.GetFakeSSLCertHome(), "RootKeyStore.kst"));
+				        cfg.getHome() + "/cert", "RootKeyStore.kst"));
 				ks.load(fis, KS_PASS.toCharArray());
 				caCert = (X509Certificate) ks.getCertificate(CA_ALIAS);
 				caPriKey = (PrivateKey) ks.getKey(CA_ALIAS,
 				        KS_PASS.toCharArray());
 				fis.close();
-				
+
 			}
 			catch (Exception e)
 			{
 				logger.error("Failed to load fake CA key store.", e);
 				return false;
 			}
-			
+
 		}
 		return true;
 	}
-	
+
 	private static KeyPair createRSAKeyPair() throws NoSuchAlgorithmException,
 	        NoSuchProviderException
 	{
@@ -157,11 +160,11 @@ public class SslCertificateHelper
 		rnd.setSeed(System.currentTimeMillis());
 		g.initialize(2048, rnd);
 		final KeyPair keypair = g.genKeyPair();
-		
+
 		return keypair;
-		
+
 	}
-	
+
 	public static X509Certificate createCACert(KeyPair keypair)
 	        throws InvalidKeyException, IllegalStateException,
 	        NoSuchProviderException, NoSuchAlgorithmException,
@@ -172,7 +175,7 @@ public class SslCertificateHelper
 		        + (100L * 365L * 24L * 60L * 60L * 1000L));
 		// The Root CA serial number is '1'
 		final BigInteger serialNumber = new BigInteger("1");
-		
+
 		final X509V3CertificateGenerator certGen = new X509V3CertificateGenerator();
 		// using the hash code of the user's name and home path, keeps anonymity
 		// but also gives user a chance to distinguish between each other
@@ -185,7 +188,7 @@ public class SslCertificateHelper
 		                        .hashCode()) + ", "
 		                + "O = Snova Root Fake CA, "
 		                + "OU = Snova Root Fake CA, " + "C = XX");
-		
+
 		certGen.setSerialNumber(serialNumber);
 		certGen.setSubjectDN(x500principal);
 		certGen.setIssuerDN(x500principal);
@@ -193,7 +196,7 @@ public class SslCertificateHelper
 		certGen.setNotAfter(expireDate);
 		certGen.setPublicKey(keypair.getPublic());
 		certGen.setSignatureAlgorithm("SHA1withRSA");
-		
+
 		KeyStore ks = null;
 		try
 		{
@@ -210,7 +213,7 @@ public class SslCertificateHelper
 			        "Errors during assembling root CA.", e);
 		}
 	}
-	
+
 	public static X509Certificate createClientCert(String host, PublicKey pubKey)
 	        throws Exception
 	{
@@ -221,31 +224,31 @@ public class SslCertificateHelper
 		// final KeyPair mykp = this.createKeyPair();
 		// final PrivateKey privKey = mykp.getPrivate();
 		// final PublicKey pubKey = mykp.getPublic();
-		
+
 		//
 		// subjects name table.
 		//
 		final Hashtable<Object, String> attrs = new Hashtable<Object, String>();
 		final Vector<Object> order = new Vector<Object>();
-		
+
 		attrs.put(X509Name.CN, host);
 		attrs.put(X509Name.OU, "hyk-proxy Project");
 		attrs.put(X509Name.O, "hyk-proxy");
 		attrs.put(X509Name.C, "XX");
 		attrs.put(X509Name.EmailAddress, "yinqiwen@gmail.com");
-		
+
 		order.addElement(X509Name.CN);
 		order.addElement(X509Name.OU);
 		order.addElement(X509Name.O);
 		order.addElement(X509Name.C);
 		order.addElement(X509Name.EmailAddress);
-		
+
 		//
 		// create the certificate - version 3
 		//
 		final X509V3CertificateGenerator v3CertGen = new X509V3CertificateGenerator();
 		v3CertGen.reset();
-		
+
 		v3CertGen
 		        .setSerialNumber(BigInteger.valueOf(System.currentTimeMillis()));
 		v3CertGen.setIssuerDN(PrincipalUtil.getSubjectX509Principal(caCert));
@@ -256,30 +259,30 @@ public class SslCertificateHelper
 		v3CertGen.setSubjectDN(new X509Principal(order, attrs));
 		v3CertGen.setPublicKey(pubKey);
 		v3CertGen.setSignatureAlgorithm("SHA1WithRSAEncryption");
-		
+
 		//
 		// add the extensions
 		//
 		v3CertGen.addExtension(X509Extensions.SubjectKeyIdentifier, false,
 		        new SubjectKeyIdentifierStructure(pubKey));
-		
+
 		v3CertGen.addExtension(X509Extensions.AuthorityKeyIdentifier, false,
 		        new AuthorityKeyIdentifierStructure(caCert.getPublicKey()));
-		
+
 		v3CertGen.addExtension(X509Extensions.BasicConstraints, true,
 		        new BasicConstraints(0));
-		
+
 		// X509Certificate cert = v3CertGen.generateX509Certificate(caPrivKey);
 		final X509Certificate cert = v3CertGen.generate(caPriKey, "BC");
 		cert.checkValidity(new Date());
 		cert.verify(caCert.getPublicKey());
-		
+
 		// cert.verify(caCert.getPublicKey());
 		// cert.getEncoded();
-		
+
 		return cert;
 	}
-	
+
 	public static KeyStore getClientKeyStore(String host) throws Exception
 	{
 		if (kstCache.containsKey(host))
@@ -287,12 +290,12 @@ public class SslCertificateHelper
 			return kstCache.get(host);
 		}
 		KeyStore ks = KeyStore.getInstance("JKS");
-		
+
 		File fakeSslFile = getFakeSSLCertFile(host);
-		InputStream is = fakeSslFile.exists()? new FileInputStream(
-		        fakeSslFile):null;
+		InputStream is = fakeSslFile.exists() ? new FileInputStream(fakeSslFile)
+		        : null;
 		ks.load(is, null == is ? null : KS_PASS.toCharArray());
-		
+
 		if (null == is)
 		{
 			final KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
@@ -315,7 +318,7 @@ public class SslCertificateHelper
 		kstCache.put(host, ks);
 		return ks;
 	}
-	
+
 	public static SSLContext getFakeSSLContext(String host, String port)
 	        throws Exception
 	{
@@ -324,7 +327,7 @@ public class SslCertificateHelper
 		long start = System.currentTimeMillis();
 		SSLContext sslContext = SSLContext.getInstance("TLS");
 		KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-		
+
 		kmf.init(kst, SslCertificateHelper.KS_PASS.toCharArray());
 		sslContext.init(kmf.getKeyManagers(), null, null);
 		long end = System.currentTimeMillis();
@@ -338,7 +341,7 @@ public class SslCertificateHelper
 		// param.setSSLParameters(sslparams);
 		return sslContext;
 	}
-	
+
 	public static void main(String[] args) throws Exception
 	{
 		// X509V3CertificateGenerator c = new X509V3CertificateGenerator();

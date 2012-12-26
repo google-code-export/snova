@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.snova.framework.util;
+package org.snova.framework.proxy.hosts;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,19 +19,18 @@ import javax.naming.NamingException;
 import org.arch.dns.ResolveOptions;
 import org.arch.dns.Resolver;
 import org.arch.util.ListSelector;
-import org.snova.framework.config.DesktopFrameworkConfiguration;
 
 /**
  * @author qiyingwang
  * 
  */
-public class HostsHelper
+public class HostsService
 {
-	private static Map<String, ListSelector<String>>	hostsMappingTable	= new HashMap<String, ListSelector<String>>();
-	
-	static
+	private static Map<String, ListSelector<String>> hostsMappingTable = new HashMap<String, ListSelector<String>>();
+
+	private static void loadHostFile(String file)
 	{
-		InputStream is = HostsHelper.class.getResourceAsStream("/hosts.conf");
+		InputStream is = HostsService.class.getResourceAsStream("/hosts.conf");
 		Properties props = new Properties();
 		try
 		{
@@ -54,35 +53,35 @@ public class HostsHelper
 			//
 		}
 	}
-	
-	public static String lookupIP(String host)
-	{
-		ResolveOptions options = new ResolveOptions();
-		options.useTcp = true;
-		options.cacheTtl = ResolveOptions.DNS_CACHE_TTL_SELF;
-		String[] ips;
-		try
-		{
-			DesktopFrameworkConfiguration cfg = DesktopFrameworkConfiguration
-			        .getInstance();
-			ips = Resolver.resolveIPv4(cfg.getTrsutedDNS(), host, options);
-			if (ips.length > 0)
-			{
-				if (ips.length == 1)
-				{
-					return ips[0];
-				}
-				Random r = new Random();
-				return ips[r.nextInt(ips.length)];
-			}
-		}
-		catch (NamingException e)
-		{
-			
-		}
-		return host;
-	}
-	
+
+	// public static String lookupIP(String host)
+	// {
+	// ResolveOptions options = new ResolveOptions();
+	// options.useTcp = true;
+	// options.cacheTtl = ResolveOptions.DNS_CACHE_TTL_SELF;
+	// String[] ips;
+	// try
+	// {
+	// DesktopFrameworkConfiguration cfg = DesktopFrameworkConfiguration
+	// .getInstance();
+	// ips = Resolver.resolveIPv4(cfg.getTrsutedDNS(), host, options);
+	// if (ips.length > 0)
+	// {
+	// if (ips.length == 1)
+	// {
+	// return ips[0];
+	// }
+	// Random r = new Random();
+	// return ips[r.nextInt(ips.length)];
+	// }
+	// }
+	// catch (NamingException e)
+	// {
+	//
+	// }
+	// return host;
+	// }
+
 	public static String getMappingHost(String host)
 	{
 		ListSelector<String> selector = hostsMappingTable.get(host);
@@ -90,9 +89,14 @@ public class HostsHelper
 		{
 			return host;
 		}
-		return selector.select().trim();
+		String addr = selector.select().trim();
+		if (hostsMappingTable.containsKey(addr))
+		{
+			return getMappingHost(addr);
+		}
+		return addr;
 	}
-	
+
 	public static void removeMapping(String host, String mapping)
 	{
 		ListSelector<String> selector = hostsMappingTable.get(host);
@@ -100,5 +104,12 @@ public class HostsHelper
 		{
 			selector.remove(mapping);
 		}
+	}
+
+	public static boolean init()
+	{
+		loadHostFile("cloud_hosts.conf");
+		loadHostFile("user_hosts.conf");
+		return true;
 	}
 }
