@@ -14,6 +14,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundMessageHandlerAdapter;
 import io.netty.handler.codec.http.HttpChunk;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 
@@ -41,21 +42,25 @@ import org.snova.framework.proxy.RemoteProxyManagerHolder;
 public class ProxyHandler extends ChannelInboundMessageHandlerAdapter<Object>
         implements LocalProxyHandler
 {
-	protected Logger	         logger	       = LoggerFactory
-	                                                   .getLogger(getClass());
-	
-	private RemoteProxyHandler	 remoteHandler	= null;
-	private Channel	             localChannel	= null;
-	
-	private Integer	             id;
-	
-	private static AtomicInteger	seed	   = new AtomicInteger(1);
-	
+	protected Logger logger = LoggerFactory.getLogger(getClass());
+
+	private RemoteProxyHandler remoteHandler = null;
+	private Channel localChannel = null;
+
+	public Channel getLocalChannel()
+	{
+		return localChannel;
+	}
+
+	private Integer id;
+
+	private static AtomicInteger seed = new AtomicInteger(1);
+
 	public ProxyHandler()
 	{
 		id = seed.getAndIncrement();
 	}
-	
+
 	private void handleChunks(Object e)
 	{
 		if (e instanceof HttpChunk)
@@ -78,7 +83,7 @@ public class ProxyHandler extends ChannelInboundMessageHandlerAdapter<Object>
 			logger.error("Unsupported message type:" + e.getClass());
 		}
 	}
-	
+
 	private void handleHttpRequest(HttpRequest request)
 	{
 		if (null == remoteHandler)
@@ -95,10 +100,11 @@ public class ProxyHandler extends ChannelInboundMessageHandlerAdapter<Object>
 			}
 			remoteHandler = rm.createProxyHandler();
 		}
+		request.removeHeader("Proxy-Connection");
 		remoteHandler.handleRequest(this, request);
-		
+
 	}
-	
+
 	public void close()
 	{
 		if (localChannel != null && localChannel.isActive())
@@ -107,7 +113,7 @@ public class ProxyHandler extends ChannelInboundMessageHandlerAdapter<Object>
 			localChannel = null;
 		}
 	}
-	
+
 	@Override
 	public void channelInactive(ChannelHandlerContext ctx) throws Exception
 	{
@@ -115,22 +121,22 @@ public class ProxyHandler extends ChannelInboundMessageHandlerAdapter<Object>
 		{
 			logger.debug("Browser connection[" + id + "]  closed");
 		}
-		
+
 	}
-	
+
 	@Override
 	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
 	        throws Exception
 	{
 		logger.error("Browser connection[" + id + "] exceptionCaught.", cause);
 	}
-	
+
 	@Override
 	public void messageReceived(ChannelHandlerContext ctx, Object msg)
 	        throws Exception
 	{
 		localChannel = ctx.channel();
-		
+
 		if (msg instanceof HttpRequest)
 		{
 			HttpRequest request = (HttpRequest) msg;
@@ -141,7 +147,7 @@ public class ProxyHandler extends ChannelInboundMessageHandlerAdapter<Object>
 			handleChunks(msg);
 		}
 	}
-	
+
 	@Override
 	public void handleResponse(RemoteProxyHandler remote, HttpResponse res)
 	{
@@ -150,7 +156,7 @@ public class ProxyHandler extends ChannelInboundMessageHandlerAdapter<Object>
 			localChannel.write(res);
 		}
 	}
-	
+
 	@Override
 	public void handleChunk(RemoteProxyHandler remote, HttpChunk chunk)
 	{
@@ -159,7 +165,7 @@ public class ProxyHandler extends ChannelInboundMessageHandlerAdapter<Object>
 			localChannel.write(chunk);
 		}
 	}
-	
+
 	@Override
 	public void handleRawData(RemoteProxyHandler remote, ByteBuf raw)
 	{
@@ -168,7 +174,7 @@ public class ProxyHandler extends ChannelInboundMessageHandlerAdapter<Object>
 			localChannel.write(raw);
 		}
 	}
-	
+
 	@Override
 	public int getId()
 	{

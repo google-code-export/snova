@@ -11,11 +11,11 @@ import org.arch.util.StringHelper;
  */
 public class GAEServerAuth
 {
-	public String	appid;
-	public String	user;
-	public String	passwd;
-	public boolean	backendEnable;
-	
+	public String appid;
+	public String user;
+	public String passwd;
+	public String token = "";
+
 	public void init()
 	{
 		if (user == null || user.equals(""))
@@ -30,7 +30,7 @@ public class GAEServerAuth
 		user = user.trim();
 		passwd = passwd.trim();
 	}
-	
+
 	public boolean parse(String line)
 	{
 		if (null == line || line.trim().isEmpty())
@@ -52,18 +52,13 @@ public class GAEServerAuth
 			user = ks[0];
 			passwd = ks[1];
 		}
-		if (appid.indexOf("/backend") != -1)
-		{
-			appid = appid.substring(0, appid.indexOf("/backend"));
-			backendEnable = true;
-		}
+
 		init();
 		return true;
 	}
-	
+
 	public String toString()
 	{
-		return user + ":" + passwd + "@" + appid
-		        + (backendEnable ? "/backend" : "");
+		return user + ":" + passwd + "@" + appid;
 	}
 }

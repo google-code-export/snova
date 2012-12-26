@@ -13,9 +13,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.framework.config.SnovaConfiguration;
 import org.snova.framework.proxy.gae.GAE;
+import org.snova.framework.proxy.hosts.HostsService;
 import org.snova.framework.server.ProxyServer;
 import org.snova.framework.trace.Trace;
 import org.snova.framework.util.SharedObjectHelper;
+import org.snova.http.client.HttpClientHelper;
 import org.snova.http.client.common.SimpleSocketAddress;
 
 /**
@@ -30,6 +32,7 @@ public class Snova
 	public Snova(Trace trace)
 	{
 		SharedObjectHelper.setTrace(trace);
+		HostsService.init();
 		if(!GAE.init())
 		{
 			
@@ -71,8 +74,7 @@ public class Snova
 			stop();
 			String listen = SnovaConfiguration.getInstance().getIniProperties()
 			        .getProperty("LocalServer", "Listen");
-			SimpleSocketAddress address = new SimpleSocketAddress("0.0.0.0",
-			        48110);
+			SimpleSocketAddress address = HttpClientHelper.getHttpRemoteAddress(false, listen);
 			server = new ProxyServer(address);
 			
 			SharedObjectHelper.getTrace().info(
