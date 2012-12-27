@@ -25,20 +25,22 @@ import org.snova.http.client.common.SimpleSocketAddress;
  */
 public class Snova
 {
-	protected Logger	logger	  = LoggerFactory.getLogger(getClass());
-	private ProxyServer	server;
-	private boolean	    isStarted	= false;
-	
+	protected Logger logger = LoggerFactory.getLogger(getClass());
+	private ProxyServer server;
+	private boolean isStarted = false;
+
 	public Snova(Trace trace)
 	{
 		SharedObjectHelper.setTrace(trace);
 		HostsService.init();
-		if(!GAE.init())
+		if (GAE.init())
 		{
-			
+		}
+		else
+		{
 		}
 	}
-	
+
 	public void stop()
 	{
 		try
@@ -47,6 +49,8 @@ public class Snova
 			{
 				server.close();
 				server = null;
+				SharedObjectHelper.getTrace().info(
+				        "Local HTTP(S) Server stoped\n");
 			}
 			isStarted = false;
 		}
@@ -54,19 +58,19 @@ public class Snova
 		{
 			logger.error("Failed to stop framework.", e);
 		}
-		
+
 	}
-	
+
 	public boolean isStarted()
 	{
 		return isStarted;
 	}
-	
+
 	public boolean start()
 	{
 		return restart();
 	}
-	
+
 	public boolean restart()
 	{
 		try
@@ -74,12 +78,13 @@ public class Snova
 			stop();
 			String listen = SnovaConfiguration.getInstance().getIniProperties()
 			        .getProperty("LocalServer", "Listen");
-			SimpleSocketAddress address = HttpClientHelper.getHttpRemoteAddress(false, listen);
+			SimpleSocketAddress address = HttpClientHelper
+			        .getHttpRemoteAddress(false, listen);
 			server = new ProxyServer(address);
-			
+
 			SharedObjectHelper.getTrace().info(
 			        "Local HTTP(S) Server Running...\nat " + listen);
-			
+
 			isStarted = true;
 			return true;
 		}

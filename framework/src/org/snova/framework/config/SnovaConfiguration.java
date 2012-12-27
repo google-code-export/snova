@@ -30,10 +30,15 @@ public class SnovaConfiguration implements ReloadableFileMonitor
 
 	private IniProperties props = new IniProperties();
 
-	private static String home = "../bin";
+	private static String home = null;
 
 	public static String getHome()
 	{
+		getInstance();
+		if (null == home)
+		{
+			home = ".";
+		}
 		return home;
 	}
 
@@ -113,5 +118,11 @@ public class SnovaConfiguration implements ReloadableFileMonitor
 	public File getMonitorFile()
 	{
 		return getConfigFile();
+	}
+
+	public void setProxyService(String handlerName)
+	{
+		props.setProperty("SPAC", "Default", handlerName);
+
 	}
 }

@@ -7,12 +7,20 @@ package org.snova.framework.shell.swing;
 
 import javax.swing.ImageIcon;
 
+
 /**
  * 
  * @author Administrator
  */
 public class ImageUtil
 {
+
+	public static final ImageIcon APPENGINE = new javax.swing.ImageIcon(
+	        ImageUtil.class.getResource("/images/appEngine-32.png"));
+	public static final ImageIcon APPENGINE16 = new javax.swing.ImageIcon(
+	        ImageUtil.class.getResource("/images/appEngine-16.png"));
+	public static final ImageIcon SHARE = new javax.swing.ImageIcon(
+	        ImageUtil.class.getResource("/images/share.png"));
 	public static final ImageIcon START = new javax.swing.ImageIcon(
 	        ImageUtil.class.getResource("/images/player_play.png"));
 	public static final ImageIcon STOP = new javax.swing.ImageIcon(

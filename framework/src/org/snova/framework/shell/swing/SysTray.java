@@ -21,6 +21,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 
 import org.arch.common.Pair;
+import org.arch.config.IniProperties;
 import org.arch.event.EventDispatcher;
 import org.arch.event.NamedEventHandler;
 import org.snova.framework.common.Constants;
@@ -32,21 +33,22 @@ import org.snova.framework.config.SnovaConfiguration;
  */
 public class SysTray
 {
-	
+
 	private void restoreFrame(MainFrame fm)
 	{
 		// fm.setAlwaysOnTop(true);
 		fm.setVisible(true);
 		fm.setFocusable(true);
-		fm.setState ( Frame.NORMAL );
-		
+		fm.setState(Frame.NORMAL);
+
 	}
-	
+
 	private void updateProxyServiceMenus(List<Pair<JMenuItem, String>> list)
 	{
-		for(Pair<JMenuItem, String> item:list)
+		IniProperties cfg = SnovaConfiguration.getInstance().getIniProperties();
+		for (Pair<JMenuItem, String> item : list)
 		{
-			if(item.second.endsWith(SnovaConfiguration.getInstance().getProxyEventHandler()))
+			if (item.second.endsWith(cfg.getProperty("SPAC", "Default")))
 			{
 				item.first.setIcon(ImageUtil.OK);
 			}
@@ -56,13 +58,13 @@ public class SysTray
 			}
 		}
 	}
-	
+
 	public SysTray(final MainFrame mainFrame)
 	{
 		final SystemTray tray = SystemTray.getSystemTray();
 		final JPopupMenu popup = new JPopupMenu();
 		ImageIcon icon = new ImageIcon(
-				MainFrame.class.getResource("/images/flag-16.png"));
+		        MainFrame.class.getResource("/images/flag-16.png"));
 		final TrayIcon trayIcon = new TrayIcon(icon.getImage(),
 		        Constants.PROJECT_NAME);
 
@@ -73,19 +75,22 @@ public class SysTray
 				restoreFrame(mainFrame);
 			}
 		});
-		trayIcon.addMouseListener(new MouseAdapter() {
-	        public void mouseReleased(MouseEvent e) {
-	            if (e.isPopupTrigger()) {
-	            	//popup.
-	            	popup.setLocation(e.getX(), e.getY());
-	            	popup.setInvoker(popup);
-	            	popup.setVisible(true);
-	            }
-	        }
-	    });
-		
-		JMenuItem item = new JMenuItem("Restore", new ImageIcon(MainFrame.class
-		        .getResource("/images/flag-16.png")));
+		trayIcon.addMouseListener(new MouseAdapter()
+		{
+			public void mouseReleased(MouseEvent e)
+			{
+				if (e.isPopupTrigger())
+				{
+					// popup.
+					popup.setLocation(e.getX(), e.getY());
+					popup.setInvoker(popup);
+					popup.setVisible(true);
+				}
+			}
+		});
+
+		JMenuItem item = new JMenuItem("Restore", new ImageIcon(
+		        MainFrame.class.getResource("/images/flag-16.png")));
 		item.setFont(new Font(null, Font.BOLD, 12));
 		item.addActionListener(new ActionListener()
 		{
@@ -95,27 +100,30 @@ public class SysTray
 			}
 		});
 		popup.add(item);
-		
+
 		final JMenu servicePop = new JMenu("Services");
 		final List<Pair<JMenuItem, String>> serviceMemus = new LinkedList<Pair<JMenuItem, String>>();
-		for(NamedEventHandler handler:EventDispatcher.getSingletonInstance().getAllNamedEventHandlers())
-		{
-			final String handlerName = handler.getName();
-			final JMenuItem serviceItem = new JMenuItem(handler.getName());
+		String[] all = new String[]{"GAE", "C4", "Auto"};
+		for (int i = 0; i < all.length; i++)
+        {
+			final String handlerName = all[i];
+			final JMenuItem serviceItem = new JMenuItem(all[i]);
 			serviceItem.setFont(new Font(null, Font.BOLD, 12));
 			serviceItem.addActionListener(new ActionListener()
 			{
 				public void actionPerformed(ActionEvent e)
 				{
-					SnovaConfiguration.getInstance().setProxyService(handlerName);
+					SnovaConfiguration.getInstance().setProxyService(
+					        handlerName);
 					SnovaConfiguration.getInstance().save();
 					updateProxyServiceMenus(serviceMemus);
 				}
 			});
-			serviceMemus.add(new Pair<JMenuItem, String>(serviceItem, handlerName));
+			serviceMemus.add(new Pair<JMenuItem, String>(serviceItem,
+			        handlerName));
 			updateProxyServiceMenus(serviceMemus);
 			servicePop.add(serviceItem);
-		}
+        }
 		popup.add(servicePop);
 		// item = new MenuItem("View Log");
 		// item.setFont(new Font(null, Font.BOLD, 12));
@@ -130,14 +138,14 @@ public class SysTray
 		// }
 		// });
 		// popup.add(item);
-		
-		item = new JMenuItem("Exit", new ImageIcon(MainFrame.class
-		        .getResource("/images/exit.png")));
-		
+
+		item = new JMenuItem("Exit", new ImageIcon(
+		        MainFrame.class.getResource("/images/exit.png")));
+
 		item.setFont(new Font(null, Font.BOLD, 12));
 		item.addActionListener(new ActionListener()
 		{
-			
+
 			public void actionPerformed(ActionEvent e)
 			{
 				System.exit(1);
@@ -145,15 +153,14 @@ public class SysTray
 		});
 		popup.add(item);
 		try
-        {
+		{
 			tray.add(trayIcon);
-        }
-        catch (Exception e)
-        {
-	        // TODO: handle exception
-        }
-		
-		
+		}
+		catch (Exception e)
+		{
+			// TODO: handle exception
+		}
+
 		trayIcon.addActionListener(new ActionListener()
 		{
 			public void actionPerformed(ActionEvent e)
@@ -165,6 +172,6 @@ public class SysTray
 				}
 			}
 		});
-		
+
 	}
 }

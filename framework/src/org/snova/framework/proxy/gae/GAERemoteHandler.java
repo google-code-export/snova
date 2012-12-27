@@ -28,9 +28,11 @@ import java.net.InetSocketAddress;
 import java.net.URL;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -71,6 +73,7 @@ import org.snova.http.client.HttpClient;
 import org.snova.http.client.HttpClientCallback;
 import org.snova.http.client.HttpClientConnector;
 import org.snova.http.client.HttpClientException;
+import org.snova.http.client.HttpClientHandler;
 import org.snova.http.client.HttpClientHelper;
 import org.snova.http.client.HttpClientOptions;
 import org.snova.http.client.HttpClientProxyCallback;
@@ -90,6 +93,8 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 	private GAEServerAuth auth;
 	private LocalProxyHandler local;
 	private HTTPRequestEvent proxyRequest;
+	private Set<HttpClientHandler> httpClientHandlers = Collections
+	        .synchronizedSet(new HashSet<HttpClientHandler>());
 
 	private RangeFetchStatus rangeStatus;
 	private RangeHeaderValue originRangeHeader;
@@ -109,6 +114,15 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 		{
 			logger.error("Failed to init http client.", e);
 		}
+	}
+
+	private void clearStatus()
+	{
+		fetchChunkPos = 0;
+		expectedChunkPos = 0;
+		rangeFetchWorkerNum.set(0);
+		restChunks.clear();
+		rangeStatus = RangeFetchStatus.WAITING_NORMAL_RESPONSE;
 	}
 
 	private static void initHttpClient() throws Exception
@@ -402,18 +416,8 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 		if (req.getMethod().equals(HttpMethod.CONNECT))
 		{
 			isHttps = true;
-			if (true)
-			{
-				HttpResponse fail1 = new DefaultHttpResponse(
-				        req.getProtocolVersion(),
-				        HttpResponseStatus.SERVICE_UNAVAILABLE);
-				local.handleResponse(this, fail1);
-				return;
-			}
-
-			byte[] establised = "HTTP/1.1 200 Connection established\r\n\r\n"
-			        .getBytes();
-
+			HttpResponse establised = new DefaultHttpResponse(
+			        req.getProtocolVersion(), HttpResponseStatus.OK);
 			final SSLContext sslCtx = prepareSslContext(req);
 			if (null == sslCtx)
 			{
@@ -423,7 +427,7 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 				local.handleResponse(this, fail);
 				return;
 			}
-			local.getLocalChannel().write(Unpooled.wrappedBuffer(establised))
+			local.getLocalChannel().write(establised)
 			        .addListener(new ChannelFutureListener()
 			        {
 				        public void operationComplete(ChannelFuture future)
@@ -455,8 +459,8 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 			originRangeHeader = new RangeHeaderValue(
 			        req.getHeader(HttpHeaders.Names.RANGE));
 		}
+		clearStatus();
 		proxyRequest = buildHttpRequestEvent(req);
-		rangeStatus = RangeFetchStatus.WAITING_NORMAL_RESPONSE;
 		tryProxyRequest();
 	}
 
@@ -476,15 +480,24 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 	@Override
 	public void close()
 	{
-		// TODO close unfinished requests
+		for (HttpClientHandler ch : httpClientHandlers)
+		{
+			ch.closeChannel();
+		}
+		httpClientHandlers.clear();
+		// if (null != local)
+		// {
+		// local.close();
+		// local = null;
+		// }
 	}
 
 	private synchronized boolean rangeFetch(RangeHeaderValue originRange,
 	        long limitSize)
 	{
-	    //if (logger.isDebugEnabled())
+		if (logger.isDebugEnabled())
 		{
-			logger.info("Session[" + getSessionID()
+			logger.debug("Session[" + getSessionID()
 			        + "] has waitingWriteStreamPos = " + expectedChunkPos
 			        + ", waitingFetchStreamPos=" + fetchChunkPos
 			        + ", limitSize =" + limitSize + ", rangeFetchWorkerNum = "
@@ -551,7 +564,10 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 			        chunk.chunk.getRawBuffer(), chunk.chunk.getReadIndex(),
 			        chunk.chunk.readableBytes()));
 			local.handleChunk(this, httpchunk);
-			logger.info("#######Write chunk:" + chunk.pos);
+			if (logger.isDebugEnabled())
+			{
+
+			}
 		}
 	}
 
@@ -611,6 +627,7 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 						{
 							proxyRequest.url = location;
 							proxyRequest.setHeader("Range", xrange);
+							rangeFetchWorkerNum.addAndGet(1);
 							requestEvent(proxyRequest, this);
 							if (logger.isDebugEnabled())
 							{
@@ -710,7 +727,9 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 			        "" + buf.readableBytes());
 			request.setContent(Unpooled.wrappedBuffer(buf.getRawBuffer(),
 			        buf.getReadIndex(), buf.readableBytes()));
-			client.doRequest(request, cb);
+			HttpClientHandler h = client.doRequest(request, cb);
+			httpClientHandlers.add(h);
+			cb.httpHandler = h;
 		}
 		catch (HttpClientException e)
 		{
@@ -724,6 +743,7 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 		private Buffer bodyContent = new Buffer(1024);
 		private long bodyLength = 0;
 		private HTTPRequestEvent backupEvent = null;
+		private HttpClientHandler httpHandler = null;
 
 		public GAEHttpClientCallback(EventHandler handler, Event ev)
 		{
@@ -744,6 +764,15 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 
 		EventHandler handler;
 
+		private void removeHttpClientHandler()
+		{
+			if (null != httpHandler)
+			{
+				httpClientHandlers.remove(httpHandler);
+				httpHandler = null;
+			}
+		}
+
 		private void onError()
 		{
 			failedCount++;
@@ -758,6 +787,7 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 			{
 				local.close();
 			}
+			removeHttpClientHandler();
 		}
 
 		private void fillBodyContent(ByteBuf buf)
@@ -776,7 +806,7 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 					EventHeader header = new EventHeader(
 					        Event.getTypeVersion(ev.getClass()), ev.getHash());
 					handler.onEvent(header, ev);
-
+					removeHttpClientHandler();
 				}
 				catch (Exception e)
 				{
@@ -790,6 +820,7 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 		{
 			if (res.getStatus().getCode() != 200)
 			{
+				logger.error("Unexpected response:" + res);
 				onError();
 			}
 			else

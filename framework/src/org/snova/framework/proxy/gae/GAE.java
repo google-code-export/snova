@@ -1,10 +1,8 @@
 package org.snova.framework.proxy.gae;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
-import org.arch.config.IniProperties;
 import org.arch.event.Event;
 import org.arch.event.EventHandler;
 import org.arch.event.EventHeader;
@@ -12,7 +10,6 @@ import org.arch.util.ListSelector;
 import org.arch.util.StringHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.snova.framework.config.SnovaConfiguration;
 import org.snova.framework.event.CommonEventConstants;
 import org.snova.framework.event.gae.AdminResponseEvent;
 import org.snova.framework.event.gae.AuthRequestEvent;
@@ -119,9 +116,6 @@ public class GAE
 				{
 					AdminResponseEvent ev = (AdminResponseEvent) event;
 					logger.error("Failed to get shared appid:" + ev.errorCause);
-				}else
-				{
-					logger.error("Unsupported@@@@");
 				}
 				synchronized (appids)
 				{
