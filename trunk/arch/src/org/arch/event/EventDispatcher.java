@@ -55,6 +55,7 @@ public class EventDispatcher
 			throw new Exception("[Parse]No event type:version(" + key.type
 			        + ":" + key.version + ") found in registry.");
 		}
+		
 		Event ev =  (Event) value.clazz.newInstance();
 		if(ev.decode(buffer, false))
 		{

@@ -29,7 +29,7 @@ public class PatternJDKLoggingFormatter extends Formatter
 	//private final DateFormat dateFormat = new SimpleDateFormat(
 	//        "yyyy-MM-dd HH:mm:ss Z");
 	private final DateFormat dateFormat = new SimpleDateFormat(
-	        "MM-dd HH:mm:ss.SSS");
+	        "MM/dd HH:mm:ss");
 
 	/** */
 	public PatternJDKLoggingFormatter()
