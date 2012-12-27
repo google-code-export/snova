@@ -14,19 +14,11 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundMessageHandlerAdapter;
 import io.netty.handler.codec.http.HttpChunk;
-import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 
-import java.nio.channels.ClosedChannelException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.arch.common.KeyValuePair;
-import org.arch.common.Pair;
-import org.arch.event.Event;
-import org.arch.event.EventDispatcher;
-import org.arch.event.http.HTTPConnectionEvent;
-import org.arch.event.http.HTTPRequestEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.framework.config.SnovaConfiguration;
@@ -102,7 +94,6 @@ public class ProxyHandler extends ChannelInboundMessageHandlerAdapter<Object>
 		}
 		request.removeHeader("Proxy-Connection");
 		remoteHandler.handleRequest(this, request);
-
 	}
 
 	public void close()
@@ -112,6 +103,11 @@ public class ProxyHandler extends ChannelInboundMessageHandlerAdapter<Object>
 			localChannel.close();
 			localChannel = null;
 		}
+		if (null != remoteHandler)
+		{
+			remoteHandler.close();
+			remoteHandler = null;
+		}
 	}
 
 	@Override
@@ -120,8 +116,9 @@ public class ProxyHandler extends ChannelInboundMessageHandlerAdapter<Object>
 		if (logger.isDebugEnabled())
 		{
 			logger.debug("Browser connection[" + id + "]  closed");
+			localChannel = null;
 		}
-
+		close();
 	}
 
 	@Override
@@ -155,14 +152,24 @@ public class ProxyHandler extends ChannelInboundMessageHandlerAdapter<Object>
 		{
 			localChannel.write(res);
 		}
+		else
+		{
+			close();
+		}
 	}
 
 	@Override
-	public void handleChunk(RemoteProxyHandler remote, HttpChunk chunk)
+	public void handleChunk(RemoteProxyHandler remote, final HttpChunk chunk)
 	{
+		logger.info("Write chunk:" + chunk.getContent().readableBytes()
+		        + localChannel);
 		if (null != localChannel)
 		{
 			localChannel.write(chunk);
+		}
+		else
+		{
+			close();
 		}
 	}
 
@@ -172,6 +179,10 @@ public class ProxyHandler extends ChannelInboundMessageHandlerAdapter<Object>
 		if (null != localChannel)
 		{
 			localChannel.write(raw);
+		}
+		else
+		{
+			close();
 		}
 	}
 

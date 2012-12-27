@@ -13,6 +13,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.nio.NioEventLoopGroup;
 
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
@@ -70,6 +71,10 @@ public class SharedObjectHelper
 
 	public static ExecutorService getGlobalThreadPool()
     {
+		if(null == globalThreadPool)
+		{
+			globalThreadPool = Executors.newCachedThreadPool();
+		}
     	return globalThreadPool;
     }
 

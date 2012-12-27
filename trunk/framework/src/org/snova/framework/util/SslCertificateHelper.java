@@ -67,7 +67,6 @@ public class SslCertificateHelper
 	static
 	{
 		Security.addProvider(new BouncyCastleProvider());
-
 	}
 
 	static PrivateKey caPriKey;
@@ -77,13 +76,6 @@ public class SslCertificateHelper
 	public static final String CA_ALIAS = "RootCAPriKey";
 	public static final String CLIENT_CERT_ALIAS = "FakeCertForClient";
 	public static final String CA_FILE = "RootKeyStore.kst";
-
-	private static void addFilesToExistingZip(File zipFile, File[] files)
-	        throws IOException
-	{
-		// get a temp file
-
-	}
 
 	public static PrivateKey getFakeRootCAPrivateKey()
 	{
@@ -115,8 +107,12 @@ public class SslCertificateHelper
 
 	private static File getFakeSSLCertFile(String host)
 	{
-		SnovaConfiguration cfg = SnovaConfiguration.getInstance();
-		File confhome = new File(cfg.getHome(), "cert");
+		File confhome = new File(SnovaConfiguration.getHome(), "cert");
+		if (!confhome.exists())
+		{
+			confhome.mkdir();
+		}
+		confhome = new File(confhome, "host");
 		if (!confhome.exists())
 		{
 			confhome.mkdir();
@@ -134,7 +130,8 @@ public class SslCertificateHelper
 				SnovaConfiguration cfg = SnovaConfiguration.getInstance();
 				KeyStore ks = KeyStore.getInstance("JKS");
 				FileInputStream fis = new FileInputStream(new File(
-				        cfg.getHome() + "/cert", "RootKeyStore.kst"));
+				        SnovaConfiguration.getHome() + "/cert",
+				        "RootKeyStore.kst"));
 				ks.load(fis, KS_PASS.toCharArray());
 				caCert = (X509Certificate) ks.getCertificate(CA_ALIAS);
 				caPriKey = (PrivateKey) ks.getKey(CA_ALIAS,
@@ -155,12 +152,11 @@ public class SslCertificateHelper
 	private static KeyPair createRSAKeyPair() throws NoSuchAlgorithmException,
 	        NoSuchProviderException
 	{
-		final KeyPairGenerator g = KeyPairGenerator.getInstance("RSA");
-		final SecureRandom rnd = SecureRandom.getInstance("SHA1PRNG");
+		KeyPairGenerator g = KeyPairGenerator.getInstance("RSA");
+		SecureRandom rnd = SecureRandom.getInstance("SHA1PRNG");
 		rnd.setSeed(System.currentTimeMillis());
 		g.initialize(2048, rnd);
-		final KeyPair keypair = g.genKeyPair();
-
+		KeyPair keypair = g.genKeyPair();
 		return keypair;
 
 	}
@@ -294,6 +290,7 @@ public class SslCertificateHelper
 		File fakeSslFile = getFakeSSLCertFile(host);
 		InputStream is = fakeSslFile.exists() ? new FileInputStream(fakeSslFile)
 		        : null;
+		System.out.println("####" + fakeSslFile.getAbsolutePath());
 		ks.load(is, null == is ? null : KS_PASS.toCharArray());
 
 		if (null == is)

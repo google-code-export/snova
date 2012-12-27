@@ -16,7 +16,6 @@ public class RangeHeaderValue  implements HttpHeaderValue
 {
 	private static final String BYTES_UNIT = "bytes";
 
-
 	private long firstBytePos;
 
 	private long lastBytePos = -1;

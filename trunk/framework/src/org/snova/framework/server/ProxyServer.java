@@ -26,16 +26,15 @@ import org.snova.http.client.common.SimpleSocketAddress;
  */
 public class ProxyServer
 {
-	protected static Logger	logger	= LoggerFactory
-	                                       .getLogger(ProxyServer.class);
-	
-	private ServerBootstrap	bootstrap;
-	
+	protected static Logger logger = LoggerFactory.getLogger(ProxyServer.class);
+
+	private ServerBootstrap bootstrap = new ServerBootstrap();
+	private ChannelFuture server = null;
+
 	public ProxyServer(SimpleSocketAddress listenAddress)
 	{
 		String host = listenAddress.host;
 		int port = listenAddress.port;
-		bootstrap = new ServerBootstrap();
 		try
 		{
 			bootstrap
@@ -54,9 +53,9 @@ public class ProxyServer
 					        p.addLast("handler", new ProxyHandler());
 				        }
 			        });
-			
-			ChannelFuture f = bootstrap.bind().sync();
-			if(!f.isSuccess())
+
+			server = bootstrap.bind().sync();
+			if (!server.isSuccess())
 			{
 				logger.error("Failed to start proxy server");
 			}
@@ -66,9 +65,13 @@ public class ProxyServer
 			logger.error("Failed to start proxy server.", e);
 		}
 	}
-	
+
 	public void close()
 	{
-		
+		if (null != server)
+		{
+			server.channel().close();
+			server = null;
+		}
 	}
 }

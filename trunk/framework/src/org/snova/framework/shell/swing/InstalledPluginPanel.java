@@ -16,9 +16,6 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.snova.framework.plugin.DesktopPluginManager;
-import org.snova.framework.plugin.DesktopPluginManager.InstalledPlugin;
-import org.snova.framework.plugin.PluginState;
 import org.snova.framework.util.SharedObjectHelper;
 
 /**
@@ -27,46 +24,39 @@ import org.snova.framework.util.SharedObjectHelper;
  */
 public class InstalledPluginPanel extends javax.swing.JPanel
 {
-	
+
 	/** Creates new form PluginPanel */
-	public InstalledPluginPanel(MainFrame owner, InstalledPlugin plugin)
+	public InstalledPluginPanel(MainFrame owner, ProxyGUIHolder plugin)
 	{
 		this.plugin = plugin;
 		this.owner = owner;
 		initComponents();
 		setButtonsVisible(false);
 		allPluginPanels.add(this);
-		
-		if (plugin.plugin instanceof GUIPlugin)
+
+		if (plugin.getIcon() != null)
 		{
-			GUIPlugin gp = (GUIPlugin) plugin.plugin;
-			if (gp.getIcon() != null)
-			{
-				iconLabel.setIcon(gp.getIcon());
-			}
+			iconLabel.setIcon(plugin.getIcon());
 		}
-		else
-		{
-			configButton.setEnabled(false);
-		}
-		descLabel.setText(plugin.desc.description);
+		configButton.setEnabled(true);
+		descLabel.setText(plugin.getDesc());
 		setPluginManageButtonStatus();
 	}
-	
+
 	private void setPluginManageButtonStatus()
 	{
-		if (plugin.state.equals(PluginState.ACTIVATED))
-		{
-			pluginLifeButton.setIcon(ImageUtil.DISABLE);
-			pluginLifeButton.setText("Disable");
-		}
-		else
+		// if (plugin.state.equals(PluginState.ACTIVATED))
+		// {
+		// pluginLifeButton.setIcon(ImageUtil.DISABLE);
+		// pluginLifeButton.setText("Disable");
+		// }
+		// else
 		{
 			pluginLifeButton.setIcon(ImageUtil.OK);
 			pluginLifeButton.setText("Enable");
 		}
 	}
-	
+
 	/**
 	 * This method is called from within the constructor to initialize the form.
 	 * WARNING: Do NOT modify this code. The content of this method is always
@@ -78,23 +68,23 @@ public class InstalledPluginPanel extends javax.swing.JPanel
 	// desc="Generated Code">//GEN-BEGIN:initComponents
 	private void initComponents()
 	{
-		
+
 		configButton = new javax.swing.JButton();
 		pluginLifeButton = new javax.swing.JButton();
 		iconLabel = new javax.swing.JLabel();
 		descLabel = new javax.swing.JLabel();
 		removeButton = new javax.swing.JButton();
-		
-		setBorder(javax.swing.BorderFactory
-		        .createTitledBorder((plugin.desc.name + " " + plugin.desc.version)));
+
+		setBorder(javax.swing.BorderFactory.createTitledBorder((plugin
+		        .getName())));
 		addMouseListener(new java.awt.event.MouseAdapter()
 		{
 			public void mouseClicked(java.awt.event.MouseEvent evt)
 			{
-				formMouseClicked(evt);
+				//formMouseClicked(evt);
 			}
 		});
-		
+
 		configButton.setText("Config");
 		configButton.setIcon(ImageUtil.CONFIG);
 		configButton.addActionListener(new java.awt.event.ActionListener()
@@ -104,7 +94,7 @@ public class InstalledPluginPanel extends javax.swing.JPanel
 				configButtonActionPerformed(evt);
 			}
 		});
-		
+
 		pluginLifeButton.setIcon(ImageUtil.DISABLE);
 		pluginLifeButton.setText("Disable");
 		pluginLifeButton.addActionListener(new java.awt.event.ActionListener()
@@ -114,9 +104,9 @@ public class InstalledPluginPanel extends javax.swing.JPanel
 				pluginLifeButtonActionPerformed(evt);
 			}
 		});
-		
+
 		iconLabel.setIcon(ImageUtil.PLUGIN32);
-		
+
 		descLabel.setText("jLabel2");
 		descLabel.setAutoscrolls(true);
 		descLabel.addMouseListener(new java.awt.event.MouseAdapter()
@@ -126,7 +116,7 @@ public class InstalledPluginPanel extends javax.swing.JPanel
 				descLabelMouseClicked(evt);
 			}
 		});
-		
+
 		removeButton.setIcon(ImageUtil.REMOVE);
 		removeButton.setText("Remove");
 		removeButton.addActionListener(new java.awt.event.ActionListener()
@@ -136,7 +126,7 @@ public class InstalledPluginPanel extends javax.swing.JPanel
 				removeButtonActionPerformed(evt);
 			}
 		});
-		
+
 		javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
 		this.setLayout(layout);
 		layout.setHorizontalGroup(layout
@@ -207,7 +197,7 @@ public class InstalledPluginPanel extends javax.swing.JPanel
 		                                                javax.swing.GroupLayout.PREFERRED_SIZE))
 		                        .addContainerGap()));
 	}// </editor-fold>//GEN-END:initComponents
-	
+
 	private void formMouseClicked(java.awt.event.MouseEvent evt)
 	{// GEN-FIRST:event_formMouseClicked
 		setButtonsVisible(true);
@@ -218,30 +208,22 @@ public class InstalledPluginPanel extends javax.swing.JPanel
 				other.setButtonsVisible(false);
 			}
 		}
-		
+
 	}// GEN-LAST:event_formMouseClicked
-	
+
 	private void configButtonActionPerformed(java.awt.event.ActionEvent evt)
 	{// GEN-FIRST:event_configButtonActionPerformed
-            logger.info("#####INVKEDF#############Invoked!");
-		if (plugin.plugin instanceof GUIPlugin)
+		if (null != plugin.getConfigPanel())
 		{
-                    try
-                    {
-                        GUIPlugin gp = (GUIPlugin) plugin.plugin;
-			if (gp.getConfigPanel() != null)
+			try
 			{
-				new PluginConfigDialog(owner, gp, this.plugin.desc)
-				        .setVisible(true);
+				new PluginConfigDialog(owner, plugin).setVisible(true);
 			}
-			else
+			catch (Throwable e)
 			{
+				logger.error("######", e);
 			}
-                    }catch(Throwable e)
-                    {
-                        logger.error("######", e);
-                    }
-			
+
 		}
 		else
 		{
@@ -249,100 +231,53 @@ public class InstalledPluginPanel extends javax.swing.JPanel
 			// tp.onConfig();
 		}
 	}// GEN-LAST:event_configButtonActionPerformed
-	
+
 	private void pluginLifeButtonActionPerformed(java.awt.event.ActionEvent evt)
 	{// GEN-FIRST:event_pluginLifeButtonActionPerformed
 		// TODO add your handling code here:
 		SharedObjectHelper.getGlobalThreadPool().submit(new Runnable()
 		{
-			
+
 			public void run()
 			{
-				DesktopPluginManager pm = DesktopPluginManager.getInstance();
-				try
-				{
-					if (plugin.state.equals(PluginState.ACTIVATED))
-					{
-						pm.deactivePlugin(plugin.desc.name);
-					}
-					else
-					{
-						pm.activatePlugin(plugin);
-					}
-					EventQueue.invokeLater(new Runnable()
-					{
-						
-						public void run()
-						{
-							setPluginManageButtonStatus();
-						}
-					});
-				}
-				catch (Exception e)
-				{
-					logger.error("Failed.", e);
-				}
-				
+				// do nothing
 			}
 		});
-		
+
 	}// GEN-LAST:event_pluginLifeButtonActionPerformed
-	
+
 	private void removeButtonActionPerformed(java.awt.event.ActionEvent evt)
 	{// GEN-FIRST:event_removeButtonActionPerformed
 		SharedObjectHelper.getGlobalThreadPool().submit(new Runnable()
 		{
-			
 			public void run()
 			{
-				DesktopPluginManager pm = DesktopPluginManager.getInstance();
-				try
-				{
-					pm.deactivePlugin(plugin.desc.name);
-					pm.unloadPlugin(plugin.desc.name);
-					EventQueue.invokeLater(new Runnable()
-					{
-						
-						public void run()
-						{
-							configButton.setEnabled(false);
-							pluginLifeButton.setEnabled(false);
-							removeButton.setEnabled(false);
-							descLabel.setText("Already removed");
-						}
-					});
-				}
-				catch (Exception e)
-				{
-					logger.error("Failed.", e);
-				}
-				
+				// do nothing
 			}
 		});
 	}// GEN-LAST:event_removeButtonActionPerformed
-	
+
 	private void descLabelMouseClicked(java.awt.event.MouseEvent evt)
 	{// GEN-FIRST:event_descLabelMouseClicked
 		formMouseClicked(evt);
 	}// GEN-LAST:event_descLabelMouseClicked
-	
+
 	private void setButtonsVisible(boolean isVisible)
 	{
 		configButton.setVisible(isVisible);
 		pluginLifeButton.setVisible(isVisible);
 		removeButton.setVisible(isVisible);
 	}
-	
+
 	// Variables declaration - do not modify//GEN-BEGIN:variables
-	private javax.swing.JButton	              configButton;
-	private javax.swing.JLabel	              descLabel;
-	private javax.swing.JLabel	              iconLabel;
-	private javax.swing.JButton	              pluginLifeButton;
-	private javax.swing.JButton	              removeButton;
+	private javax.swing.JButton configButton;
+	private javax.swing.JLabel descLabel;
+	private javax.swing.JLabel iconLabel;
+	private javax.swing.JButton pluginLifeButton;
+	private javax.swing.JButton removeButton;
 	// End of variables declaration//GEN-END:variables
-	private InstalledPlugin	                  plugin;
-	private MainFrame	                      owner;
-	private static List<InstalledPluginPanel>	allPluginPanels	= new ArrayList<InstalledPluginPanel>();
-	protected Logger	                      logger	        = LoggerFactory
-	                                                                    .getLogger(getClass());
+	private ProxyGUIHolder plugin;
+	private MainFrame owner;
+	private static List<InstalledPluginPanel> allPluginPanels = new ArrayList<InstalledPluginPanel>();
+	protected Logger logger = LoggerFactory.getLogger(getClass());
 }
