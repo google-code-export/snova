@@ -47,7 +47,7 @@ public class GAEConfig
 			}
 			appids.add(auth);
 		}
-		if (appids.isEmpty() && (C4.eanble || SSH.enable))
+		if (appids.isEmpty() && (C4.enable || SSH.enable))
 		{
 			return false;
 		}
