@@ -18,7 +18,6 @@ import java.util.logging.LogManager;
 
 import org.arch.util.PropertiesHelper;
 import org.snova.framework.Snova;
-import org.snova.framework.common.Constants;
 import org.snova.framework.config.SnovaConfiguration;
 import org.snova.framework.shell.swing.MainFrame;
 import org.snova.framework.trace.TUITrace;

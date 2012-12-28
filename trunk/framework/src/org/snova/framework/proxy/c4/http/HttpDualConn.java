@@ -114,8 +114,8 @@ public class HttpDualConn
 		        HttpMethod.POST, server.url.getPath() + path);
 		request.setHeader(HttpHeaders.Names.HOST, server.url.getHost());
 		request.setHeader(HttpHeaders.Names.CONNECTION, "keep-alive");
-		request.setHeader(C4Constants.USER_TOKEN_HEADER,
-		        ConnectionHelper.getUserToken());
+//		request.setHeader(C4Constants.USER_TOKEN_HEADER,
+//		        ConnectionHelper.getUserToken());
 		request.setHeader(
 		        HttpHeaders.Names.USER_AGENT,
 		        cfg.getProperty("C4", "UserAgent",

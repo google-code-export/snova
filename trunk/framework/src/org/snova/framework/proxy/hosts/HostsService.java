@@ -30,7 +30,7 @@ public class HostsService
 
 	private static void loadHostFile(String file)
 	{
-		InputStream is = HostsService.class.getResourceAsStream("/hosts.conf");
+		InputStream is = HostsService.class.getResourceAsStream("/" + file);
 		Properties props = new Properties();
 		try
 		{
@@ -45,6 +45,7 @@ public class HostsService
 				String[] splits = value.split("[,|;|\\|]");
 				List<String> mappings = Arrays.asList(splits);
 				hostsMappingTable.put(key, new ListSelector<String>(mappings));
+				
 			}
 			is.close();
 		}
@@ -85,6 +86,7 @@ public class HostsService
 	public static String getMappingHost(String host)
 	{
 		ListSelector<String> selector = hostsMappingTable.get(host);
+		
 		if (null == selector)
 		{
 			return host;
