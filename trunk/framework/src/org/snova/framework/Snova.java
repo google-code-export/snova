@@ -12,6 +12,7 @@ package org.snova.framework;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.framework.config.SnovaConfiguration;
+import org.snova.framework.proxy.c4.C4;
 import org.snova.framework.proxy.gae.GAE;
 import org.snova.framework.proxy.hosts.HostsService;
 import org.snova.framework.server.ProxyServer;
@@ -34,6 +35,12 @@ public class Snova
 		SharedObjectHelper.setTrace(trace);
 		HostsService.init();
 		if (GAE.init())
+		{
+		}
+		else
+		{
+		}
+		if (C4.init())
 		{
 		}
 		else

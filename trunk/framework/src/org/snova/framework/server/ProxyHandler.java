@@ -103,11 +103,7 @@ public class ProxyHandler extends ChannelInboundMessageHandlerAdapter<Object>
 			localChannel.close();
 			localChannel = null;
 		}
-		if (null != remoteHandler)
-		{
-			remoteHandler.close();
-			remoteHandler = null;
-		}
+
 	}
 
 	@Override
@@ -119,6 +115,11 @@ public class ProxyHandler extends ChannelInboundMessageHandlerAdapter<Object>
 			localChannel = null;
 		}
 		close();
+		if (null != remoteHandler)
+		{
+			remoteHandler.close();
+			remoteHandler = null;
+		}
 	}
 
 	@Override

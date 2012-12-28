@@ -11,10 +11,10 @@ import org.arch.util.StringHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.framework.event.CommonEventConstants;
+import org.snova.framework.event.CommonEvents;
 import org.snova.framework.event.gae.AdminResponseEvent;
 import org.snova.framework.event.gae.AuthRequestEvent;
 import org.snova.framework.event.gae.AuthResponseEvent;
-import org.snova.framework.event.gae.GAEEvents;
 import org.snova.framework.event.gae.RequestSharedAppIDEvent;
 import org.snova.framework.event.gae.RequestSharedAppIDResultEvent;
 import org.snova.framework.proxy.RemoteProxyHandler;
@@ -144,7 +144,7 @@ public class GAE
 			return false;
 		}
 		logger.info("GAE init.");
-		GAEEvents.init(null, false);
+		CommonEvents.init(null, false);
 		if (GAEConfig.appids.isEmpty())
 		{
 			GAEConfig.appids = fetchSharedAppIDs();

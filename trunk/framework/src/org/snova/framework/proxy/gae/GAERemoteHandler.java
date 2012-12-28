@@ -93,7 +93,7 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 	private GAEServerAuth auth;
 	private LocalProxyHandler local;
 	private HTTPRequestEvent proxyRequest;
-	private Set<HttpClientHandler> httpClientHandlers = Collections
+	private Set<HttpClientHandler> workingHttpClientHandlers = Collections
 	        .synchronizedSet(new HashSet<HttpClientHandler>());
 
 	private RangeFetchStatus rangeStatus;
@@ -102,6 +102,7 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 	private long expectedChunkPos = 0;
 	private AtomicInteger rangeFetchWorkerNum = new AtomicInteger(0);
 	private Map<Long, RangeChunk> restChunks = new ConcurrentHashMap<Long, RangeChunk>();
+	private boolean closed = false;
 
 	public GAERemoteHandler(GAEServerAuth auth)
 	{
@@ -480,16 +481,12 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 	@Override
 	public void close()
 	{
-		for (HttpClientHandler ch : httpClientHandlers)
+		for (HttpClientHandler ch : workingHttpClientHandlers)
 		{
 			ch.closeChannel();
 		}
-		httpClientHandlers.clear();
-		// if (null != local)
-		// {
-		// local.close();
-		// local = null;
-		// }
+		workingHttpClientHandlers.clear();
+		closed = true;
 	}
 
 	private synchronized boolean rangeFetch(RangeHeaderValue originRange,
@@ -728,7 +725,7 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 			request.setContent(Unpooled.wrappedBuffer(buf.getRawBuffer(),
 			        buf.getReadIndex(), buf.readableBytes()));
 			HttpClientHandler h = client.doRequest(request, cb);
-			httpClientHandlers.add(h);
+			workingHttpClientHandlers.add(h);
 			cb.httpHandler = h;
 		}
 		catch (HttpClientException e)
@@ -768,7 +765,7 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 		{
 			if (null != httpHandler)
 			{
-				httpClientHandlers.remove(httpHandler);
+				workingHttpClientHandlers.remove(httpHandler);
 				httpHandler = null;
 			}
 		}
@@ -776,7 +773,7 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 		private void onError()
 		{
 			failedCount++;
-			if (failedCount < 2 && null != backupEvent)
+			if (failedCount < 2 && null != backupEvent && !closed)
 			{
 				requestEvent(wrapEvent(backupEvent), GAERemoteHandler.this,
 				        this);
@@ -841,6 +838,11 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 		public void onError(String error)
 		{
 			onError();
+		}
+
+		@Override
+		public void onResponseComplete()
+		{
 		}
 	}
 }
