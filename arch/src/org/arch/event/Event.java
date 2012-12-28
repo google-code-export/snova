@@ -66,6 +66,16 @@ public abstract class Event implements CodecObject
 			}
 		}
 	}
+	
+	public static EventHeader getHeader(Event ev)
+	{
+		TypeVersion tv = getTypeVersion(ev.getClass());
+		EventHeader header= new EventHeader();
+		header.hash = ev.getHash();
+		header.type = tv.type;
+		header.version = tv.version;
+		return header;
+	}
 
 	public static synchronized TypeVersion getTypeVersion(
 	        Class<? extends Event> clazz)
