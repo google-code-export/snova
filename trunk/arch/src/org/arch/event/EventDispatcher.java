@@ -42,9 +42,15 @@ public class EventDispatcher
 	public Event parse(Buffer buffer) throws Exception
 	{
 		EventHeader header = new EventHeader();
+		return parse(buffer, header);
+	}
+
+	public Event parse(Buffer buffer, EventHeader header) throws Exception
+	{
 		if (!header.decode(buffer))
 		{
-			throw new Exception("[Parse]Invalid event head:" + buffer.readableBytes());
+			throw new Exception("[Parse]Invalid event head:"
+			        + buffer.readableBytes());
 		}
 		TypeVersion key = new TypeVersion();
 		key.type = header.type;
@@ -55,15 +61,15 @@ public class EventDispatcher
 			throw new Exception("[Parse]No event type:version(" + key.type
 			        + ":" + key.version + ") found in registry.");
 		}
-		
-		Event ev =  (Event) value.clazz.newInstance();
-		if(ev.decode(buffer, false))
+
+		Event ev = (Event) value.clazz.newInstance();
+		if (ev.decode(buffer, false))
 		{
 			ev.setHash(header.hash);
 			return ev;
 		}
-		throw new Exception("[Parse]Event type:version(" + key.type
-		        + ":" + key.version + ") decode failed.");	
+		throw new Exception("[Parse]Event type:version(" + key.type + ":"
+		        + key.version + ") decode failed.");
 	}
 
 	private TypeVersion getTypeVersion(Class clazz) throws Exception
@@ -153,7 +159,7 @@ public class EventDispatcher
 	{
 		return eventHandlerTable.get(name);
 	}
-	
+
 	public Collection<NamedEventHandler> getAllNamedEventHandlers()
 	{
 		return eventHandlerTable.values();
