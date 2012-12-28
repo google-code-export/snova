@@ -1,0 +1,164 @@
+/**
+ * 
+ */
+package org.snova.framework.proxy.c4;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.handler.codec.http.HttpChunk;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.HttpRequest;
+
+import org.arch.common.KeyValuePair;
+import org.arch.event.Event;
+import org.arch.event.EventHandler;
+import org.arch.event.EventHeader;
+import org.arch.event.http.HTTPRequestEvent;
+import org.snova.framework.event.CommonEventConstants;
+import org.snova.framework.event.SocketConnectionEvent;
+import org.snova.framework.event.TCPChunkEvent;
+import org.snova.framework.proxy.LocalProxyHandler;
+import org.snova.framework.proxy.RemoteProxyHandler;
+import org.snova.framework.proxy.c4.http.HttpDualConn;
+import org.snova.http.client.HttpClientHelper;
+import org.snova.http.client.common.SimpleSocketAddress;
+
+/**
+ * @author qiyingwang
+ * 
+ */
+public class C4RemoteHandler implements RemoteProxyHandler, EventHandler
+{
+	private C4ServerAuth server;
+	private LocalProxyHandler localHandler;
+
+	private HttpDualConn http;
+	private SimpleSocketAddress proxyAddr;
+
+	public C4RemoteHandler(C4ServerAuth s)
+	{
+		this.server = s;
+		http = new HttpDualConn(s, this);
+	}
+
+	private boolean isWebsocketServer()
+	{
+		return (server.url.getProtocol().equalsIgnoreCase("ws") || server.url
+		        .getProtocol().equalsIgnoreCase("wss"));
+	}
+
+	private HTTPRequestEvent buildHttpRequestEvent(HttpRequest request)
+	{
+		HTTPRequestEvent event = new HTTPRequestEvent();
+		event.method = request.getMethod().getName();
+		event.url = request.getUri();
+		event.version = request.getProtocolVersion().getText();
+		event.setHash(localHandler.getId());
+		event.setAttachment(request);
+		proxyAddr = HttpClientHelper.getHttpRemoteAddress(request.getMethod()
+		        .equals(HttpMethod.CONNECT), HttpHeaders.getHost(request));
+		ByteBuf content = request.getContent();
+		if (null != content)
+		{
+			content.markReaderIndex();
+			int buflen = content.readableBytes();
+			event.content.ensureWritableBytes(content.readableBytes());
+			content.readBytes(event.content.getRawBuffer(),
+			        event.content.getWriteIndex(), content.readableBytes());
+			event.content.advanceWriteIndex(buflen);
+		}
+		for (String name : request.getHeaderNames())
+		{
+			for (String value : request.getHeaders(name))
+			{
+				event.headers
+				        .add(new KeyValuePair<String, String>(name, value));
+			}
+		}
+		return event;
+	}
+
+	@Override
+	public void handleRequest(LocalProxyHandler local, HttpRequest req)
+	{
+		localHandler = local;
+		Event ev = buildHttpRequestEvent(req);
+		if (isWebsocketServer())
+		{
+
+		}
+		else
+		{
+			http.requestEvent(ev);
+		}
+	}
+
+	@Override
+	public void handleChunk(LocalProxyHandler local, HttpChunk chunk)
+	{
+		TCPChunkEvent ev = new TCPChunkEvent();
+		if (isWebsocketServer())
+		{
+
+		}
+		else
+		{
+
+			http.requestEvent(ev);
+			// http.requestEvent(buildHttpRequestEvent(req));
+		}
+	}
+
+	@Override
+	public void handleRawData(LocalProxyHandler local, ByteBuf raw)
+	{
+		if (isWebsocketServer())
+		{
+
+		}
+		else
+		{
+			// http.requestEvent(buildHttpRequestEvent(req));
+		}
+	}
+
+	@Override
+	public void close()
+	{
+		if (null != http)
+		{
+			http.close();
+			http = null;
+		}
+
+	}
+
+	@Override
+	public void onEvent(EventHeader header, Event event)
+	{
+		switch (header.type)
+		{
+			case CommonEventConstants.EVENT_TCP_CHUNK_TYPE:
+			{
+				TCPChunkEvent chunk = (TCPChunkEvent) event;
+				localHandler.handleRawData(this,
+				        Unpooled.wrappedBuffer(chunk.content));
+				break;
+			}
+			case CommonEventConstants.EVENT_TCP_CONNECTION_TYPE:
+			{
+				SocketConnectionEvent ev = (SocketConnectionEvent) event;
+				if (ev.status == SocketConnectionEvent.TCP_CONN_CLOSED)
+				{
+					if (null != proxyAddr
+					        && proxyAddr.toString().equals(ev.addr))
+					{
+						localHandler.close();
+					}
+				}
+				break;
+			}
+		}
+	}
+}

@@ -41,6 +41,12 @@ public interface CommonEventConstants
 	public static final int REQUEST_ALL_SHARED_APPID_EVENT_TYPE = 2021;
 	public static final int SERVER_CONFIG_EVENT_TYPE = 2050;
 	
+	public static final int EVENT_USER_LOGIN_TYPE = 12002;
+	public static final int EVENT_TCP_CONNECTION_TYPE = 12000;
+	public static final int EVENT_TCP_CHUNK_TYPE = 12001;
+	public static final int EVENT_RSOCKET_ACCEPTED_TYPE = 11506;
+	public static final int EVENT_SOCKET_READ_TYPE = 13000;
+	
 	public static final String SNOVA_MASTER_APPID = "snova-master";
 	
 	public static final String USER_ENTITY_NAME = "ProxyUser";

@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.snova.framework.event.gae;
+package org.snova.framework.event;
 
 import org.arch.event.Event;
 import org.arch.event.EventDispatcher;
@@ -13,12 +13,18 @@ import org.arch.event.http.HTTPRequestEvent;
 import org.arch.event.http.HTTPResponseEvent;
 import org.arch.event.misc.CompressEvent;
 import org.arch.event.misc.EncryptEvent;
+import org.snova.framework.event.gae.AdminResponseEvent;
+import org.snova.framework.event.gae.AuthRequestEvent;
+import org.snova.framework.event.gae.AuthResponseEvent;
+import org.snova.framework.event.gae.RequestAllSharedAppIDEvent;
+import org.snova.framework.event.gae.RequestSharedAppIDEvent;
+import org.snova.framework.event.gae.RequestSharedAppIDResultEvent;
 
 /**
- * @author qiyingwang
+ * @author yinqiwen
  * 
  */
-public class GAEEvents
+public class CommonEvents
 {
 	private static void registerEventHandler(Class<? extends Event> clazz,
 	        EventHandler handler)
@@ -30,10 +36,10 @@ public class GAEEvents
 		catch (Exception e)
 		{
 			// TODO Auto-generated catch block
-			
+
 		}
 	}
-	
+
 	public static void init(EventHandler handler, boolean isServer)
 	{
 		try
@@ -42,15 +48,15 @@ public class GAEEvents
 			registerEventHandler(HTTPErrorEvent.class, handler);
 			registerEventHandler(AuthResponseEvent.class, handler);
 			registerEventHandler(AdminResponseEvent.class, handler);
-			//registerEventHandler(ListGroupResponseEvent.class, handler);
-			
-			//registerEventHandler(ListUserResponseEvent.class, handler);
-			
+			// registerEventHandler(ListGroupResponseEvent.class, handler);
+
+			// registerEventHandler(ListUserResponseEvent.class, handler);
+
 			registerEventHandler(EventSegment.class, handler);
-			
+
 			registerEventHandler(CompressEvent.class, handler);
 			registerEventHandler(EncryptEvent.class, handler);
-			//registerEventHandler(ServerConfigEvent.class, handler);
+			// registerEventHandler(ServerConfigEvent.class, handler);
 			registerEventHandler(RequestSharedAppIDResultEvent.class, handler);
 			registerEventHandler(RequestSharedAppIDEvent.class, handler);
 			registerEventHandler(RequestAllSharedAppIDEvent.class, handler);
@@ -60,18 +66,18 @@ public class GAEEvents
 				        AuthRequestEvent.class, handler);
 				EventDispatcher.getSingletonInstance().register(
 				        HTTPRequestEvent.class, handler);
-//				EventDispatcher.getSingletonInstance().register(
-//				        BlackListOperationEvent.class, handler);
-//				EventDispatcher.getSingletonInstance().register(
-//				        GroupOperationEvent.class, handler);
-//				EventDispatcher.getSingletonInstance().register(
-//				        ListGroupRequestEvent.class, handler);
-//				
-//				EventDispatcher.getSingletonInstance().register(
-//				        ListUserRequestEvent.class, handler);
-//				EventDispatcher.getSingletonInstance().register(
-//				        UserOperationEvent.class, handler);
-				
+				// EventDispatcher.getSingletonInstance().register(
+				// BlackListOperationEvent.class, handler);
+				// EventDispatcher.getSingletonInstance().register(
+				// GroupOperationEvent.class, handler);
+				// EventDispatcher.getSingletonInstance().register(
+				// ListGroupRequestEvent.class, handler);
+				//
+				// EventDispatcher.getSingletonInstance().register(
+				// ListUserRequestEvent.class, handler);
+				// EventDispatcher.getSingletonInstance().register(
+				// UserOperationEvent.class, handler);
+
 				EventDispatcher.getSingletonInstance().register(
 				        RequestSharedAppIDEvent.class, handler);
 			}
@@ -84,12 +90,12 @@ public class GAEEvents
 					                (NamedEventHandler) handler);
 				}
 			}
-			
+
 		}
 		catch (Exception e)
 		{
 			//
 		}
-		
+
 	}
 }
