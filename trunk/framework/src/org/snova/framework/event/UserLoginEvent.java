@@ -10,7 +10,6 @@ import org.arch.buffer.BufferHelper;
 import org.arch.event.Event;
 import org.arch.event.EventType;
 import org.arch.event.EventVersion;
-import org.snova.c4.common.C4Constants;
 
 /**
  * @author qiyingwang

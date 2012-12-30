@@ -20,9 +20,10 @@ import org.snova.framework.proxy.ssh.SSH;
  */
 public class C4Config
 {
-	protected static Logger logger = LoggerFactory.getLogger(C4Config.class);
-	static List<C4ServerAuth> appids = new ArrayList<C4ServerAuth>();
-
+	protected static Logger	  logger	= LoggerFactory
+	                                           .getLogger(C4Config.class);
+	static List<C4ServerAuth>	appids	= new ArrayList<C4ServerAuth>();
+	
 	public static boolean init()
 	{
 		IniProperties cfg = SnovaConfiguration.getInstance().getIniProperties();
@@ -40,6 +41,10 @@ public class C4Config
 			if (!v.endsWith("/"))
 			{
 				v = v + "/";
+			}
+			if (v.indexOf("://") == -1)
+			{
+				v = "http://" + v;
 			}
 			C4ServerAuth auth = new C4ServerAuth();
 			if (!auth.parse(v.trim()))

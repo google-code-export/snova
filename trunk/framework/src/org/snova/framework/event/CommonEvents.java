@@ -12,7 +12,9 @@ import org.arch.event.http.HTTPErrorEvent;
 import org.arch.event.http.HTTPRequestEvent;
 import org.arch.event.http.HTTPResponseEvent;
 import org.arch.event.misc.CompressEvent;
+import org.arch.event.misc.CompressEventV2;
 import org.arch.event.misc.EncryptEvent;
+import org.arch.event.misc.EncryptEventV2;
 import org.snova.framework.event.gae.AdminResponseEvent;
 import org.snova.framework.event.gae.AuthRequestEvent;
 import org.snova.framework.event.gae.AuthResponseEvent;
@@ -36,10 +38,10 @@ public class CommonEvents
 		catch (Exception e)
 		{
 			// TODO Auto-generated catch block
-
+			
 		}
 	}
-
+	
 	public static void init(EventHandler handler, boolean isServer)
 	{
 		try
@@ -49,14 +51,18 @@ public class CommonEvents
 			registerEventHandler(AuthResponseEvent.class, handler);
 			registerEventHandler(AdminResponseEvent.class, handler);
 			// registerEventHandler(ListGroupResponseEvent.class, handler);
-
+			
 			// registerEventHandler(ListUserResponseEvent.class, handler);
-
+			
 			registerEventHandler(EventSegment.class, handler);
-
+			
 			registerEventHandler(CompressEvent.class, handler);
 			registerEventHandler(EncryptEvent.class, handler);
-			// registerEventHandler(ServerConfigEvent.class, handler);
+			registerEventHandler(EncryptEventV2.class, handler);
+			registerEventHandler(CompressEventV2.class, handler);
+			registerEventHandler(TCPChunkEvent.class, handler);
+			registerEventHandler(SocketConnectionEvent.class, handler);
+			
 			registerEventHandler(RequestSharedAppIDResultEvent.class, handler);
 			registerEventHandler(RequestSharedAppIDEvent.class, handler);
 			registerEventHandler(RequestAllSharedAppIDEvent.class, handler);
@@ -77,7 +83,7 @@ public class CommonEvents
 				// ListUserRequestEvent.class, handler);
 				// EventDispatcher.getSingletonInstance().register(
 				// UserOperationEvent.class, handler);
-
+				
 				EventDispatcher.getSingletonInstance().register(
 				        RequestSharedAppIDEvent.class, handler);
 			}
@@ -90,12 +96,12 @@ public class CommonEvents
 					                (NamedEventHandler) handler);
 				}
 			}
-
+			
 		}
 		catch (Exception e)
 		{
 			//
 		}
-
+		
 	}
 }

@@ -70,13 +70,13 @@ import org.snova.framework.proxy.hosts.HostsService;
 import org.snova.framework.util.SharedObjectHelper;
 import org.snova.framework.util.SslCertificateHelper;
 import org.snova.http.client.HttpClient;
-import org.snova.http.client.HttpClientCallback;
-import org.snova.http.client.HttpClientConnector;
+import org.snova.http.client.FutureCallback;
+import org.snova.http.client.Connector;
 import org.snova.http.client.HttpClientException;
 import org.snova.http.client.HttpClientHandler;
 import org.snova.http.client.HttpClientHelper;
-import org.snova.http.client.HttpClientOptions;
-import org.snova.http.client.HttpClientProxyCallback;
+import org.snova.http.client.Options;
+import org.snova.http.client.ProxyCallback;
 import org.snova.http.client.common.SimpleSocketAddress;
 
 /**
@@ -134,14 +134,14 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 		}
 		final IniProperties cfg = SnovaConfiguration.getInstance()
 		        .getIniProperties();
-		HttpClientOptions options = new HttpClientOptions();
+		Options options = new Options();
 		options.maxIdleConnsPerHost = cfg.getIntProperty("GAE",
 		        "ConnectionPoolSize", 5);
 		String proxy = cfg.getProperty("GAE", "Proxy");
 		if (null != proxy)
 		{
 			final URL proxyUrl = new URL(proxy);
-			options.proxyCB = new HttpClientProxyCallback()
+			options.proxyCB = new ProxyCallback()
 			{
 				@Override
 				public URL getProxy(HttpRequest request)
@@ -149,7 +149,7 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 					return proxyUrl;
 				}
 			};
-			options.connector = new HttpClientConnector()
+			options.connector = new Connector()
 			{
 				@Override
 				public ChannelFuture connect(String host, int port)
@@ -692,11 +692,11 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 		{
 			handler = this;
 		}
-		requestEvent(ev, handler, new GAEHttpClientCallback(handler, ev));
+		requestEvent(ev, handler, new GAEFutureCallback(handler, ev));
 	}
 
 	private void requestEvent(Event ev, EventHandler handler,
-	        GAEHttpClientCallback cb)
+	        GAEFutureCallback cb)
 	{
 		try
 		{
@@ -724,7 +724,7 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 			        "" + buf.readableBytes());
 			request.setContent(Unpooled.wrappedBuffer(buf.getRawBuffer(),
 			        buf.getReadIndex(), buf.readableBytes()));
-			HttpClientHandler h = client.doRequest(request, cb);
+			HttpClientHandler h = client.execute(request, cb);
 			workingHttpClientHandlers.add(h);
 			cb.httpHandler = h;
 		}
@@ -734,7 +734,7 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 		}
 	}
 
-	class GAEHttpClientCallback implements HttpClientCallback
+	class GAEFutureCallback implements FutureCallback
 	{
 		private int failedCount;
 		private Buffer bodyContent = new Buffer(1024);
@@ -742,7 +742,7 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 		private HTTPRequestEvent backupEvent = null;
 		private HttpClientHandler httpHandler = null;
 
-		public GAEHttpClientCallback(EventHandler handler, Event ev)
+		public GAEFutureCallback(EventHandler handler, Event ev)
 		{
 			ev = Event.extractEvent(ev);
 			if (ev instanceof HTTPRequestEvent)
@@ -841,7 +841,7 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 		}
 
 		@Override
-		public void onResponseComplete()
+		public void onComplete(HttpResponse res)
 		{
 		}
 	}

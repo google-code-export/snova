@@ -144,7 +144,6 @@ public class GAE
 			return false;
 		}
 		logger.info("GAE init.");
-		CommonEvents.init(null, false);
 		if (GAEConfig.appids.isEmpty())
 		{
 			GAEConfig.appids = fetchSharedAppIDs();
