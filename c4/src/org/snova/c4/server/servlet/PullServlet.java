@@ -30,34 +30,6 @@ public class PullServlet extends HttpServlet
 {
 	protected Logger logger = LoggerFactory.getLogger(getClass());
 
-	private void writeBytes(HttpServletResponse resp, byte[] buf, int off,
-	        int len) throws IOException
-	{
-		int maxWriteLen = 8192;
-		int writed = 0;
-		while (writed < len)
-		{
-			int writeLen = maxWriteLen;
-			if (writed + writeLen > len)
-			{
-				writeLen = len - writed;
-			}
-			resp.getOutputStream().write(buf, off + writed, writeLen);
-			resp.getOutputStream().flush();
-			writed += writeLen;
-		}
-		// resp.getOutputStream().close();
-	}
-
-	private void send(HttpServletResponse resp, Buffer buf) throws Exception
-	{
-		resp.setStatus(200);
-		resp.setContentType("image/jpeg");
-		resp.setContentLength(buf.readableBytes());
-		writeBytes(resp, buf.getRawBuffer(), buf.getReadIndex(),
-		        buf.readableBytes());
-	}
-
 	private void flushContent(HttpServletResponse resp, Buffer buf)
 	        throws Exception
 	{
