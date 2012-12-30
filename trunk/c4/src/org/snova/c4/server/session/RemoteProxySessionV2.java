@@ -196,10 +196,7 @@ public class RemoteProxySessionV2
 			{
 				RemoteProxySessionV2 s = getSession(user, event);
 				s.handleEvent(tv, event);
-				if (null != s)
-				{
-					ret = s;
-				}
+				ret = s;
 			}
 		}
 		return ret;
