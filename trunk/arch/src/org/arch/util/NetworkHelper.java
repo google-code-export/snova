@@ -5,6 +5,7 @@ package org.arch.util;
 
 import java.net.Inet6Address;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
 
 /**
  * @author wqy
@@ -96,5 +97,37 @@ public class NetworkHelper
 		{
 			return false;
 		}
+	}
+	
+	private static String	macAddress	= null;
+	
+	public static String getMacAddress()
+	{
+		if (null != macAddress)
+		{
+			return macAddress;
+		}
+		try
+		{
+			byte[] mac = NetworkInterface.getByInetAddress(
+			        InetAddress.getLocalHost()).getHardwareAddress();
+			StringBuffer sb = new StringBuffer();
+			
+			for (int i = 0; i < mac.length; i++)
+			{
+				if (i != 0)
+				{
+					sb.append("-");
+				}
+				String s = Integer.toHexString(mac[i] & 0xFF);
+				sb.append(s.length() == 1 ? 0 + s : s);
+			}
+			macAddress = sb.toString();
+		}
+		catch (Exception e)
+		{
+			macAddress = RandomHelper.generateRandomString(8);
+		}
+		return macAddress;
 	}
 }
