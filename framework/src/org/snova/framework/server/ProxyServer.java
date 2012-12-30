@@ -4,10 +4,14 @@
 package org.snova.framework.server;
 
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.ChannelBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOutboundByteHandlerAdapter;
+import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.HttpRequestDecoder;
@@ -26,11 +30,12 @@ import org.snova.http.client.common.SimpleSocketAddress;
  */
 public class ProxyServer
 {
-	protected static Logger logger = LoggerFactory.getLogger(ProxyServer.class);
-
-	private ServerBootstrap bootstrap = new ServerBootstrap();
-	private ChannelFuture server = null;
-
+	protected static Logger	logger	  = LoggerFactory
+	                                          .getLogger(ProxyServer.class);
+	
+	private ServerBootstrap	bootstrap	= new ServerBootstrap();
+	private ChannelFuture	server	  = null;
+	
 	public ProxyServer(SimpleSocketAddress listenAddress)
 	{
 		String host = listenAddress.host;
@@ -53,7 +58,7 @@ public class ProxyServer
 					        p.addLast("handler", new ProxyHandler());
 				        }
 			        });
-
+			
 			server = bootstrap.bind().sync();
 			if (!server.isSuccess())
 			{
@@ -65,7 +70,7 @@ public class ProxyServer
 			logger.error("Failed to start proxy server.", e);
 		}
 	}
-
+	
 	public void close()
 	{
 		if (null != server)
