@@ -22,7 +22,7 @@ public class C4
 	public static boolean enable;
 	static ListSelector<C4ServerAuth> servers = new ListSelector<C4ServerAuth>();
 
-	static class C4RemoteProxyManager implements RemoteProxyManager
+	public static class C4RemoteProxyManager implements RemoteProxyManager
 	{
 		@Override
 		public String getName()

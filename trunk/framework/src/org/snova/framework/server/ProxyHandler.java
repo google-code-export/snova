@@ -23,11 +23,10 @@ import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.snova.framework.config.SnovaConfiguration;
 import org.snova.framework.proxy.LocalProxyHandler;
 import org.snova.framework.proxy.RemoteProxyHandler;
 import org.snova.framework.proxy.RemoteProxyManager;
-import org.snova.framework.proxy.RemoteProxyManagerHolder;
+import org.snova.framework.proxy.spac.SPAC;
 
 /**
  * @author yinqiwen
@@ -36,25 +35,29 @@ import org.snova.framework.proxy.RemoteProxyManagerHolder;
 public class ProxyHandler extends SimpleChannelUpstreamHandler implements
         LocalProxyHandler
 {
-	protected Logger logger = LoggerFactory.getLogger(getClass());
-
-	private RemoteProxyHandler remoteHandler = null;
-	private Channel localChannel = null;
-
+	protected Logger	       logger	           = LoggerFactory
+	                                                       .getLogger(getClass());
+	
+	private ProxyServerType	   serverType;
+	private RemoteProxyManager	remoteProxyManager	= null;
+	private RemoteProxyHandler	remoteHandler	   = null;
+	private Channel	           localChannel	       = null;
+	
 	public Channel getLocalChannel()
 	{
 		return localChannel;
 	}
-
-	private Integer id;
-
-	private static AtomicInteger seed = new AtomicInteger(1);
-
-	public ProxyHandler()
+	
+	private Integer	             id;
+	
+	private static AtomicInteger	seed	= new AtomicInteger(1);
+	
+	public ProxyHandler(ProxyServerType type)
 	{
 		id = seed.getAndIncrement();
+		serverType = type;
 	}
-
+	
 	private void handleChunks(Object e)
 	{
 		if (e instanceof HttpChunk)
@@ -77,29 +80,35 @@ public class ProxyHandler extends SimpleChannelUpstreamHandler implements
 			logger.error("Unsupported message type:" + e.getClass());
 		}
 	}
-
+	
 	private void handleHttpRequest(HttpRequest request)
 	{
-		if (null == remoteHandler)
+		RemoteProxyManager[] rm = SPAC.selectProxy(request, serverType);
+		if (null == rm)
 		{
-			String name = SnovaConfiguration.getInstance().getIniProperties()
-			        .getProperty("SPAC", "Default", "GAE");
-			RemoteProxyManager rm = RemoteProxyManagerHolder
-			        .getRemoteProxyManager(name);
-			if (null == rm)
+			logger.error("No proxy service found.");
+			close();
+			return;
+		}
+		if (null == remoteProxyManager)
+		{
+			// only first handler support
+			remoteProxyManager = rm[0];
+			remoteHandler = remoteProxyManager.createProxyHandler();
+		}
+		else
+		{
+			if (!remoteProxyManager.getName().equalsIgnoreCase(rm[0].getName()))
 			{
-				logger.error("No proxy service:" + name + " found.");
-				close();
-				return;
+				remoteHandler.close();
+				remoteProxyManager = rm[0];
+				remoteHandler = remoteProxyManager.createProxyHandler();
 			}
-
-			remoteHandler = rm.createProxyHandler();
-
 		}
 		request.removeHeader("Proxy-Connection");
 		remoteHandler.handleRequest(this, request);
 	}
-
+	
 	private void doClose()
 	{
 		close();
@@ -109,17 +118,20 @@ public class ProxyHandler extends SimpleChannelUpstreamHandler implements
 			remoteHandler = null;
 		}
 	}
-
+	
 	public void close()
 	{
 		if (localChannel != null)
 		{
-			localChannel.close();
+			if (localChannel.isConnected())
+			{
+				localChannel.close();
+			}
 			localChannel = null;
 		}
-
+		
 	}
-
+	
 	@Override
 	public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e)
 	        throws Exception
@@ -131,7 +143,7 @@ public class ProxyHandler extends SimpleChannelUpstreamHandler implements
 		}
 		doClose();
 	}
-
+	
 	@Override
 	public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
 	        throws Exception
@@ -139,14 +151,14 @@ public class ProxyHandler extends SimpleChannelUpstreamHandler implements
 		logger.error("Browser connection[" + id + "] exceptionCaught.",
 		        e.getCause());
 	}
-
+	
 	@Override
 	public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
 	        throws Exception
 	{
 		Object msg = e.getMessage();
 		localChannel = ctx.getChannel();
-
+		
 		if (msg instanceof HttpRequest)
 		{
 			HttpRequest request = (HttpRequest) msg;
@@ -157,7 +169,7 @@ public class ProxyHandler extends SimpleChannelUpstreamHandler implements
 			handleChunks(msg);
 		}
 	}
-
+	
 	public void handleResponse(RemoteProxyHandler remote, HttpResponse res)
 	{
 		if (null != localChannel && localChannel.isConnected())
@@ -169,7 +181,7 @@ public class ProxyHandler extends SimpleChannelUpstreamHandler implements
 			doClose();
 		}
 	}
-
+	
 	@Override
 	public void handleChunk(RemoteProxyHandler remote, final HttpChunk chunk)
 	{
@@ -184,7 +196,7 @@ public class ProxyHandler extends SimpleChannelUpstreamHandler implements
 			doClose();
 		}
 	}
-
+	
 	@Override
 	public void handleRawData(RemoteProxyHandler remote, ChannelBuffer raw)
 	{
@@ -197,13 +209,13 @@ public class ProxyHandler extends SimpleChannelUpstreamHandler implements
 			doClose();
 		}
 	}
-
+	
 	@Override
 	public int getId()
 	{
 		return id;
 	}
-
+	
 	public void switchRawHandler()
 	{
 		if (null != localChannel)
@@ -213,5 +225,4 @@ public class ProxyHandler extends SimpleChannelUpstreamHandler implements
 			localChannel.getPipeline().remove("decoder");
 		}
 	}
-
 }
