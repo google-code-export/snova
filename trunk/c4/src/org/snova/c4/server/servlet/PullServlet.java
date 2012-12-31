@@ -4,9 +4,7 @@
 package org.snova.c4.server.servlet;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintStream;
-import java.util.HashSet;
 import java.util.LinkedList;
 
 import javax.servlet.ServletException;
