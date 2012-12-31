@@ -4,6 +4,7 @@
 package org.arch.util;
 
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 /**
  * @author wqy
@@ -87,5 +88,17 @@ public class StringHelper
 			ss.add(k);
 		}
 		return null;
+	}
+
+	public static Pattern[] prepareRegexPattern(String[] ss)
+	{
+		Pattern[] ps = new Pattern[ss.length];
+		for (int i = 0; i < ss.length; i++)
+		{
+			String s = ss[i].replace(".", "\\.");
+			s = s.replace("*", ".*");
+			ps[i] = Pattern.compile(s);
+		}
+		return ps;
 	}
 }

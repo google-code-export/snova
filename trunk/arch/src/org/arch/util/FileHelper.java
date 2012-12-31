@@ -14,6 +14,7 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.util.Enumeration;
@@ -145,20 +146,22 @@ public class FileHelper
 			}
 		}
 	}
-	
+
 	public static void moveFile(File sourceFile, String dir) throws IOException
 	{
 		moveFile(sourceFile, new File(dir));
 	}
-	
-	public static void moveFile(String sourceFile, String dir) throws IOException
+
+	public static void moveFile(String sourceFile, String dir)
+	        throws IOException
 	{
 		moveFile(new File(sourceFile), new File(dir));
 	}
-	
-	public static void moveFile(File sourceFile, File destFile) throws IOException
+
+	public static void moveFile(File sourceFile, File destFile)
+	        throws IOException
 	{
-		if(destFile.isDirectory())
+		if (destFile.isDirectory())
 		{
 			destFile = new File(destFile, sourceFile.getName());
 		}
@@ -212,6 +215,21 @@ public class FileHelper
 			bis.close();
 		}
 		zipFile.close();
+	}
+
+	public static String readEntireFile(File f) throws IOException
+	{
+		FileReader in = new FileReader(f);
+		StringBuilder contents = new StringBuilder();
+		char[] buffer = new char[4096];
+		int read = 0;
+		do
+		{
+			contents.append(buffer, 0, read);
+			read = in.read(buffer);
+		}
+		while (read >= 0);
+		return contents.toString();
 	}
 
 }
