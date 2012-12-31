@@ -3,22 +3,18 @@
  */
 package org.snova.framework.server;
 
-import io.netty.bootstrap.ServerBootstrap;
-import io.netty.buffer.ChannelBuf;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOutboundByteHandlerAdapter;
-import io.netty.channel.ChannelOutboundHandlerAdapter;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.codec.http.HttpRequestDecoder;
-import io.netty.handler.codec.http.HttpResponseEncoder;
-
 import java.net.InetSocketAddress;
+import java.util.concurrent.Executors;
 
+import org.jboss.netty.bootstrap.ServerBootstrap;
+import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.channel.ChannelPipeline;
+import org.jboss.netty.channel.ChannelPipelineFactory;
+import org.jboss.netty.channel.Channels;
+import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
+import org.jboss.netty.handler.codec.http.HttpRequestDecoder;
+import org.jboss.netty.handler.codec.http.HttpResponseEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.framework.util.SharedObjectHelper;
@@ -30,53 +26,50 @@ import org.snova.http.client.common.SimpleSocketAddress;
  */
 public class ProxyServer
 {
-	protected static Logger	logger	  = LoggerFactory
-	                                          .getLogger(ProxyServer.class);
-	
-	private ServerBootstrap	bootstrap	= new ServerBootstrap();
-	private ChannelFuture	server	  = null;
-	
+	protected static Logger logger = LoggerFactory.getLogger(ProxyServer.class);
+
+	private ServerBootstrap bootstrap = new ServerBootstrap();
+	private Channel server = null;
+
 	public ProxyServer(SimpleSocketAddress listenAddress)
 	{
 		String host = listenAddress.host;
 		int port = listenAddress.port;
 		try
 		{
-			bootstrap
-			        .group(SharedObjectHelper.getEventLoop(),
-			                SharedObjectHelper.getEventLoop())
-			        .channel(NioServerSocketChannel.class)
-			        .localAddress(new InetSocketAddress(host, port))
-			        .childHandler(new ChannelInitializer<Channel>()
-			        {
-				        @Override
-				        public void initChannel(Channel ch) throws Exception
-				        {
-					        ChannelPipeline p = ch.pipeline();
-					        p.addLast("decoder", new HttpRequestDecoder());
-					        p.addLast("encoder", new HttpResponseEncoder());
-					        p.addLast("handler", new ProxyHandler());
-				        }
-			        });
-			
-			server = bootstrap.bind().sync();
-			if (!server.isSuccess())
+			bootstrap = new ServerBootstrap(new NioServerSocketChannelFactory(
+			        Executors.newCachedThreadPool(),
+			        Executors.newCachedThreadPool()));
+			bootstrap.setPipelineFactory(new ChannelPipelineFactory()
 			{
-				logger.error("Failed to start proxy server");
-			}
+				@Override
+				public ChannelPipeline getPipeline() throws Exception
+				{
+					ChannelPipeline pipeline = Channels.pipeline();
+					pipeline.addLast("decoder", new HttpRequestDecoder());
+					pipeline.addLast("encoder", new HttpResponseEncoder());
+					pipeline.addLast("handler", new ProxyHandler());
+					return pipeline;
+				}
+			});
+
+			// Bind and start to accept incoming connections.
+			bootstrap.bind(new InetSocketAddress(host, port));
+
 		}
 		catch (Exception e)
 		{
 			logger.error("Failed to start proxy server.", e);
 		}
 	}
-	
+
 	public void close()
 	{
 		if (null != server)
 		{
-			server.channel().close();
+			server.close();
 			server = null;
 		}
+		bootstrap.shutdown();
 	}
 }

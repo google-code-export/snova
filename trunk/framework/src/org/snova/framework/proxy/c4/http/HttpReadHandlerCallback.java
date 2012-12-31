@@ -3,19 +3,19 @@
  */
 package org.snova.framework.proxy.c4.http;
 
-import java.nio.charset.Charset;
-
-import io.netty.buffer.ByteBuf;
-import io.netty.handler.codec.http.HttpChunk;
-import io.netty.handler.codec.http.HttpResponse;
+import java.util.concurrent.TimeUnit;
 
 import org.arch.buffer.Buffer;
 import org.arch.buffer.BufferHelper;
 import org.arch.event.Event;
 import org.arch.event.EventDispatcher;
 import org.arch.event.EventHeader;
+import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.handler.codec.http.HttpChunk;
+import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.snova.framework.util.SharedObjectHelper;
 import org.snova.http.client.FutureCallback;
 import org.snova.http.client.HttpClientHandler;
 
@@ -25,19 +25,20 @@ import org.snova.http.client.HttpClientHandler;
  */
 public class HttpReadHandlerCallback implements FutureCallback
 {
-	protected static Logger	logger	    = LoggerFactory
-	                                            .getLogger(HttpReadHandlerCallback.class);
-	Event	                cacheEvent;
-	private HttpDualConn	conn;
-	HttpClientHandler	    httpClient;
-	private Buffer	        resBuffer	= new Buffer(256);
-	private int	            chunkLength	= -1;
-	
+	protected static Logger logger = LoggerFactory
+	        .getLogger(HttpReadHandlerCallback.class);
+	Event cacheEvent;
+	private HttpDualConn conn;
+	HttpClientHandler httpClient;
+	private Buffer resBuffer = new Buffer(256);
+	private int chunkLength = -1;
+	private int waitTime = 1;
+
 	public HttpReadHandlerCallback(HttpDualConn httpDualConn)
 	{
 		conn = httpDualConn;
 	}
-	
+
 	void stop()
 	{
 		if (null != httpClient)
@@ -45,7 +46,7 @@ public class HttpReadHandlerCallback implements FutureCallback
 			httpClient.closeChannel();
 		}
 	}
-	
+
 	@Override
 	public void onResponse(HttpResponse res)
 	{
@@ -58,17 +59,17 @@ public class HttpReadHandlerCallback implements FutureCallback
 			if (res.getStatus().getCode() != 200)
 			{
 				System.out.println("##########" + res.getStatus());
-			}	
+			}
 		}
 	}
-	
+
 	@Override
 	public synchronized void onBody(HttpChunk chunk)
 	{
 		fillResponseBuffer(chunk.getContent());
 	}
-	
-	private  boolean tryHandleBuffer()
+
+	private boolean tryHandleBuffer()
 	{
 		if (chunkLength == -1)
 		{
@@ -104,17 +105,17 @@ public class HttpReadHandlerCallback implements FutureCallback
 			{
 				logger.error("Failed to parse recv content", e);
 			}
-			
+
 			resBuffer.discardReadedBytes();
 			chunkLength = -1;
 		}
 		return true;
 	}
-	
-	private void fillResponseBuffer(ByteBuf buffer)
+
+	private void fillResponseBuffer(ChannelBuffer buffer)
 	{
 		int contentlen = buffer.readableBytes();
-		
+
 		if (contentlen > 0)
 		{
 			resBuffer.ensureWritableBytes(contentlen);
@@ -125,25 +126,58 @@ public class HttpReadHandlerCallback implements FutureCallback
 				;
 		}
 	}
-	
-	@Override
-	public void onComplete(HttpResponse res)
+
+	private void retry()
 	{
-		logger.info(String.format("Session[%d] read tunnel closed", conn.sid));
-		conn.read = null;
-		conn.startReadTask();
-	}
-	
-	@Override
-	public void onError(String error)
-	{
-		logger.error(String.format("Session[%d] read tunnel ecounter error %s",
-		        conn.sid, error));
-		conn.read = null;
-		if(null != cacheEvent)
+		if (null != cacheEvent)
 		{
 			conn.startWriteTask(cacheEvent);
 		}
 		conn.startReadTask();
+	}
+
+	@Override
+	public void onComplete(HttpResponse res)
+	{
+		// logger.info(String.format("Session[%d] read tunnel closed",
+		// conn.sid));
+		conn.read = null;
+		if (res.getStatus().getCode() != 200)
+		{
+			SharedObjectHelper.getGlobalTimer().schedule(new Runnable()
+			{
+
+				@Override
+				public void run()
+				{
+					retry();
+				}
+			}, waitTime, TimeUnit.SECONDS);
+			waitTime *= 2;
+		}
+		else
+		{
+			waitTime = 1;
+			cacheEvent = null;
+			retry();
+		}
+	}
+
+	@Override
+	public void onError(String error)
+	{
+		// logger.error(String.format("Session[%d] read tunnel ecounter error %s",
+		// conn.sid, error));
+		conn.read = null;
+		SharedObjectHelper.getGlobalTimer().schedule(new Runnable()
+		{
+			@Override
+			public void run()
+			{
+				retry();
+			}
+		}, waitTime, TimeUnit.SECONDS);
+		waitTime *= 2;
+
 	}
 }

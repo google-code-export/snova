@@ -3,27 +3,6 @@
  */
 package org.snova.framework.proxy.gae;
 
-import io.netty.bootstrap.Bootstrap;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.socket.SocketChannel;
-import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.http.DefaultHttpChunk;
-import io.netty.handler.codec.http.DefaultHttpRequest;
-import io.netty.handler.codec.http.DefaultHttpResponse;
-import io.netty.handler.codec.http.HttpChunk;
-import io.netty.handler.codec.http.HttpClientCodec;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpResponse;
-import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.HttpTransferEncoding;
-import io.netty.handler.codec.http.HttpVersion;
-import io.netty.handler.ssl.SslHandler;
-
 import java.net.InetSocketAddress;
 import java.net.URL;
 import java.security.NoSuchAlgorithmException;
@@ -54,6 +33,23 @@ import org.arch.event.misc.CompressorType;
 import org.arch.event.misc.EncryptEvent;
 import org.arch.event.misc.EncryptType;
 import org.arch.util.StringHelper;
+import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.buffer.ChannelBuffers;
+import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.channel.ChannelFutureListener;
+import org.jboss.netty.channel.socket.SocketChannel;
+import org.jboss.netty.handler.codec.http.DefaultHttpChunk;
+import org.jboss.netty.handler.codec.http.DefaultHttpRequest;
+import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
+import org.jboss.netty.handler.codec.http.HttpChunk;
+import org.jboss.netty.handler.codec.http.HttpClientCodec;
+import org.jboss.netty.handler.codec.http.HttpHeaders;
+import org.jboss.netty.handler.codec.http.HttpMethod;
+import org.jboss.netty.handler.codec.http.HttpRequest;
+import org.jboss.netty.handler.codec.http.HttpResponse;
+import org.jboss.netty.handler.codec.http.HttpResponseStatus;
+import org.jboss.netty.handler.codec.http.HttpVersion;
+import org.jboss.netty.handler.ssl.SslHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.framework.common.http.ContentRangeHeaderValue;
@@ -155,13 +151,9 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 				public ChannelFuture connect(String host, int port)
 				{
 					String remoteHost = HostsService.getMappingHost(host);
-					Bootstrap b = new Bootstrap();
-					ChannelFuture future = b
-					        .group(SharedObjectHelper.getEventLoop())
-					        .channel(NioSocketChannel.class)
-					        .remoteAddress(remoteHost, port)
-					        .handler(new HttpClientCodec()).connect();
-
+					ChannelFuture future = SharedObjectHelper
+					        .getClientBootstrap().connect(
+					                new InetSocketAddress(remoteHost, port));
 					if (proxyUrl.getProtocol().equalsIgnoreCase("https"))
 					{
 						SSLContext sslContext = null;
@@ -176,14 +168,15 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 
 						SSLEngine sslEngine = sslContext.createSSLEngine();
 						sslEngine.setUseClientMode(true);
-						future.channel().pipeline()
-						        .addFirst(new SslHandler(sslEngine));
+						future.getChannel().getPipeline()
+						        .addLast("ssl", new SslHandler(sslEngine));
 					}
 					return future;
 				}
 			};
 		}
-		client = new HttpClient(options, SharedObjectHelper.getEventLoop());
+		client = new HttpClient(options,
+		        SharedObjectHelper.getClientBootstrap());
 	}
 
 	private HttpResponse buildHttpResponse(HTTPResponseEvent ev)
@@ -267,13 +260,15 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 		if (HttpHeaders.getContentLength(response) == ev.content
 		        .readableBytes())
 		{
-			ByteBuf bufer = Unpooled.wrappedBuffer(ev.content.getRawBuffer(),
-			        ev.content.getReadIndex(), ev.content.readableBytes());
+			ChannelBuffer bufer = ChannelBuffers.wrappedBuffer(
+			        ev.content.getRawBuffer(), ev.content.getReadIndex(),
+			        ev.content.readableBytes());
 			response.setContent(bufer);
 		}
 		else
 		{
-			response.setTransferEncoding(HttpTransferEncoding.STREAMED);
+			response.setChunked(true);
+			// response.setTransferEncoding(HttpTransferEncoding.STREAMED);
 		}
 		return response;
 	}
@@ -300,7 +295,7 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 		event.version = request.getProtocolVersion().getText();
 		event.setHash(local.getId());
 		event.setAttachment(request);
-		ByteBuf content = request.getContent();
+		ChannelBuffer content = request.getContent();
 		if (null != content)
 		{
 			content.markReaderIndex();
@@ -376,7 +371,7 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 		}
 	}
 
-	private boolean fillHttpRequestBody(ByteBuf buf)
+	private boolean fillHttpRequestBody(ChannelBuffer buf)
 	{
 		if (null != proxyRequest)
 		{
@@ -438,17 +433,17 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 					        {
 						        SocketChannel ch = (SocketChannel) local
 						                .getLocalChannel();
-						        if (ch.pipeline().get(SslHandler.class) == null)
+						        if (ch.getPipeline().get(SslHandler.class) == null)
 						        {
-							        InetSocketAddress remote = (InetSocketAddress) ch
-							                .remoteAddress();
+							        InetSocketAddress remote = ch
+							                .getRemoteAddress();
 							        SSLEngine engine = sslCtx.createSSLEngine(
 							                remote.getAddress()
 							                        .getHostAddress(), remote
 							                        .getPort());
 							        engine.setUseClientMode(false);
-							        ch.pipeline().addBefore("decoder", "ssl",
-							                new SslHandler(engine));
+							        ch.getPipeline().addBefore("decoder",
+							                "ssl", new SslHandler(engine));
 						        }
 					        }
 				        }
@@ -473,7 +468,7 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 	}
 
 	@Override
-	public void handleRawData(LocalProxyHandler local, ByteBuf raw)
+	public void handleRawData(LocalProxyHandler local, ChannelBuffer raw)
 	{
 		logger.error("Unsupported raw data in GAE.");
 	}
@@ -557,9 +552,10 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 		{
 			RangeChunk chunk = restChunks.remove(expectedChunkPos);
 			expectedChunkPos += chunk.chunk.readableBytes();
-			HttpChunk httpchunk = new DefaultHttpChunk(Unpooled.wrappedBuffer(
-			        chunk.chunk.getRawBuffer(), chunk.chunk.getReadIndex(),
-			        chunk.chunk.readableBytes()));
+			HttpChunk httpchunk = new DefaultHttpChunk(
+			        ChannelBuffers.wrappedBuffer(chunk.chunk.getRawBuffer(),
+			                chunk.chunk.getReadIndex(),
+			                chunk.chunk.readableBytes()));
 			local.handleChunk(this, httpchunk);
 			if (logger.isDebugEnabled())
 			{
@@ -722,7 +718,7 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 			Buffer buf = EventHelper.encodeEvent(tags, ev);
 			request.setHeader(HttpHeaders.Names.CONTENT_LENGTH,
 			        "" + buf.readableBytes());
-			request.setContent(Unpooled.wrappedBuffer(buf.getRawBuffer(),
+			request.setContent(ChannelBuffers.wrappedBuffer(buf.getRawBuffer(),
 			        buf.getReadIndex(), buf.readableBytes()));
 			HttpClientHandler h = client.execute(request, cb);
 			workingHttpClientHandlers.add(h);
@@ -782,12 +778,15 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 			}
 			else
 			{
-				local.close();
+				if(null != local)
+				{
+					local.close();
+				}
 			}
 			removeHttpClientHandler();
 		}
 
-		private void fillBodyContent(ByteBuf buf)
+		private void fillBodyContent(ChannelBuffer buf)
 		{
 			int len = buf.readableBytes();
 			bodyContent.ensureWritableBytes(len);

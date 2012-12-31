@@ -4,10 +4,11 @@
 package org.snova.framework.proxy.c4.http;
 
 import java.nio.charset.Charset;
-
-import io.netty.handler.codec.http.HttpResponse;
+import java.util.concurrent.TimeUnit;
 
 import org.arch.event.Event;
+import org.jboss.netty.handler.codec.http.HttpResponse;
+import org.snova.framework.util.SharedObjectHelper;
 import org.snova.http.client.FutureCallback;
 
 /**
@@ -17,13 +18,14 @@ import org.snova.http.client.FutureCallback;
 public class HttpWriteHandlerCallback extends
         FutureCallback.FutureCallbackAdapter
 {
-	Event	cacheEvent;
-	private HttpDualConn	conn;
-	
+	Event cacheEvent;
+	private HttpDualConn conn;
+	private int waitTime = 1;
+
 	public HttpWriteHandlerCallback(HttpDualConn conn)
-    {
-	    this.conn = conn;
-    }
+	{
+		this.conn = conn;
+	}
 
 	@Override
 	public void onResponse(HttpResponse res)
@@ -32,13 +34,32 @@ public class HttpWriteHandlerCallback extends
 		{
 			System.out.println(res.getContent().toString(
 			        Charset.forName("utf8")));
-			conn.startWriteTask(cacheEvent);
+			SharedObjectHelper.getGlobalTimer().schedule(new Runnable()
+			{
+
+				@Override
+				public void run()
+				{
+					conn.startWriteTask(cacheEvent);
+				}
+			}, waitTime, TimeUnit.SECONDS);
+			waitTime *= 2;
 		}
 	}
-	
+
 	@Override
 	public void onError(String error)
 	{
-		conn.startWriteTask(cacheEvent);
+		SharedObjectHelper.getGlobalTimer().schedule(new Runnable()
+		{
+
+			@Override
+			public void run()
+			{
+				conn.startWriteTask(cacheEvent);
+			}
+		}, waitTime, TimeUnit.SECONDS);
+		waitTime *= 2;
+
 	}
 }
