@@ -15,7 +15,9 @@ import org.snova.framework.config.SnovaConfiguration;
 import org.snova.framework.event.CommonEvents;
 import org.snova.framework.proxy.c4.C4;
 import org.snova.framework.proxy.gae.GAE;
+import org.snova.framework.proxy.google.Google;
 import org.snova.framework.proxy.hosts.HostsService;
+import org.snova.framework.proxy.spac.SPAC;
 import org.snova.framework.server.ProxyServer;
 import org.snova.framework.trace.Trace;
 import org.snova.framework.util.SharedObjectHelper;
@@ -36,6 +38,8 @@ public class Snova
 		SharedObjectHelper.setTrace(trace);
 		CommonEvents.init(null, false);
 		HostsService.init();
+		Google.init();
+		
 		if (GAE.init())
 		{
 		}
@@ -48,6 +52,7 @@ public class Snova
 		else
 		{
 		}
+		SPAC.init();
 	}
 
 	public void stop()

@@ -9,19 +9,18 @@
  */
 package org.snova.framework.server;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundByteHandlerAdapter;
-import io.netty.channel.ChannelInboundMessageHandlerAdapter;
-import io.netty.handler.codec.http.HttpChunk;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpResponse;
-
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.channel.ChannelStateEvent;
+import org.jboss.netty.channel.ExceptionEvent;
+import org.jboss.netty.channel.MessageEvent;
+import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
+import org.jboss.netty.handler.codec.http.HttpChunk;
+import org.jboss.netty.handler.codec.http.HttpRequest;
+import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.framework.config.SnovaConfiguration;
@@ -34,32 +33,30 @@ import org.snova.framework.proxy.RemoteProxyManagerHolder;
  * @author yinqiwen
  * 
  */
-public class ProxyHandler extends ChannelInboundMessageHandlerAdapter<Object>
-        implements LocalProxyHandler
+public class ProxyHandler extends SimpleChannelUpstreamHandler implements
+        LocalProxyHandler
 {
-	protected Logger	       logger	      = LoggerFactory
-	                                                  .getLogger(getClass());
-	
-	private RemoteProxyHandler	remoteHandler	= null;
-	private Channel	           localChannel	  = null;
-	
+	protected Logger logger = LoggerFactory.getLogger(getClass());
+
+	private RemoteProxyHandler remoteHandler = null;
+	private Channel localChannel = null;
+
 	public Channel getLocalChannel()
 	{
 		return localChannel;
 	}
-	
-	private Integer	             id;
-	
-	private static AtomicInteger	seed	= new AtomicInteger(1);
-	
+
+	private Integer id;
+
+	private static AtomicInteger seed = new AtomicInteger(1);
+
 	public ProxyHandler()
 	{
 		id = seed.getAndIncrement();
 	}
-	
+
 	private void handleChunks(Object e)
 	{
-		System.out.println("###########" + e.getClass());
 		if (e instanceof HttpChunk)
 		{
 			HttpChunk chunk = (HttpChunk) e;
@@ -68,11 +65,11 @@ public class ProxyHandler extends ChannelInboundMessageHandlerAdapter<Object>
 				remoteHandler.handleChunk(this, chunk);
 			}
 		}
-		else if (e instanceof ByteBuf)
+		else if (e instanceof ChannelBuffer)
 		{
 			if (null != remoteHandler)
 			{
-				remoteHandler.handleRawData(this, (ByteBuf) e);
+				remoteHandler.handleRawData(this, (ChannelBuffer) e);
 			}
 		}
 		else
@@ -80,7 +77,7 @@ public class ProxyHandler extends ChannelInboundMessageHandlerAdapter<Object>
 			logger.error("Unsupported message type:" + e.getClass());
 		}
 	}
-	
+
 	private void handleHttpRequest(HttpRequest request)
 	{
 		if (null == remoteHandler)
@@ -95,14 +92,14 @@ public class ProxyHandler extends ChannelInboundMessageHandlerAdapter<Object>
 				close();
 				return;
 			}
-			
+
 			remoteHandler = rm.createProxyHandler();
-			
+
 		}
 		request.removeHeader("Proxy-Connection");
 		remoteHandler.handleRequest(this, request);
 	}
-	
+
 	private void doClose()
 	{
 		close();
@@ -112,7 +109,7 @@ public class ProxyHandler extends ChannelInboundMessageHandlerAdapter<Object>
 			remoteHandler = null;
 		}
 	}
-	
+
 	public void close()
 	{
 		if (localChannel != null)
@@ -120,11 +117,12 @@ public class ProxyHandler extends ChannelInboundMessageHandlerAdapter<Object>
 			localChannel.close();
 			localChannel = null;
 		}
-		
+
 	}
-	
+
 	@Override
-	public void channelInactive(ChannelHandlerContext ctx) throws Exception
+	public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e)
+	        throws Exception
 	{
 		if (logger.isDebugEnabled())
 		{
@@ -133,20 +131,22 @@ public class ProxyHandler extends ChannelInboundMessageHandlerAdapter<Object>
 		}
 		doClose();
 	}
-	
+
 	@Override
-	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
+	public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
 	        throws Exception
 	{
-		logger.error("Browser connection[" + id + "] exceptionCaught.", cause);
+		logger.error("Browser connection[" + id + "] exceptionCaught.",
+		        e.getCause());
 	}
-	
+
 	@Override
-	public void messageReceived(ChannelHandlerContext ctx, Object msg)
+	public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
 	        throws Exception
 	{
-		localChannel = ctx.channel();
-		
+		Object msg = e.getMessage();
+		localChannel = ctx.getChannel();
+
 		if (msg instanceof HttpRequest)
 		{
 			HttpRequest request = (HttpRequest) msg;
@@ -157,11 +157,10 @@ public class ProxyHandler extends ChannelInboundMessageHandlerAdapter<Object>
 			handleChunks(msg);
 		}
 	}
-	
-	@Override
+
 	public void handleResponse(RemoteProxyHandler remote, HttpResponse res)
 	{
-		if (null != localChannel && localChannel.isActive())
+		if (null != localChannel && localChannel.isConnected())
 		{
 			localChannel.write(res);
 		}
@@ -170,13 +169,13 @@ public class ProxyHandler extends ChannelInboundMessageHandlerAdapter<Object>
 			doClose();
 		}
 	}
-	
+
 	@Override
 	public void handleChunk(RemoteProxyHandler remote, final HttpChunk chunk)
 	{
 		logger.info("Write chunk:" + chunk.getContent().readableBytes()
 		        + localChannel);
-		if (null != localChannel && localChannel.isActive())
+		if (null != localChannel && localChannel.isConnected())
 		{
 			localChannel.write(chunk);
 		}
@@ -185,56 +184,34 @@ public class ProxyHandler extends ChannelInboundMessageHandlerAdapter<Object>
 			doClose();
 		}
 	}
-	
+
 	@Override
-	public void handleRawData(RemoteProxyHandler remote, ByteBuf raw)
+	public void handleRawData(RemoteProxyHandler remote, ChannelBuffer raw)
 	{
-		
-		if (null != localChannel && localChannel.isActive())
+		if (null != localChannel && localChannel.isConnected())
 		{
-			ByteBuf out = localChannel.outboundByteBuffer();
-			out.discardReadBytes();
-			out.writeBytes(raw);
-			raw.clear();
-			localChannel.flush();
+			localChannel.write(raw);
 		}
 		else
 		{
 			doClose();
 		}
 	}
-	
+
 	@Override
 	public int getId()
 	{
 		return id;
 	}
-	
+
 	public void switchRawHandler()
 	{
 		if (null != localChannel)
 		{
 			// logger.info(String.format("Session[%d] switch raw handler", id));
-			localChannel.pipeline().remove(ProxyHandler.class);
-			localChannel.pipeline().addLast("raw", new RawProxyDataHandler());
+			localChannel.getPipeline().remove("encoder");
+			localChannel.getPipeline().remove("decoder");
 		}
 	}
-	
-	public class RawProxyDataHandler extends ChannelInboundByteHandlerAdapter
-	{
-		@Override
-		public void inboundBufferUpdated(ChannelHandlerContext ctx, ByteBuf in)
-		        throws Exception
-		{
-			logger.info(String.format("Session[%d] recv local chunk", id));
-			handleChunks(in);
-			in.clear();
-		}
-		
-		public void channelInactive(ChannelHandlerContext ctx) throws Exception
-		{
-			doClose();
-		}
-	}
-	
+
 }

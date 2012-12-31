@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.snova.framework.proxy.google;
+package org.snova.framework.proxy.spac;
 
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.handler.codec.http.HttpChunk;
@@ -13,8 +13,13 @@ import org.snova.framework.proxy.RemoteProxyHandler;
  * @author wqy
  * 
  */
-public class GoogleRemoteHandler implements RemoteProxyHandler
+public class SpacRemoteHandler implements RemoteProxyHandler
 {
+
+	private RemoteProxyHandler selectProxy(HttpRequest req)
+	{
+		return null;
+	}
 
 	@Override
 	public void handleRequest(LocalProxyHandler local, HttpRequest req)

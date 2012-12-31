@@ -3,17 +3,7 @@
  */
 package org.snova.framework.proxy.c4.http;
 
-import io.netty.bootstrap.Bootstrap;
-import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.http.DefaultHttpRequest;
-import io.netty.handler.codec.http.HttpClientCodec;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpVersion;
-
+import java.net.InetSocketAddress;
 import java.net.URL;
 
 import org.arch.buffer.Buffer;
@@ -25,12 +15,18 @@ import org.arch.event.http.HTTPRequestEvent;
 import org.arch.event.misc.EncryptEventV2;
 import org.arch.event.misc.EncryptType;
 import org.arch.util.NetworkHelper;
+import org.jboss.netty.buffer.ChannelBuffers;
+import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.handler.codec.http.DefaultHttpRequest;
+import org.jboss.netty.handler.codec.http.HttpHeaders;
+import org.jboss.netty.handler.codec.http.HttpMethod;
+import org.jboss.netty.handler.codec.http.HttpRequest;
+import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.framework.config.SnovaConfiguration;
 import org.snova.framework.event.EventHelper;
 import org.snova.framework.event.SocketReadEvent;
-import org.snova.framework.event.gae.ShareAppIDEvent;
 import org.snova.framework.proxy.c4.C4ServerAuth;
 import org.snova.framework.proxy.hosts.HostsService;
 import org.snova.framework.util.SharedObjectHelper;
@@ -48,14 +44,14 @@ import org.snova.http.client.ProxyCallback;
  */
 public class HttpDualConn
 {
-	protected static Logger	  logger	   = LoggerFactory
-	                                               .getLogger(HttpDualConn.class);
-	private C4ServerAuth	  server;
-	EventHandler	          cb;
-	int	                      sid;
-	private boolean	          closed	   = false;
-	private static HttpClient	httpClient	= null;
-	
+	protected static Logger logger = LoggerFactory
+	        .getLogger(HttpDualConn.class);
+	private C4ServerAuth server;
+	EventHandler cb;
+	int sid;
+	private boolean closed = false;
+	private static HttpClient httpClient = null;
+
 	private static void initHttpClient() throws Exception
 	{
 		if (null != httpClient)
@@ -85,19 +81,15 @@ public class HttpDualConn
 				public ChannelFuture connect(String host, int port)
 				{
 					String remoteHost = HostsService.getMappingHost(host);
-					Bootstrap b = new Bootstrap();
-					ChannelFuture future = b
-					        .group(SharedObjectHelper.getEventLoop())
-					        .channel(NioSocketChannel.class)
-					        .remoteAddress(remoteHost, port)
-					        .handler(new HttpClientCodec()).connect();
-					return future;
+					return SharedObjectHelper.getClientBootstrap().connect(
+					        new InetSocketAddress(remoteHost, port));
 				}
 			};
 		}
-		httpClient = new HttpClient(options, SharedObjectHelper.getEventLoop());
+		httpClient = new HttpClient(options,
+		        SharedObjectHelper.getClientBootstrap());
 	}
-	
+
 	public HttpDualConn(C4ServerAuth server, EventHandler cb)
 	{
 		this.server = server;
@@ -112,18 +104,31 @@ public class HttpDualConn
 			e.printStackTrace();
 		}
 	}
-	
-	HttpReadHandlerCallback	 read;
-	HttpWriteHandlerCallback	write;
-	boolean	                 running;
-	
+
+	HttpReadHandlerCallback read;
+	HttpWriteHandlerCallback write;
+	boolean running;
+
 	private HttpClientHandler writeEvent(Event[] evs, String path,
 	        FutureCallback callback, KeyValuePair<String, String> header)
 	{
 		IniProperties cfg = SnovaConfiguration.getInstance().getIniProperties();
 		HttpRequest request = new DefaultHttpRequest(HttpVersion.HTTP_1_1,
-		        HttpMethod.POST, server.url.getPath() + path);
-		request.setHeader(HttpHeaders.Names.HOST, server.url.getHost());
+		        HttpMethod.POST, server.url.toString() + path);
+		int port = 80;
+		if (server.url.getPort() > 0)
+		{
+			port = server.url.getPort();
+		}
+		else
+		{
+			if (server.url.getProtocol().equalsIgnoreCase("https"))
+			{
+				port = 443;
+			}
+		}
+		request.setHeader(HttpHeaders.Names.HOST, server.url.getHost() + ":"
+		        + port);
 		request.setHeader(HttpHeaders.Names.CONNECTION, "keep-alive");
 		request.setHeader("UserToken", NetworkHelper.getMacAddress());
 		request.setHeader(
@@ -132,7 +137,7 @@ public class HttpDualConn
 		                "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:15.0) Gecko/20100101 Firefox/15.0.1"));
 		request.setHeader(HttpHeaders.Names.CONTENT_TYPE,
 		        "application/octet-stream");
-		
+
 		Buffer buf = new Buffer(1024);
 		for (Event ev : evs)
 		{
@@ -144,10 +149,10 @@ public class HttpDualConn
 		{
 			request.setHeader(header.getName(), header.getValue());
 		}
-		
-		request.setContent(Unpooled.wrappedBuffer(buf.getRawBuffer(),
+
+		request.setContent(ChannelBuffers.wrappedBuffer(buf.getRawBuffer(),
 		        buf.getReadIndex(), buf.readableBytes()));
-		
+
 		try
 		{
 			return httpClient.execute(request, callback);
@@ -158,7 +163,7 @@ public class HttpDualConn
 		}
 		return null;
 	}
-	
+
 	private Event wrapEvent(Event ev)
 	{
 		IniProperties cfg = SnovaConfiguration.getInstance().getIniProperties();
@@ -168,7 +173,7 @@ public class HttpDualConn
 		enc.setHash(ev.getHash());
 		return enc;
 	}
-	
+
 	void startWriteTask(final Event ev)
 	{
 		HttpDualConn.this.write = new HttpWriteHandlerCallback(
@@ -177,13 +182,13 @@ public class HttpDualConn
 		EventHelper.resetEncodedEvent(ev);
 		write.cacheEvent = ev;
 	}
-	
+
 	void startReadTask()
 	{
 		if (closed || null != read)
 		{
-			logger.info(String.format(
-			        "Session[%d]is closed or read task is not null.", sid));
+			// logger.info(String.format(
+			// "Session[%d]is closed or read task is not null.", sid));
 			return;
 		}
 		read = new HttpReadHandlerCallback(HttpDualConn.this);
@@ -197,20 +202,20 @@ public class HttpDualConn
 		HttpClientHandler h = writeEvent(new Event[] { readEv }, "pull", read,
 		        addition);
 		read.httpClient = h;
-		logger.info(String.format("Session[%d] restart read task:%d", sid,
-		        read.hashCode()));
-		
+		// logger.info(String.format("Session[%d] restart read task:%d", sid,
+		// read.hashCode()));
+
 	}
-	
+
 	public void requestEvent(Event ev)
 	{
 		sid = ev.getHash();
 		if (null == read && ev instanceof HTTPRequestEvent)
 		{
-			if(ev instanceof HTTPRequestEvent)
+			if (ev instanceof HTTPRequestEvent)
 			{
 				HTTPRequestEvent hreq = (HTTPRequestEvent) ev;
-				if(hreq.method.equalsIgnoreCase("Connect"))
+				if (hreq.method.equalsIgnoreCase("Connect"))
 				{
 					startWriteTask(ev);
 					startReadTask();
@@ -239,7 +244,7 @@ public class HttpDualConn
 			// startReadTask();
 		}
 	}
-	
+
 	public void close()
 	{
 		if (null != read)
