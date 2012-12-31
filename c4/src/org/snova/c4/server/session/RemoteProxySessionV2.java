@@ -192,7 +192,7 @@ public class RemoteProxySessionV2
 				UserLoginEvent usev = (UserLoginEvent) event;
 				clearUser(usev.user);
 			}
-			else
+			else if (tv.type != C4Constants.EVENT_SOCKET_READ_TYPE)
 			{
 				RemoteProxySessionV2 s = getSession(user, event);
 				s.handleEvent(tv, event);
@@ -264,7 +264,9 @@ public class RemoteProxySessionV2
 					if (success)
 					{
 						chunk.content = "HTTP/1.1 200 OK\r\n\r\n".getBytes();
-						//System.out.println("Session[" + sessionId + "]####establised to  " + remoteAddr + " at" + System.currentTimeMillis()/1000);
+						// System.out.println("Session[" + sessionId +
+						// "]####establised to  " + remoteAddr + " at" +
+						// System.currentTimeMillis()/1000);
 					}
 					else
 					{
@@ -320,7 +322,8 @@ public class RemoteProxySessionV2
 		try
 		{
 			remoteAddr = addr;
-//			System.out.println("Session[" + sessionId + "]####connect " + addr);
+			// System.out.println("Session[" + sessionId + "]####connect " +
+			// addr);
 			tmp = new Socket();
 			tmp.connect(new InetSocketAddress(host, port), 20000);
 			client = tmp;
@@ -345,16 +348,18 @@ public class RemoteProxySessionV2
 			String remote = remoteAddr;
 			try
 			{
-//				System.out.println("Session[" + sessionId
-//				        + "]####Start read "+ " at" + System.currentTimeMillis()/1000);
+				// System.out.println("Session[" + sessionId
+				// + "]####Start read "+ " at" +
+				// System.currentTimeMillis()/1000);
 				closing = false;
 				byte[] buffer = new byte[maxread];
 				sock.setSoTimeout(timeout * 1000);
 				int n = sock.getInputStream().read(buffer);
 				if (n <= 0)
 				{
-//					System.out.println("Session[" + sessionId
-//					        + "]####No more data for:" + remote + " at" + System.currentTimeMillis()/1000);
+					// System.out.println("Session[" + sessionId
+					// + "]####No more data for:" + remote + " at" +
+					// System.currentTimeMillis()/1000);
 					close(sock, remote);
 					return false;
 				}
@@ -390,7 +395,8 @@ public class RemoteProxySessionV2
 		{
 			try
 			{
-//				System.out.println("Session[" + sessionId + "]####write to  " + remoteAddr);
+				// System.out.println("Session[" + sessionId + "]####write to  "
+				// + remoteAddr);
 				client.getOutputStream().write(content);
 				return true;
 			}
@@ -432,7 +438,6 @@ public class RemoteProxySessionV2
 					client = null;
 				}
 				closing = true;
-				new Exception().printStackTrace();
 			}
 		}
 	}
@@ -451,10 +456,11 @@ public class RemoteProxySessionV2
 	}
 
 	private int sessionId;
+
 	public int getSessionId()
-    {
-    	return sessionId;
-    }
+	{
+		return sessionId;
+	}
 
 	private int sequence;
 	private String method;
