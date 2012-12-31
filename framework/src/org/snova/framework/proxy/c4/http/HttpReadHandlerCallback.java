@@ -25,20 +25,20 @@ import org.snova.http.client.HttpClientHandler;
  */
 public class HttpReadHandlerCallback implements FutureCallback
 {
-	protected static Logger logger = LoggerFactory
-	        .getLogger(HttpReadHandlerCallback.class);
-	Event cacheEvent;
-	private HttpDualConn conn;
-	HttpClientHandler httpClient;
-	private Buffer resBuffer = new Buffer(256);
-	private int chunkLength = -1;
-	private int waitTime = 1;
-
+	protected static Logger	logger	    = LoggerFactory
+	                                            .getLogger(HttpReadHandlerCallback.class);
+	Event	                cacheEvent;
+	private HttpDualConn	conn;
+	HttpClientHandler	    httpClient;
+	private Buffer	        resBuffer	= new Buffer(256);
+	private int	            chunkLength	= -1;
+	private int	            waitTime	= 1;
+	
 	public HttpReadHandlerCallback(HttpDualConn httpDualConn)
 	{
 		conn = httpDualConn;
 	}
-
+	
 	void stop()
 	{
 		if (null != httpClient)
@@ -46,7 +46,7 @@ public class HttpReadHandlerCallback implements FutureCallback
 			httpClient.closeChannel();
 		}
 	}
-
+	
 	@Override
 	public void onResponse(HttpResponse res)
 	{
@@ -62,13 +62,13 @@ public class HttpReadHandlerCallback implements FutureCallback
 			}
 		}
 	}
-
+	
 	@Override
 	public synchronized void onBody(HttpChunk chunk)
 	{
 		fillResponseBuffer(chunk.getContent());
 	}
-
+	
 	private boolean tryHandleBuffer()
 	{
 		if (chunkLength == -1)
@@ -105,17 +105,17 @@ public class HttpReadHandlerCallback implements FutureCallback
 			{
 				logger.error("Failed to parse recv content", e);
 			}
-
+			
 			resBuffer.discardReadedBytes();
 			chunkLength = -1;
 		}
 		return true;
 	}
-
+	
 	private void fillResponseBuffer(ChannelBuffer buffer)
 	{
 		int contentlen = buffer.readableBytes();
-
+		
 		if (contentlen > 0)
 		{
 			resBuffer.ensureWritableBytes(contentlen);
@@ -126,28 +126,26 @@ public class HttpReadHandlerCallback implements FutureCallback
 				;
 		}
 	}
-
+	
 	private void retry()
 	{
 		if (null != cacheEvent)
 		{
-			conn.startWriteTask(cacheEvent);
+			conn.startWriteTask(new Event[] { cacheEvent });
 		}
 		conn.startReadTask();
 	}
-
+	
 	@Override
 	public void onComplete(HttpResponse res)
 	{
 		// logger.info(String.format("Session[%d] read tunnel closed",
 		// conn.sid));
 		conn.read = null;
-		if (res.getStatus().getCode() != 200)
+		if (res.getStatus().getCode() >= 500)
 		{
 			SharedObjectHelper.getGlobalTimer().schedule(new Runnable()
 			{
-
-				@Override
 				public void run()
 				{
 					retry();
@@ -162,7 +160,7 @@ public class HttpReadHandlerCallback implements FutureCallback
 			retry();
 		}
 	}
-
+	
 	@Override
 	public void onError(String error)
 	{
@@ -178,6 +176,6 @@ public class HttpReadHandlerCallback implements FutureCallback
 			}
 		}, waitTime, TimeUnit.SECONDS);
 		waitTime *= 2;
-
+		
 	}
 }

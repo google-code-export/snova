@@ -19,6 +19,7 @@ import org.snova.framework.proxy.google.Google;
 import org.snova.framework.proxy.hosts.HostsService;
 import org.snova.framework.proxy.spac.SPAC;
 import org.snova.framework.server.ProxyServer;
+import org.snova.framework.server.ProxyServerType;
 import org.snova.framework.trace.Trace;
 import org.snova.framework.util.SharedObjectHelper;
 import org.snova.http.client.HttpClientHelper;
@@ -29,10 +30,10 @@ import org.snova.http.client.common.SimpleSocketAddress;
  */
 public class Snova
 {
-	protected Logger logger = LoggerFactory.getLogger(getClass());
-	private ProxyServer server;
-	private boolean isStarted = false;
-
+	protected Logger	logger	  = LoggerFactory.getLogger(getClass());
+	private ProxyServer	server;
+	private boolean	    isStarted	= false;
+	
 	public Snova(Trace trace)
 	{
 		SharedObjectHelper.setTrace(trace);
@@ -54,7 +55,7 @@ public class Snova
 		}
 		SPAC.init();
 	}
-
+	
 	public void stop()
 	{
 		try
@@ -72,19 +73,19 @@ public class Snova
 		{
 			logger.error("Failed to stop framework.", e);
 		}
-
+		
 	}
-
+	
 	public boolean isStarted()
 	{
 		return isStarted;
 	}
-
+	
 	public boolean start()
 	{
 		return restart();
 	}
-
+	
 	public boolean restart()
 	{
 		try
@@ -94,11 +95,11 @@ public class Snova
 			        .getProperty("LocalServer", "Listen");
 			SimpleSocketAddress address = HttpClientHelper
 			        .getHttpRemoteAddress(false, listen);
-			server = new ProxyServer(address);
-
+			server = new ProxyServer(address, ProxyServerType.AUTO);
+			
 			SharedObjectHelper.getTrace().info(
 			        "Local HTTP(S) Server Running...\nat " + listen);
-
+			
 			isStarted = true;
 			return true;
 		}

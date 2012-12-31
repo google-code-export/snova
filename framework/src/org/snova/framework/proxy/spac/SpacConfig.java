@@ -26,7 +26,7 @@ public class SpacConfig
 {
 	protected static Logger logger = LoggerFactory.getLogger(SpacConfig.class);
 
-	private static String defaultProxy = "GAE";
+	static String defaultProxy = "GAE";
 	static SpacRule[] spacRules = new SpacRule[0];
 
 	private static void parseSpacRules(JSONArray array,

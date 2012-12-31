@@ -27,7 +27,7 @@ public class GAE
 	public static boolean enable;
 	static ListSelector<GAEServerAuth> servers = new ListSelector<GAEServerAuth>();
 
-	static class GAERemoteProxyManager implements RemoteProxyManager
+	public static class GAERemoteProxyManager implements RemoteProxyManager
 	{
 		@Override
 		public String getName()

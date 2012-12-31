@@ -31,7 +31,7 @@ public class ProxyServer
 	private ServerBootstrap bootstrap = new ServerBootstrap();
 	private Channel server = null;
 
-	public ProxyServer(SimpleSocketAddress listenAddress)
+	public ProxyServer(SimpleSocketAddress listenAddress, final ProxyServerType type)
 	{
 		String host = listenAddress.host;
 		int port = listenAddress.port;
@@ -48,7 +48,7 @@ public class ProxyServer
 					ChannelPipeline pipeline = Channels.pipeline();
 					pipeline.addLast("decoder", new HttpRequestDecoder());
 					pipeline.addLast("encoder", new HttpResponseEncoder());
-					pipeline.addLast("handler", new ProxyHandler());
+					pipeline.addLast("handler", new ProxyHandler(type));
 					return pipeline;
 				}
 			});

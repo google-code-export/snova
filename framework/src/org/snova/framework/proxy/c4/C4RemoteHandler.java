@@ -33,27 +33,27 @@ import org.snova.http.client.common.SimpleSocketAddress;
  */
 public class C4RemoteHandler implements RemoteProxyHandler, EventHandler
 {
-	protected static Logger logger = LoggerFactory
-	        .getLogger(C4RemoteHandler.class);
-	private C4ServerAuth server;
-	private LocalProxyHandler localHandler;
-	private int sequence = 0;
-
-	private HttpDualConn http;
-	private SimpleSocketAddress proxyAddr;
-
+	protected static Logger	    logger	 = LoggerFactory
+	                                             .getLogger(C4RemoteHandler.class);
+	private C4ServerAuth	    server;
+	private LocalProxyHandler	localHandler;
+	private int	                sequence	= 0;
+	
+	private HttpDualConn	    http;
+	private SimpleSocketAddress	proxyAddr;
+	
 	public C4RemoteHandler(C4ServerAuth s)
 	{
 		this.server = s;
 		http = new HttpDualConn(s, this);
 	}
-
+	
 	private boolean isWebsocketServer()
 	{
 		return (server.url.getProtocol().equalsIgnoreCase("ws") || server.url
 		        .getProtocol().equalsIgnoreCase("wss"));
 	}
-
+	
 	private HTTPRequestEvent buildHttpRequestEvent(HttpRequest request)
 	{
 		HTTPRequestEvent event = new HTTPRequestEvent();
@@ -91,7 +91,7 @@ public class C4RemoteHandler implements RemoteProxyHandler, EventHandler
 		}
 		return event;
 	}
-
+	
 	@Override
 	public void handleRequest(LocalProxyHandler local, HttpRequest req)
 	{
@@ -112,27 +112,28 @@ public class C4RemoteHandler implements RemoteProxyHandler, EventHandler
 		}
 		requestEvent(ev);
 	}
-
+	
 	void requestEvent(Event ev)
 	{
 		if (isWebsocketServer())
 		{
-
+			
 		}
 		else
 		{
-
-			http.requestEvent(ev);
-			// http.requestEvent(buildHttpRequestEvent(req));
+			if (null != http)
+			{
+				http.requestEvent(ev);
+			}
 		}
 	}
-
+	
 	@Override
 	public void handleChunk(LocalProxyHandler local, HttpChunk chunk)
 	{
 		handleRawData(local, chunk.getContent());
 	}
-
+	
 	@Override
 	public void handleRawData(LocalProxyHandler local, ChannelBuffer raw)
 	{
@@ -144,14 +145,13 @@ public class C4RemoteHandler implements RemoteProxyHandler, EventHandler
 		buf.readBytes(ev.content);
 		requestEvent(ev);
 	}
-
+	
 	@Override
 	public void close()
 	{
-		logger.info(String.format("Session[%d]closed", localHandler.getId()));
-
 		if (null != http)
 		{
+			logger.info(String.format("Session[%d]closed", localHandler.getId()));
 			HttpDualConn httpConn = http;
 			SocketConnectionEvent closeEv = new SocketConnectionEvent();
 			closeEv.status = SocketConnectionEvent.TCP_CONN_CLOSED;
@@ -161,9 +161,8 @@ public class C4RemoteHandler implements RemoteProxyHandler, EventHandler
 			httpConn.close();
 			http = null;
 		}
-
 	}
-
+	
 	@Override
 	public void onEvent(EventHeader header, Event event)
 	{
@@ -173,7 +172,7 @@ public class C4RemoteHandler implements RemoteProxyHandler, EventHandler
 			{
 				TCPChunkEvent chunk = (TCPChunkEvent) event;
 				localHandler.handleRawData(this,
-						ChannelBuffers.wrappedBuffer(chunk.content));
+				        ChannelBuffers.wrappedBuffer(chunk.content));
 				logger.info(String.format("Session[%d]Handle chunk %d:%d",
 				        localHandler.getId(), chunk.sequence,
 				        chunk.content.length));

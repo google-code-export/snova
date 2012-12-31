@@ -44,14 +44,14 @@ import org.snova.http.client.ProxyCallback;
  */
 public class HttpDualConn
 {
-	protected static Logger logger = LoggerFactory
-	        .getLogger(HttpDualConn.class);
-	private C4ServerAuth server;
-	EventHandler cb;
-	int sid;
-	private boolean closed = false;
-	private static HttpClient httpClient = null;
-
+	protected static Logger	  logger	   = LoggerFactory
+	                                               .getLogger(HttpDualConn.class);
+	private C4ServerAuth	  server;
+	EventHandler	          cb;
+	int	                      sid;
+	private boolean	          closed	   = false;
+	private static HttpClient	httpClient	= null;
+	
 	private static void initHttpClient() throws Exception
 	{
 		if (null != httpClient)
@@ -89,7 +89,7 @@ public class HttpDualConn
 		httpClient = new HttpClient(options,
 		        SharedObjectHelper.getClientBootstrap());
 	}
-
+	
 	public HttpDualConn(C4ServerAuth server, EventHandler cb)
 	{
 		this.server = server;
@@ -104,11 +104,11 @@ public class HttpDualConn
 			e.printStackTrace();
 		}
 	}
-
-	HttpReadHandlerCallback read;
-	HttpWriteHandlerCallback write;
-	boolean running;
-
+	
+	HttpReadHandlerCallback	 read;
+	HttpWriteHandlerCallback	write;
+	boolean	                 running;
+	
 	private HttpClientHandler writeEvent(Event[] evs, String path,
 	        FutureCallback callback, KeyValuePair<String, String> header)
 	{
@@ -137,7 +137,7 @@ public class HttpDualConn
 		                "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:15.0) Gecko/20100101 Firefox/15.0.1"));
 		request.setHeader(HttpHeaders.Names.CONTENT_TYPE,
 		        "application/octet-stream");
-
+		
 		Buffer buf = new Buffer(1024);
 		for (Event ev : evs)
 		{
@@ -149,10 +149,10 @@ public class HttpDualConn
 		{
 			request.setHeader(header.getName(), header.getValue());
 		}
-
+		
 		request.setContent(ChannelBuffers.wrappedBuffer(buf.getRawBuffer(),
 		        buf.getReadIndex(), buf.readableBytes()));
-
+		
 		try
 		{
 			return httpClient.execute(request, callback);
@@ -163,7 +163,7 @@ public class HttpDualConn
 		}
 		return null;
 	}
-
+	
 	private Event wrapEvent(Event ev)
 	{
 		IniProperties cfg = SnovaConfiguration.getInstance().getIniProperties();
@@ -173,22 +173,31 @@ public class HttpDualConn
 		enc.setHash(ev.getHash());
 		return enc;
 	}
-
-	void startWriteTask(final Event ev)
+	
+	void startWriteTask(Event[] evs)
 	{
-		HttpDualConn.this.write = new HttpWriteHandlerCallback(
+		this.write = new HttpWriteHandlerCallback(
 		        HttpDualConn.this);
-		writeEvent(new Event[] { wrapEvent(ev) }, "push", write, null);
-		EventHelper.resetEncodedEvent(ev);
-		write.cacheEvent = ev;
+		Event[] es = new Event[evs.length];
+		for (int i = 0; i < es.length; i++)
+		{
+			es[i] = wrapEvent(evs[i]);
+		}
+		writeEvent(es, "push", write, null);
+		for (int i = 0; i < es.length; i++)
+		{
+			EventHelper.resetEncodedEvent(evs[i]);
+		}
+		
+		write.cacheEvent = evs;
 	}
-
+	
 	void startReadTask()
 	{
 		if (closed || null != read)
 		{
-			// logger.info(String.format(
-			// "Session[%d]is closed or read task is not null.", sid));
+			logger.info(String.format(
+			        "Session[%d]is closed or read task is not null.", sid));
 			return;
 		}
 		read = new HttpReadHandlerCallback(HttpDualConn.this);
@@ -204,9 +213,9 @@ public class HttpDualConn
 		read.httpClient = h;
 		// logger.info(String.format("Session[%d] restart read task:%d", sid,
 		// read.hashCode()));
-
+		
 	}
-
+	
 	public void requestEvent(Event ev)
 	{
 		sid = ev.getHash();
@@ -217,7 +226,7 @@ public class HttpDualConn
 				HTTPRequestEvent hreq = (HTTPRequestEvent) ev;
 				if (hreq.method.equalsIgnoreCase("Connect"))
 				{
-					startWriteTask(ev);
+					startWriteTask(new Event[] { ev });
 					startReadTask();
 					return;
 				}
@@ -240,11 +249,19 @@ public class HttpDualConn
 		else
 		{
 			// May be not working if uploading big data
-			startWriteTask(ev);
+			if (write != null)
+			{
+				write.offerEvent(ev);
+			}
+			else
+			{
+				startWriteTask(new Event[] { ev });
+			}
+			
 			// startReadTask();
 		}
 	}
-
+	
 	public void close()
 	{
 		if (null != read)
