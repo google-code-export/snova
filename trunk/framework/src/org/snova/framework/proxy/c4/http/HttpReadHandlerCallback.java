@@ -34,9 +34,12 @@ public class HttpReadHandlerCallback implements FutureCallback
 	private int	            chunkLength	= -1;
 	private int	            waitTime	= 1;
 	
+	long startTime;
+	
 	public HttpReadHandlerCallback(HttpDualConn httpDualConn)
 	{
 		conn = httpDualConn;
+		startTime = System.currentTimeMillis();
 	}
 	
 	void stop()
@@ -53,6 +56,7 @@ public class HttpReadHandlerCallback implements FutureCallback
 		if (res.getStatus().getCode() == 200)
 		{
 			fillResponseBuffer(res.getContent());
+			
 		}
 		else
 		{
@@ -98,7 +102,15 @@ public class HttpReadHandlerCallback implements FutureCallback
 					        content);
 					ev = Event.extractEvent(ev);
 					EventHeader header = Event.getHeader(ev);
-					conn.cb.onEvent(header, ev);
+					try
+                    {
+						conn.cb.onEvent(header, ev);
+                    }
+                    catch (Exception e)
+                    {
+                    	logger.error("Ignore event handle exception ", e);
+                    }
+					
 				}
 			}
 			catch (Exception e)
@@ -115,7 +127,7 @@ public class HttpReadHandlerCallback implements FutureCallback
 	private void fillResponseBuffer(ChannelBuffer buffer)
 	{
 		int contentlen = buffer.readableBytes();
-		
+		startTime = System.currentTimeMillis();
 		if (contentlen > 0)
 		{
 			resBuffer.ensureWritableBytes(contentlen);
@@ -132,6 +144,7 @@ public class HttpReadHandlerCallback implements FutureCallback
 		if (null != cacheEvent)
 		{
 			conn.startWriteTask(new Event[] { cacheEvent });
+			cacheEvent = null;
 		}
 		conn.startReadTask();
 	}
