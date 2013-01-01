@@ -28,7 +28,7 @@ import org.snova.http.client.HttpClientHelper;
 import org.snova.http.client.common.SimpleSocketAddress;
 
 /**
- * @author qiyingwang
+ * @author yinqiwen
  * 
  */
 public class C4RemoteHandler implements RemoteProxyHandler, EventHandler
@@ -194,4 +194,10 @@ public class C4RemoteHandler implements RemoteProxyHandler, EventHandler
 			}
 		}
 	}
+
+	@Override
+    public String getName()
+    {
+	    return "C4";
+    }
 }

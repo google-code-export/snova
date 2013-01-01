@@ -42,7 +42,6 @@ import org.jboss.netty.handler.codec.http.DefaultHttpChunk;
 import org.jboss.netty.handler.codec.http.DefaultHttpRequest;
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
 import org.jboss.netty.handler.codec.http.HttpChunk;
-import org.jboss.netty.handler.codec.http.HttpClientCodec;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpRequest;
@@ -65,9 +64,9 @@ import org.snova.framework.proxy.common.RangeFetchStatus;
 import org.snova.framework.proxy.hosts.HostsService;
 import org.snova.framework.util.SharedObjectHelper;
 import org.snova.framework.util.SslCertificateHelper;
-import org.snova.http.client.HttpClient;
-import org.snova.http.client.FutureCallback;
 import org.snova.http.client.Connector;
+import org.snova.http.client.FutureCallback;
+import org.snova.http.client.HttpClient;
 import org.snova.http.client.HttpClientException;
 import org.snova.http.client.HttpClientHandler;
 import org.snova.http.client.HttpClientHelper;
@@ -844,4 +843,10 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 		{
 		}
 	}
+
+	@Override
+    public String getName()
+    {
+	    return "GAE";
+    }
 }

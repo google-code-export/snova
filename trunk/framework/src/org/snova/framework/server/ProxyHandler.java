@@ -35,29 +35,29 @@ import org.snova.framework.proxy.spac.SPAC;
 public class ProxyHandler extends SimpleChannelUpstreamHandler implements
         LocalProxyHandler
 {
-	protected Logger	       logger	           = LoggerFactory
-	                                                       .getLogger(getClass());
-	
-	private ProxyServerType	   serverType;
-	private RemoteProxyManager	remoteProxyManager	= null;
-	private RemoteProxyHandler	remoteHandler	   = null;
-	private Channel	           localChannel	       = null;
-	
+	protected Logger logger = LoggerFactory.getLogger(getClass());
+
+	private ProxyServerType serverType;
+	private RemoteProxyManager[] candidateProxyManager = null;
+	private String[] proxyAttr;
+	private RemoteProxyHandler remoteHandler = null;
+	private Channel localChannel = null;
+
 	public Channel getLocalChannel()
 	{
 		return localChannel;
 	}
-	
-	private Integer	             id;
-	
-	private static AtomicInteger	seed	= new AtomicInteger(1);
-	
+
+	private Integer id;
+
+	private static AtomicInteger seed = new AtomicInteger(1);
+
 	public ProxyHandler(ProxyServerType type)
 	{
 		id = seed.getAndIncrement();
 		serverType = type;
 	}
-	
+
 	private void handleChunks(Object e)
 	{
 		if (e instanceof HttpChunk)
@@ -80,35 +80,49 @@ public class ProxyHandler extends SimpleChannelUpstreamHandler implements
 			logger.error("Unsupported message type:" + e.getClass());
 		}
 	}
-	
+
+	private void processHttpRequest(RemoteProxyManager rm, HttpRequest request)
+	{
+		remoteHandler = rm.createProxyHandler(proxyAttr);
+		remoteHandler.handleRequest(this, request);
+	}
+
 	private void handleHttpRequest(HttpRequest request)
 	{
-		RemoteProxyManager[] rm = SPAC.selectProxy(request, serverType);
-		if (null == rm)
+		request.removeHeader("Proxy-Connection");
+		Object[] attr = new Object[1];
+		candidateProxyManager = SPAC.selectProxy(request, serverType, attr);
+		if (null == candidateProxyManager)
 		{
 			logger.error("No proxy service found.");
 			close();
 			return;
 		}
-		if (null == remoteProxyManager)
+		proxyAttr = (String[]) attr[0];
+		if (remoteHandler != null)
 		{
-			// only first handler support
-			remoteProxyManager = rm[0];
-			remoteHandler = remoteProxyManager.createProxyHandler();
-		}
-		else
-		{
-			if (!remoteProxyManager.getName().equalsIgnoreCase(rm[0].getName()))
+			boolean match = false;
+			for (RemoteProxyManager rm : candidateProxyManager)
+			{
+				if (rm.getName().equalsIgnoreCase(remoteHandler.getName()))
+				{
+					match = true;
+					break;
+				}
+			}
+			if (match)
+			{
+				remoteHandler.handleRequest(this, request);
+				return;
+			}
+			else
 			{
 				remoteHandler.close();
-				remoteProxyManager = rm[0];
-				remoteHandler = remoteProxyManager.createProxyHandler();
 			}
 		}
-		request.removeHeader("Proxy-Connection");
-		remoteHandler.handleRequest(this, request);
+		processHttpRequest(candidateProxyManager[0], request);
 	}
-	
+
 	private void doClose()
 	{
 		close();
@@ -118,7 +132,7 @@ public class ProxyHandler extends SimpleChannelUpstreamHandler implements
 			remoteHandler = null;
 		}
 	}
-	
+
 	public void close()
 	{
 		if (localChannel != null)
@@ -129,9 +143,9 @@ public class ProxyHandler extends SimpleChannelUpstreamHandler implements
 			}
 			localChannel = null;
 		}
-		
+
 	}
-	
+
 	@Override
 	public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e)
 	        throws Exception
@@ -143,7 +157,7 @@ public class ProxyHandler extends SimpleChannelUpstreamHandler implements
 		}
 		doClose();
 	}
-	
+
 	@Override
 	public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
 	        throws Exception
@@ -151,14 +165,14 @@ public class ProxyHandler extends SimpleChannelUpstreamHandler implements
 		logger.error("Browser connection[" + id + "] exceptionCaught.",
 		        e.getCause());
 	}
-	
+
 	@Override
 	public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
 	        throws Exception
 	{
 		Object msg = e.getMessage();
 		localChannel = ctx.getChannel();
-		
+
 		if (msg instanceof HttpRequest)
 		{
 			HttpRequest request = (HttpRequest) msg;
@@ -169,7 +183,7 @@ public class ProxyHandler extends SimpleChannelUpstreamHandler implements
 			handleChunks(msg);
 		}
 	}
-	
+
 	public void handleResponse(RemoteProxyHandler remote, HttpResponse res)
 	{
 		if (null != localChannel && localChannel.isConnected())
@@ -181,7 +195,7 @@ public class ProxyHandler extends SimpleChannelUpstreamHandler implements
 			doClose();
 		}
 	}
-	
+
 	@Override
 	public void handleChunk(RemoteProxyHandler remote, final HttpChunk chunk)
 	{
@@ -196,7 +210,7 @@ public class ProxyHandler extends SimpleChannelUpstreamHandler implements
 			doClose();
 		}
 	}
-	
+
 	@Override
 	public void handleRawData(RemoteProxyHandler remote, ChannelBuffer raw)
 	{
@@ -209,13 +223,13 @@ public class ProxyHandler extends SimpleChannelUpstreamHandler implements
 			doClose();
 		}
 	}
-	
+
 	@Override
 	public int getId()
 	{
 		return id;
 	}
-	
+
 	public void switchRawHandler()
 	{
 		if (null != localChannel)
@@ -224,5 +238,28 @@ public class ProxyHandler extends SimpleChannelUpstreamHandler implements
 			localChannel.getPipeline().remove("encoder");
 			localChannel.getPipeline().remove("decoder");
 		}
+	}
+
+	@Override
+	public void onProxyFailed(RemoteProxyHandler remote,
+	        HttpRequest proxyRequest)
+	{
+		if (null != candidateProxyManager)
+		{
+			for (int i = 0; i < candidateProxyManager.length; i++)
+			{
+				if (remote.getName().equalsIgnoreCase(
+				        candidateProxyManager[i].getName()))
+				{
+					if (i < candidateProxyManager.length - 1)
+					{
+						processHttpRequest(candidateProxyManager[i + 1],
+						        proxyRequest);
+						return;
+					}
+				}
+			}
+		}
+		doClose();
 	}
 }

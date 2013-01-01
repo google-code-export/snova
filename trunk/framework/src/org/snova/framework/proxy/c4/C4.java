@@ -31,7 +31,7 @@ public class C4
 		}
 
 		@Override
-		public RemoteProxyHandler createProxyHandler()
+		public RemoteProxyHandler createProxyHandler(String[] attr)
 		{
 			
 			return new C4RemoteHandler(servers.select());

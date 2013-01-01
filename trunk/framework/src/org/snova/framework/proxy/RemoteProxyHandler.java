@@ -21,4 +21,6 @@ public interface RemoteProxyHandler
 	public void handleRawData(LocalProxyHandler local, ChannelBuffer raw);
 	
 	public void close();
+	
+	public String getName();
 }
