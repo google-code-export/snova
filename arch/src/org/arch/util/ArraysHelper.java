@@ -3,16 +3,35 @@
  */
 package org.arch.util;
 
+import java.lang.reflect.Array;
+
 /**
  * @author wqy
  * 
  */
 public class ArraysHelper
 {
+	public static <T> T[] append(T[] array, T element)
+	{
+		int length = 0;
+		if(null != array)
+		{
+			length = array.length;
+		}
+		T[] newArray = (T[]) Array.newInstance(element.getClass(), length + 1);
+		if(null != array)
+		{
+			System.arraycopy(array, 0, newArray, 0, array.length);
+		}
+		newArray[array.length] = element;
+		return newArray;
+	}
+
 	public static int indexOf(byte[] source, byte[] target)
 	{
 		return indexOf(source, 0, source.length, target, 0, target.length, 0);
 	}
+
 	public static int indexOf(byte[] source, int sourceOffset, int sourceCount,
 	        byte[] target, int targetOffset, int targetCount, int fromIndex)
 	{
@@ -28,10 +47,10 @@ public class ArraysHelper
 		{
 			return fromIndex;
 		}
-		
+
 		byte first = target[targetOffset];
 		int max = sourceOffset + (sourceCount - targetCount);
-		
+
 		for (int i = sourceOffset + fromIndex; i <= max; i++)
 		{
 			/* Look for first character. */
@@ -40,7 +59,7 @@ public class ArraysHelper
 				while (++i <= max && source[i] != first)
 					;
 			}
-			
+
 			/* Found first character, now look at the rest of v2 */
 			if (i <= max)
 			{
@@ -49,7 +68,7 @@ public class ArraysHelper
 				for (int k = targetOffset + 1; j < end
 				        && source[j] == target[k]; j++, k++)
 					;
-				
+
 				if (j == end)
 				{
 					/* Found whole string. */
