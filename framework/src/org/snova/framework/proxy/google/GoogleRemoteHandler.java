@@ -7,6 +7,7 @@ import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
@@ -279,6 +280,7 @@ public class GoogleRemoteHandler implements RemoteProxyHandler
 				{
 					c = httpClient;
 				}
+				
 				proxyClientHandler = c.execute(req,
 				        new FutureCallback.FutureCallbackAdapter()
 				        {

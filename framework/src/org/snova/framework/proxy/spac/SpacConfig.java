@@ -18,7 +18,7 @@ import org.snova.framework.proxy.c4.C4;
 import org.snova.framework.proxy.gae.GAE;
 
 /**
- * @author wqy
+ * @author yinqiwen
  * 
  */
 public class SpacConfig

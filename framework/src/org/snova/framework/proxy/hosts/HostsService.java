@@ -55,34 +55,6 @@ public class HostsService
 		}
 	}
 
-	// public static String lookupIP(String host)
-	// {
-	// ResolveOptions options = new ResolveOptions();
-	// options.useTcp = true;
-	// options.cacheTtl = ResolveOptions.DNS_CACHE_TTL_SELF;
-	// String[] ips;
-	// try
-	// {
-	// DesktopFrameworkConfiguration cfg = DesktopFrameworkConfiguration
-	// .getInstance();
-	// ips = Resolver.resolveIPv4(cfg.getTrsutedDNS(), host, options);
-	// if (ips.length > 0)
-	// {
-	// if (ips.length == 1)
-	// {
-	// return ips[0];
-	// }
-	// Random r = new Random();
-	// return ips[r.nextInt(ips.length)];
-	// }
-	// }
-	// catch (NamingException e)
-	// {
-	//
-	// }
-	// return host;
-	// }
-
 	public static String getMappingHost(String host)
 	{
 		ListSelector<String> selector = hostsMappingTable.get(host);

@@ -86,9 +86,10 @@ public class SPAC
 				proxyAattr = ArraysHelper.append(proxyAattr, attrtmp);
 			}
 			rms[i] = RemoteProxyManagerHolder.getRemoteProxyManager(name);
-//			System.out.println("######" + rms[i] + " for " + name + " for "
-//			        + req.getHeader("Host"));
+			System.out.println("######" + rms[i] + " for " + name + " for "
+			        + req.getHeader("Host"));
 		}
+		attr[0] = proxyAattr;
 		return rms;
 	}
 }

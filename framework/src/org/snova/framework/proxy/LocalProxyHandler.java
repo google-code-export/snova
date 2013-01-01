@@ -10,7 +10,7 @@ import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 
 /**
- * @author qiyingwang
+ * @author yinqiwen
  * 
  */
 public interface LocalProxyHandler

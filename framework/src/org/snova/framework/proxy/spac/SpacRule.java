@@ -14,7 +14,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
- * @author qiyingwang
+ * @author yinqiwen
  * 
  */
 public class SpacRule
@@ -24,9 +24,9 @@ public class SpacRule
 	private String[]	methodPatterns	= new String[0];
 	private String	  protocolPattern;
 	
-	String[]	proxyies	   = new String[0];
-	String[]	attrs	       = new String[0];
-	String[]	filters	       = new String[0];
+	String[]	      proxyies	       = new String[0];
+	String[]	      attrs	           = new String[0];
+	String[]	      filters	       = new String[0];
 	
 	private static String[] toStringArray(JSONArray array) throws JSONException
 	{
@@ -136,8 +136,23 @@ public class SpacRule
 		return false;
 	}
 	
+	private boolean matchProtocol(HttpRequest req)
+	{
+		if (null == protocolPattern)
+		{
+			return true;
+		}
+		String protocol = "http";
+		if (req.getMethod().equals(HttpMethod.CONNECT))
+		{
+			protocol = "https";
+		}
+		return protocol.equalsIgnoreCase(protocolPattern);
+	}
+	
 	public boolean match(HttpRequest req)
 	{
-		return matchUrl(req) && matchHost(req) && matchMethod(req);
+		return matchUrl(req) && matchHost(req) && matchMethod(req)
+		        && matchProtocol(req);
 	}
 }

@@ -4,7 +4,7 @@
 package org.snova.framework.proxy;
 
 /**
- * @author qiyingwang
+ * @author yinqiwen
  * 
  */
 public interface RemoteProxyManager
