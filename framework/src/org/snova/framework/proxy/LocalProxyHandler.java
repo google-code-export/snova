@@ -6,6 +6,7 @@ package org.snova.framework.proxy;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.handler.codec.http.HttpChunk;
+import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 
 /**
@@ -25,4 +26,6 @@ public interface LocalProxyHandler
 	public int getId();
 
 	public Channel getLocalChannel();
+	
+	public void onProxyFailed(RemoteProxyHandler remote, HttpRequest proxyRequest);
 }

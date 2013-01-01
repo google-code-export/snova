@@ -11,5 +11,5 @@ public interface RemoteProxyManager
 {
 	public String getName();
 
-	public RemoteProxyHandler createProxyHandler();
+	public RemoteProxyHandler createProxyHandler(String[] attr);
 }

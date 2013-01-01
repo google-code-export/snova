@@ -20,9 +20,9 @@ public class Google
 		}
 		
 		@Override
-		public RemoteProxyHandler createProxyHandler()
+		public RemoteProxyHandler createProxyHandler(String[] attr)
 		{
-			return new GoogleRemoteHandler();
+			return new GoogleRemoteHandler(attr);
 		}
 	}
 	

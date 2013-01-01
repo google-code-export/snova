@@ -16,7 +16,6 @@ import org.slf4j.LoggerFactory;
 import org.snova.framework.config.SnovaConfiguration;
 import org.snova.framework.proxy.c4.C4;
 import org.snova.framework.proxy.gae.GAE;
-import org.snova.framework.proxy.ssh.SSH;
 
 /**
  * @author wqy
@@ -88,10 +87,6 @@ public class SpacConfig
 			else if (C4.enable)
 			{
 				defaultProxy = "C4";
-			}
-			else if (SSH.enable)
-			{
-				defaultProxy = "SSH";
 			}
 			else
 			{

@@ -12,7 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.framework.config.SnovaConfiguration;
 import org.snova.framework.proxy.c4.C4;
-import org.snova.framework.proxy.ssh.SSH;
 
 /**
  * @author wqy
@@ -47,7 +46,7 @@ public class GAEConfig
 			}
 			appids.add(auth);
 		}
-		if (appids.isEmpty() && (C4.enable || SSH.enable))
+		if (appids.isEmpty() && (C4.enable))
 		{
 			return false;
 		}

@@ -9,5 +9,5 @@ package org.snova.framework.server;
  */
 public enum ProxyServerType
 {
-	AUTO, GAE, C4, SSH
+	AUTO, GAE, C4
 }
