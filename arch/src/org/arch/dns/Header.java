@@ -25,8 +25,10 @@
 
 package org.arch.dns;
 
+import org.arch.dns.exception.CommunicationException;
+import org.arch.dns.exception.NamingException;
 
-import javax.naming.*;
+
 
 
 /**

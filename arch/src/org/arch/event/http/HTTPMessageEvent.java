@@ -18,13 +18,13 @@ import org.arch.event.Event;
  */
 public abstract class HTTPMessageEvent extends Event
 {
-	public List<KeyValuePair<String, String>> headers = new LinkedList<KeyValuePair<String, String>>();
-	public Buffer content = new Buffer(0);
-
+	public List<KeyValuePair<String, String>>	headers	= new LinkedList<KeyValuePair<String, String>>();
+	public Buffer	                          content	= new Buffer(0);
+	
 	protected abstract boolean doDecode(Buffer buffer);
-
+	
 	protected abstract boolean doEncode(Buffer buffer);
-
+	
 	public int getCurrentContentLength()
 	{
 		return content.readableBytes();
@@ -33,9 +33,13 @@ public abstract class HTTPMessageEvent extends Event
 	public int getContentLength()
 	{
 		String lenheader = getHeader("Content-Length");
-		if(null != lenheader)
+		if (null != lenheader)
 		{
 			return Integer.parseInt(lenheader.trim());
+		}
+		if (null != getHeader("Transfer-Encoding"))
+		{
+			return -1;
 		}
 		return 0;
 	}
@@ -47,9 +51,9 @@ public abstract class HTTPMessageEvent extends Event
 	
 	private KeyValuePair<String, String> getHeaderPair(String name)
 	{
-		for(KeyValuePair<String, String> header:headers)
+		for (KeyValuePair<String, String> header : headers)
 		{
-			if(header.getName().equalsIgnoreCase(name))
+			if (header.getName().equalsIgnoreCase(name))
 			{
 				return header;
 			}
@@ -60,14 +64,14 @@ public abstract class HTTPMessageEvent extends Event
 	public String getHeader(String name)
 	{
 		KeyValuePair<String, String> header = getHeaderPair(name);
-		return null != header?header.getValue():null;
+		return null != header ? header.getValue() : null;
 	}
 	
 	public void removeHeader(String name)
 	{
-		for(KeyValuePair<String, String> header:headers)
+		for (KeyValuePair<String, String> header : headers)
 		{
-			if(header.getName().equalsIgnoreCase(name))
+			if (header.getName().equalsIgnoreCase(name))
 			{
 				headers.remove(header);
 				return;
@@ -83,7 +87,7 @@ public abstract class HTTPMessageEvent extends Event
 	public void setHeader(String name, String value)
 	{
 		KeyValuePair<String, String> header = getHeaderPair(name);
-		if(null != header)
+		if (null != header)
 		{
 			header.setValue(value);
 		}
@@ -95,7 +99,8 @@ public abstract class HTTPMessageEvent extends Event
 	
 	public void addHeader(String name, String value)
 	{
-		KeyValuePair<String, String> header = new KeyValuePair<String, String>(name, value);
+		KeyValuePair<String, String> header = new KeyValuePair<String, String>(
+		        name, value);
 		headers.add(header);
 	}
 	
@@ -121,10 +126,10 @@ public abstract class HTTPMessageEvent extends Event
 			int contenlen = BufferHelper.readVarInt(buffer);
 			if (contenlen > 0)
 			{
-				//content = new byte[contenlen];
+				// content = new byte[contenlen];
 				content.ensureWritableBytes(contenlen);
 				content.write(buffer, contenlen);
-				//buffer.read(content);
+				// buffer.read(content);
 			}
 		}
 		catch (IOException e)
@@ -133,7 +138,7 @@ public abstract class HTTPMessageEvent extends Event
 		}
 		return true;
 	}
-
+	
 	@Override
 	protected boolean onEncode(Buffer buffer)
 	{
@@ -157,10 +162,13 @@ public abstract class HTTPMessageEvent extends Event
 	
 	protected void toString(StringBuilder buffer)
 	{
-		for(KeyValuePair<String, String> header:headers)
+		for (KeyValuePair<String, String> header : headers)
 		{
-			buffer.append(header.getName()).append(":").append(header.getValue()).append("\r\n");
+			buffer.append(header.getName()).append(":")
+			        .append(header.getValue()).append("\r\n");
 		}
-		//buffer.append(new String(content.getRawBuffer(),content.getReadIndex(), content.readableBytes()));
+		// buffer.append(new
+		// String(content.getRawBuffer(),content.getReadIndex(),
+		// content.readableBytes()));
 	}
 }
