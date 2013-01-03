@@ -17,7 +17,8 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.Arrays;
 
-import javax.naming.NamingException;
+import org.arch.dns.exception.NamingException;
+
 
 /**
  *
@@ -34,9 +35,12 @@ public class Main
 	{
 		ResolveOptions options = new ResolveOptions();
 		options.useTcp = true;
+		long start = System.currentTimeMillis();
 		String[] ips = Resolver.resolveIPv4(new String[] { "8.8.8.8" },
 		        "facebook.com", options);
+		long end = System.currentTimeMillis();
 		System.out.println(Arrays.toString(ips));
+		System.out.println(end - start);
 	}
 	
 }

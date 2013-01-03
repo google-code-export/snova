@@ -8,7 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import javax.naming.NamingException;
+import org.arch.dns.exception.NamingException;
+
 
 /**
  * @author wqy

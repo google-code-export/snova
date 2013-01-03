@@ -30,13 +30,19 @@ import java.net.DatagramSocket;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.Socket;
-import javax.naming.*;
 
 import java.util.Collections;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.HashSet;
+
+import org.arch.dns.exception.CommunicationException;
+import org.arch.dns.exception.ConfigurationException;
+import org.arch.dns.exception.NameNotFoundException;
+import org.arch.dns.exception.NamingException;
+import org.arch.dns.exception.OperationNotSupportedException;
+import org.arch.dns.exception.ServiceUnavailableException;
 
 // Some of this code began life as part of sun.javaos.net.DnsClient
 // originally by sritchie@eng 1/96.  It was first hacked up for JNDI

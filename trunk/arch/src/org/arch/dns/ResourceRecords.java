@@ -26,7 +26,9 @@
 package org.arch.dns;
 
 import java.util.Vector;
-import javax.naming.*;
+
+import org.arch.dns.exception.CommunicationException;
+import org.arch.dns.exception.NamingException;
 
 /**
  * The ResourceRecords class represents the resource records in the four

@@ -27,11 +27,11 @@ package org.arch.dns;
 
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.Iterator;
 
-import javax.naming.*;
+import org.arch.dns.exception.InvalidNameException;
+
 
 
 /**
@@ -103,7 +103,7 @@ import javax.naming.*;
  */
 
 
-public final class DnsName implements Name {
+public final class DnsName  {
 
     // If non-null, the domain name represented by this DnsName.
     private String domain = "";
@@ -213,25 +213,25 @@ public final class DnsName implements Name {
     }
 
     public boolean equals(Object obj) {
-        if (!(obj instanceof Name) || (obj instanceof CompositeName)) {
+        if (!(obj instanceof DnsName)) {
             return false;
         }
-        Name n = (Name) obj;
+        DnsName n = (DnsName) obj;
         return ((size() == n.size()) &&         // shortcut:  do sizes differ?
                 (compareTo(obj) == 0));
     }
 
     public int compareTo(Object obj) {
-        Name n = (Name) obj;
+    	DnsName n = (DnsName) obj;
         return compareRange(0, size(), n);      // never 0 if sizes differ
     }
 
-    public boolean startsWith(Name n) {
+    public boolean startsWith(DnsName n) {
         return ((size() >= n.size()) &&
                 (compareRange(0, n.size(), n) == 0));
     }
 
-    public boolean endsWith(Name n) {
+    public boolean endsWith(DnsName n) {
         return ((size() >= n.size()) &&
                 (compareRange(size() - n.size(), size(), n) == 0));
     }
@@ -259,11 +259,11 @@ public final class DnsName implements Name {
         };
     }
 
-    public Name getPrefix(int pos) {
+    public DnsName getPrefix(int pos) {
         return new DnsName(this, 0, pos);
     }
 
-    public Name getSuffix(int pos) {
+    public DnsName getSuffix(int pos) {
         return new DnsName(this, pos, size());
     }
 
@@ -285,11 +285,11 @@ public final class DnsName implements Name {
         return label;
     }
 
-    public Name add(String comp) throws InvalidNameException {
+    public DnsName add(String comp) throws InvalidNameException {
         return add(size(), comp);
     }
 
-    public Name add(int pos, String comp) throws InvalidNameException {
+    public DnsName add(int pos, String comp) throws InvalidNameException {
         if (pos < 0 || pos > size()) {
             throw new ArrayIndexOutOfBoundsException();
         }
@@ -316,57 +316,46 @@ public final class DnsName implements Name {
         return this;
     }
 
-    public Name addAll(Name suffix) throws InvalidNameException {
+    public DnsName addAll(DnsName suffix) throws InvalidNameException {
         return addAll(size(), suffix);
     }
 
-    public Name addAll(int pos, Name n) throws InvalidNameException {
-        if (n instanceof DnsName) {
-            // "n" is a DnsName so we can insert it as a whole, rather than
-            // verifying and inserting it component-by-component.
-            // More code, but less work.
-            DnsName dn = (DnsName) n;
+    public DnsName addAll(int pos, DnsName n) throws InvalidNameException {
+    	 // "n" is a DnsName so we can insert it as a whole, rather than
+        // verifying and inserting it component-by-component.
+        // More code, but less work.
+        DnsName dn = (DnsName) n;
 
-            if (dn.isEmpty()) {
-                return this;
-            }
-            // Check for empty labels:  may have only one, and only at end.
-            if ((pos > 0 && dn.hasRootLabel()) ||
-                (pos == 0 && hasRootLabel())) {
-                    throw new InvalidNameException(
-                        "Empty label must be the last label in a domain name");
-            }
+        if (dn.isEmpty()) {
+            return this;
+        }
+        // Check for empty labels:  may have only one, and only at end.
+        if ((pos > 0 && dn.hasRootLabel()) ||
+            (pos == 0 && hasRootLabel())) {
+                throw new InvalidNameException(
+                    "Empty label must be the last label in a domain name");
+        }
 
-            short newOctets = (short) (octets + dn.octets - 1);
-            if (newOctets > 255) {
-                throw new InvalidNameException("Name too long");
-            }
-            octets = newOctets;
-            int i = size() - pos;       // index for insertion into "labels"
-            labels.addAll(i, dn.labels);
+        short newOctets = (short) (octets + dn.octets - 1);
+        if (newOctets > 255) {
+            throw new InvalidNameException("Name too long");
+        }
+        octets = newOctets;
+        int i = size() - pos;       // index for insertion into "labels"
+        labels.addAll(i, dn.labels);
 
-            // Preserve "domain" if we're appending or prepending,
-            // otherwise invalidate it.
-            if (isEmpty()) {
-                domain = dn.domain;
-            } else if (domain == null || dn.domain == null) {
-                domain = null;
-            } else if (pos == 0) {
-                domain += (dn.domain.equals(".") ? "" : ".") + dn.domain;
-            } else if (pos == size()) {
-                domain = dn.domain + (domain.equals(".") ? "" : ".") + domain;
-            } else {
-                domain = null;
-            }
-
-        } else if (n instanceof CompositeName) {
-            n = (DnsName) n;            // force ClassCastException
-
-        } else {                // "n" is a compound name, but not a DnsName.
-            // Add labels least-significant first:  sometimes more efficient.
-            for (int i = n.size() - 1; i >= 0; i--) {
-                add(pos, n.get(i));
-            }
+        // Preserve "domain" if we're appending or prepending,
+        // otherwise invalidate it.
+        if (isEmpty()) {
+            domain = dn.domain;
+        } else if (domain == null || dn.domain == null) {
+            domain = null;
+        } else if (pos == 0) {
+            domain += (dn.domain.equals(".") ? "" : ".") + dn.domain;
+        } else if (pos == size()) {
+            domain = dn.domain + (domain.equals(".") ? "" : ".") + domain;
+        } else {
+            domain = null;
         }
         return this;
     }
@@ -385,10 +374,7 @@ public final class DnsName implements Name {
      * positive as these name components are less than, equal to, or
      * greater than those of "n".
      */
-    private int compareRange(int beg, int end, Name n) {
-        if (n instanceof CompositeName) {
-            n = (DnsName) n;                    // force ClassCastException
-        }
+    private int compareRange(int beg, int end, DnsName n) {
         // Loop through labels, starting with most significant.
         int minSize = Math.min(end - beg, n.size());
         for (int i = 0; i < minSize; i++) {

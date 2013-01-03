@@ -25,7 +25,8 @@
 
 package org.arch.dns;
 
-import javax.naming.InvalidNameException;
+import org.arch.dns.exception.InvalidNameException;
+
 
 
 /**
