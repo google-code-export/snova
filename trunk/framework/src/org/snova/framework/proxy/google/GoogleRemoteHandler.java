@@ -20,6 +20,7 @@ import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelStateEvent;
+import org.jboss.netty.channel.DefaultChannelFuture;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.handler.codec.http.HttpChunk;
@@ -50,17 +51,17 @@ import org.snova.http.client.ProxyCallback;
  */
 public class GoogleRemoteHandler implements RemoteProxyHandler
 {
-	protected static Logger logger = LoggerFactory
-	        .getLogger(GoogleRemoteHandler.class);
-	private static HttpClient httpsClient;
-	private static HttpClient httpClient;
-
-	private boolean useHttps;
-	private HttpClientHandler proxyClientHandler;
-	private ChannelFuture proxyTunnel;
-	private LocalProxyHandler localHandler;
-	private int failedCount;
-
+	protected static Logger	  logger	= LoggerFactory
+	                                         .getLogger(GoogleRemoteHandler.class);
+	private static HttpClient	httpsClient;
+	private static HttpClient	httpClient;
+	
+	private boolean	          useHttps;
+	private HttpClientHandler	proxyClientHandler;
+	private ChannelFuture	  proxyTunnel;
+	private LocalProxyHandler	localHandler;
+	private int	              failedCount;
+	
 	private static void initHttpClient() throws Exception
 	{
 		if (null != httpsClient)
@@ -107,6 +108,8 @@ public class GoogleRemoteHandler implements RemoteProxyHandler
 					ChannelFuture future = SharedObjectHelper
 					        .getClientBootstrap().connect(
 					                new InetSocketAddress(remoteHost, 443));
+					final DefaultChannelFuture returnFuture = new DefaultChannelFuture(
+					        future.getChannel(), false);
 					SSLContext sslContext = null;
 					try
 					{
@@ -118,9 +121,43 @@ public class GoogleRemoteHandler implements RemoteProxyHandler
 					}
 					SSLEngine sslEngine = sslContext.createSSLEngine();
 					sslEngine.setUseClientMode(true);
-					future.getChannel().getPipeline()
-					        .addLast("ssl", new SslHandler(sslEngine));
-					return future;
+					final SslHandler ssl = new SslHandler(sslEngine);
+					future.getChannel().getPipeline().addLast("ssl", ssl);
+					future.addListener(new ChannelFutureListener()
+					{
+						public void operationComplete(ChannelFuture future)
+						        throws Exception
+						{
+							if (future.isSuccess())
+							{
+								ssl.handshake().addListener(
+								        new ChannelFutureListener()
+								        {
+									        public void operationComplete(
+									                ChannelFuture future)
+									                throws Exception
+									        {
+										        if (future.isSuccess())
+										        {
+											        returnFuture.setSuccess();
+										        }
+										        else
+										        {
+											        returnFuture.setFailure(future
+											                .getCause());
+										        }
+										        
+									        }
+								        });
+							}
+							else
+							{
+								returnFuture.setFailure(future.getCause());
+							}
+							
+						}
+					});
+					return returnFuture;
 				}
 			};
 			httpOptions.connector = new Connector()
@@ -142,7 +179,7 @@ public class GoogleRemoteHandler implements RemoteProxyHandler
 		httpClient = new HttpClient(httpOptions,
 		        SharedObjectHelper.getClientBootstrap());
 	}
-
+	
 	public GoogleRemoteHandler(String[] attr)
 	{
 		try
@@ -164,7 +201,7 @@ public class GoogleRemoteHandler implements RemoteProxyHandler
 			}
 		}
 	}
-
+	
 	@Override
 	public void handleRequest(final LocalProxyHandler local,
 	        final HttpRequest req)
@@ -199,7 +236,7 @@ public class GoogleRemoteHandler implements RemoteProxyHandler
 					{
 						if (!future.isSuccess())
 						{
-							byte[] failed = "503 Service Unavailable HTTP/1.1\r\n\r\n"
+							byte[] failed = "HTTP/1.1 503 Service Unavailable\r\n\r\n"
 							        .getBytes();
 							local.handleRawData(GoogleRemoteHandler.this,
 							        ChannelBuffers.wrappedBuffer(failed));
@@ -211,7 +248,7 @@ public class GoogleRemoteHandler implements RemoteProxyHandler
 							pipeline.addLast("encoder",
 							        new HttpRequestEncoder());
 							future.getChannel().write(req);
-
+							
 						}
 					}
 				});
@@ -220,6 +257,7 @@ public class GoogleRemoteHandler implements RemoteProxyHandler
 			{
 				String remoteHost = HostsService
 				        .getMappingHost(GoogleConfig.googleHttpsHostAlias);
+				
 				proxyTunnel = SharedObjectHelper.getClientBootstrap().connect(
 				        new InetSocketAddress(remoteHost, 443));
 				proxyTunnel.addListener(new ChannelFutureListener()
@@ -229,7 +267,7 @@ public class GoogleRemoteHandler implements RemoteProxyHandler
 					{
 						if (future.isSuccess())
 						{
-							byte[] established = "200 OK HTTP/1.1\r\n\r\n"
+							byte[] established = "HTTP/1.1 200 Connection established\r\n\r\n"
 							        .getBytes();
 							local.handleRawData(GoogleRemoteHandler.this,
 							        ChannelBuffers.wrappedBuffer(established));
@@ -257,7 +295,7 @@ public class GoogleRemoteHandler implements RemoteProxyHandler
 				        {
 					        doClose();
 				        }
-
+				        
 				        public void messageReceived(ChannelHandlerContext ctx,
 				                MessageEvent e) throws Exception
 				        {
@@ -290,14 +328,14 @@ public class GoogleRemoteHandler implements RemoteProxyHandler
 						        local.handleResponse(GoogleRemoteHandler.this,
 						                res);
 					        }
-
+					        
 					        @Override
 					        public void onError(String error)
 					        {
 						        GoogleRemoteHandler.this.close();
 						        local.close();
 					        }
-
+					        
 					        @Override
 					        public void onBody(HttpChunk chunk)
 					        {
@@ -311,10 +349,10 @@ public class GoogleRemoteHandler implements RemoteProxyHandler
 				e.printStackTrace();
 				doClose();
 			}
-
+			
 		}
 	}
-
+	
 	@Override
 	public void handleChunk(LocalProxyHandler local, HttpChunk chunk)
 	{
@@ -327,7 +365,7 @@ public class GoogleRemoteHandler implements RemoteProxyHandler
 			doClose();
 		}
 	}
-
+	
 	@Override
 	public void handleRawData(LocalProxyHandler local, ChannelBuffer raw)
 	{
@@ -340,7 +378,7 @@ public class GoogleRemoteHandler implements RemoteProxyHandler
 			doClose();
 		}
 	}
-
+	
 	private void doClose()
 	{
 		if (null != localHandler)
@@ -350,7 +388,7 @@ public class GoogleRemoteHandler implements RemoteProxyHandler
 		}
 		close();
 	}
-
+	
 	@Override
 	public void close()
 	{
@@ -365,7 +403,7 @@ public class GoogleRemoteHandler implements RemoteProxyHandler
 		}
 		proxyTunnel = null;
 	}
-
+	
 	@Override
 	public String getName()
 	{

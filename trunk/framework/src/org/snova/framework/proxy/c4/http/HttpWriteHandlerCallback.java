@@ -4,9 +4,7 @@
 package org.snova.framework.proxy.c4.http;
 
 import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.arch.event.Event;

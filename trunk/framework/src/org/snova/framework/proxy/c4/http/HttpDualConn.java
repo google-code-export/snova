@@ -7,7 +7,6 @@ import java.net.InetSocketAddress;
 import java.net.URL;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 
 import org.arch.buffer.Buffer;
 import org.arch.common.KeyValuePair;
@@ -33,9 +32,9 @@ import org.snova.framework.event.SocketReadEvent;
 import org.snova.framework.proxy.c4.C4ServerAuth;
 import org.snova.framework.proxy.hosts.HostsService;
 import org.snova.framework.util.SharedObjectHelper;
-import org.snova.http.client.HttpClient;
-import org.snova.http.client.FutureCallback;
 import org.snova.http.client.Connector;
+import org.snova.http.client.FutureCallback;
+import org.snova.http.client.HttpClient;
 import org.snova.http.client.HttpClientException;
 import org.snova.http.client.HttpClientHandler;
 import org.snova.http.client.Options;
@@ -51,35 +50,36 @@ public class HttpDualConn
 	                                                                           .getLogger(HttpDualConn.class);
 	private static Map<Integer, HttpReadHandlerCallback>	debugCache	= new ConcurrentHashMap<Integer, HttpReadHandlerCallback>();
 	
-//	static
-//	{
-//		SharedObjectHelper.getGlobalTimer().scheduleAtFixedRate(new Runnable()
-//		{
-//			
-//			@Override
-//			public void run()
-//			{
-//				long now = System.currentTimeMillis();
-//				for (Integer sid : debugCache.keySet())
-//				{
-//					HttpReadHandlerCallback read = debugCache.get(sid);
-//					System.out.println(String.format(
-//					        "#######Session[%d] has read %dms", sid, now
-//					                - read.startTime));
-//					if (now - read.startTime >= 35000)
-//					{
-//						read.httpClient.closeChannel();
-//					}
-//				}
-//				
-//			}
-//		}, 60, 60, TimeUnit.SECONDS);
-//	}
+	// static
+	// {
+	// SharedObjectHelper.getGlobalTimer().scheduleAtFixedRate(new Runnable()
+	// {
+	//
+	// @Override
+	// public void run()
+	// {
+	// long now = System.currentTimeMillis();
+	// for (Integer sid : debugCache.keySet())
+	// {
+	// HttpReadHandlerCallback read = debugCache.get(sid);
+	// System.out.println(String.format(
+	// "#######Session[%d] has read %dms", sid, now
+	// - read.startTime));
+	// if (now - read.startTime >= 35000)
+	// {
+	// read.httpClient.closeChannel();
+	// }
+	// }
+	//
+	// }
+	// }, 60, 60, TimeUnit.SECONDS);
+	// }
 	
 	private C4ServerAuth	                             server;
 	EventHandler	                                     cb;
 	int	                                                 sid;
 	private boolean	                                     closed	       = false;
+	private boolean	                                     enableRead	   = true;
 	private static HttpClient	                         httpClient	   = null;
 	
 	private static void initHttpClient() throws Exception
@@ -160,7 +160,7 @@ public class HttpDualConn
 		}
 		request.setHeader(HttpHeaders.Names.HOST, server.url.getHost() + ":"
 		        + port);
-	
+		
 		request.setHeader(HttpHeaders.Names.CONNECTION, "keep-alive");
 		request.setHeader("UserToken", NetworkHelper.getMacAddress());
 		request.setHeader(
@@ -223,8 +223,17 @@ public class HttpDualConn
 		write.cacheEvent = evs;
 	}
 	
+	public void pauseRead()
+	{
+		enableRead = false;
+	}
+	
 	void startReadTask()
 	{
+		if(!enableRead)
+		{
+			return;
+		}
 		if (closed || null != read)
 		{
 			logger.info(String.format(
@@ -250,6 +259,7 @@ public class HttpDualConn
 	
 	public void requestEvent(Event ev)
 	{
+		enableRead = true;
 		sid = ev.getHash();
 		if (null == read && ev instanceof HTTPRequestEvent)
 		{
@@ -277,7 +287,6 @@ public class HttpDualConn
 			read.httpClient = h;
 			EventHelper.resetEncodedEvent(ev);
 			read.cacheEvent = ev;
-			
 			debugCache.put(sid, read);
 		}
 		else
@@ -291,8 +300,6 @@ public class HttpDualConn
 			{
 				startWriteTask(new Event[] { ev });
 			}
-			
-			// startReadTask();
 		}
 	}
 	

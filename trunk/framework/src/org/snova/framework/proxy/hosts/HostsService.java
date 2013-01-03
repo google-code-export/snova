@@ -11,23 +11,26 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
-import java.util.Random;
 import java.util.Set;
 
-import javax.naming.NamingException;
-
+import org.arch.config.IniProperties;
 import org.arch.dns.ResolveOptions;
 import org.arch.dns.Resolver;
+import org.arch.dns.exception.NamingException;
 import org.arch.util.ListSelector;
+import org.snova.framework.config.SnovaConfiguration;
 
 /**
- * @author qiyingwang
+ * @author yinqiwen
  * 
  */
 public class HostsService
 {
-	private static Map<String, ListSelector<String>> hostsMappingTable = new HashMap<String, ListSelector<String>>();
-
+	private static Map<String, ListSelector<String>>	hostsMappingTable	= new HashMap<String, ListSelector<String>>();
+	private static int	                             enable	              = 1;
+	private static String[]	                         trustedDNS	          = new String[] {
+	        "8.8.8.8", "208.67.222.222", "8.8.4.4", "208.67.220.220"	  };
+	
 	private static void loadHostFile(String file)
 	{
 		InputStream is = HostsService.class.getResourceAsStream("/" + file);
@@ -54,7 +57,7 @@ public class HostsService
 			//
 		}
 	}
-
+	
 	public static String getMappingHost(String host)
 	{
 		ListSelector<String> selector = hostsMappingTable.get(host);
@@ -70,7 +73,7 @@ public class HostsService
 		}
 		return addr;
 	}
-
+	
 	public static void removeMapping(String host, String mapping)
 	{
 		ListSelector<String> selector = hostsMappingTable.get(host);
@@ -79,9 +82,21 @@ public class HostsService
 			selector.remove(mapping);
 		}
 	}
-
+	
+	public static String getRealHost(String host) throws NamingException
+	{
+		if (enable > 0)
+		{
+			ResolveOptions option = new ResolveOptions();
+			String[] hosts = Resolver.resolveIPv4(trustedDNS, host, option);
+		}
+		return host;
+	}
+	
 	public static boolean init()
 	{
+		IniProperties cfg = SnovaConfiguration.getInstance().getIniProperties();
+		enable = cfg.getIntProperty("Hosts", "Enable", 1);
 		loadHostFile("cloud_hosts.conf");
 		loadHostFile("user_hosts.conf");
 		return true;
