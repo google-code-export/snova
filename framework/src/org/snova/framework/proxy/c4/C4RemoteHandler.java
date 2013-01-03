@@ -7,14 +7,21 @@ import org.arch.common.KeyValuePair;
 import org.arch.event.Event;
 import org.arch.event.EventHandler;
 import org.arch.event.EventHeader;
+import org.arch.event.http.HTTPEventContants;
 import org.arch.event.http.HTTPRequestEvent;
+import org.arch.event.http.HTTPResponseEvent;
+import org.arch.util.ArraysHelper;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.ChannelPipeline;
+import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
 import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpRequest;
+import org.jboss.netty.handler.codec.http.HttpResponse;
+import org.jboss.netty.handler.codec.http.HttpResponseStatus;
+import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.framework.event.CommonEventConstants;
@@ -41,6 +48,16 @@ public class C4RemoteHandler implements RemoteProxyHandler, EventHandler
 	
 	private HttpDualConn	    http;
 	private SimpleSocketAddress	proxyAddr;
+	private boolean	            isHttps;
+	
+	private CheckHttpStatus	    checkStatus;
+	
+	class CheckHttpStatus
+	{
+		int		length		= -1;
+		int		restBody	= -1;
+		boolean	chunked;
+	}
 	
 	public C4RemoteHandler(C4ServerAuth s)
 	{
@@ -95,6 +112,7 @@ public class C4RemoteHandler implements RemoteProxyHandler, EventHandler
 	@Override
 	public void handleRequest(LocalProxyHandler local, HttpRequest req)
 	{
+		
 		localHandler = local;
 		logger.info(String.format("Session[%d]Request %s %s",
 		        localHandler.getId(), req.getMethod(), req.getUri()));
@@ -109,6 +127,7 @@ public class C4RemoteHandler implements RemoteProxyHandler, EventHandler
 			ChannelPipeline pipeline = local.getLocalChannel().getPipeline();
 			ProxyHandler p = (ProxyHandler) pipeline.get("handler");
 			p.switchRawHandler();
+			isHttps = true;
 		}
 		requestEvent(ev);
 	}
@@ -149,10 +168,10 @@ public class C4RemoteHandler implements RemoteProxyHandler, EventHandler
 	@Override
 	public void close()
 	{
-		if (null != http)
+		HttpDualConn httpConn = http;
+		if (null != httpConn)
 		{
 			logger.info(String.format("Session[%d]closed", localHandler.getId()));
-			HttpDualConn httpConn = http;
 			SocketConnectionEvent closeEv = new SocketConnectionEvent();
 			closeEv.status = SocketConnectionEvent.TCP_CONN_CLOSED;
 			closeEv.addr = proxyAddr.toString();
@@ -160,6 +179,80 @@ public class C4RemoteHandler implements RemoteProxyHandler, EventHandler
 			httpConn.requestEvent(closeEv);
 			httpConn.close();
 			http = null;
+		}
+	}
+	
+	private void checkHttpBody(TCPChunkEvent chunk)
+	{
+		if (isHttps)
+		{
+			return;
+		}
+		boolean isHeader = false;
+		if (chunk.content.length >= 10)
+		{
+			String tmp = new String(chunk.content, 0, 9);
+			if (tmp.equalsIgnoreCase("HTTP/1.1 "))
+			{
+				isHeader = true;
+			}
+		}
+		if (isHeader)
+		{
+			checkStatus = new CheckHttpStatus();
+			int index = ArraysHelper.indexOf(chunk.content,
+			        "\r\n\r\n".getBytes());
+			if (index <= 0)
+			{
+				logger.error("####Failed to found end CRLF");
+				return;
+			}
+			String res = new String(chunk.content, 0, index);
+			String[] headers = res.split("\r\n");
+			for (String h : headers)
+			{
+				String[] nv = h.split(":");
+				if (nv.length > 1)
+				{
+					if (nv[0].trim().equalsIgnoreCase("Content-Length"))
+					{
+						checkStatus.length = Integer.parseInt(nv[1].trim());
+						checkStatus.restBody = checkStatus.length;
+					}
+					if (nv[0].trim().equalsIgnoreCase("Transfer-Encoding"))
+					{
+						checkStatus.chunked = nv[1].contains("chunked");
+					}
+				}
+			}
+			if (checkStatus.restBody > 0)
+			{
+				checkStatus.restBody -= (chunk.content.length - index - 4);
+			}
+		}
+		else
+		{
+			if (checkStatus.length > 0)
+			{
+				checkStatus.restBody -= chunk.content.length;
+			}
+			else if (checkStatus.chunked)
+			{
+				if (ArraysHelper.indexOf(chunk.content, "0\r\n\r\n".getBytes()) != -1)
+				{
+					checkStatus.restBody = 0;
+				}
+			}
+		}
+//		logger.info(String.format(
+//		        "########Session[%d]Recv chunk len:%d, checkStatus.restBody=%d",
+//		        localHandler.getId(), chunk.content.length,checkStatus.restBody));
+		if (checkStatus.restBody == 0)
+		{
+			if (null != http)
+			{
+				http.pauseRead();
+			}
 		}
 	}
 	
@@ -171,6 +264,7 @@ public class C4RemoteHandler implements RemoteProxyHandler, EventHandler
 			case CommonEventConstants.EVENT_TCP_CHUNK_TYPE:
 			{
 				TCPChunkEvent chunk = (TCPChunkEvent) event;
+				checkHttpBody(chunk);
 				localHandler.handleRawData(this,
 				        ChannelBuffers.wrappedBuffer(chunk.content));
 				logger.info(String.format("Session[%d]Handle chunk %d:%d",
@@ -194,10 +288,10 @@ public class C4RemoteHandler implements RemoteProxyHandler, EventHandler
 			}
 		}
 	}
-
+	
 	@Override
-    public String getName()
-    {
-	    return "C4";
-    }
+	public String getName()
+	{
+		return "C4";
+	}
 }

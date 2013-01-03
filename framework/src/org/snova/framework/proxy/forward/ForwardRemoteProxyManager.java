@@ -19,6 +19,6 @@ public class ForwardRemoteProxyManager implements RemoteProxyManager
 	@Override
 	public RemoteProxyHandler createProxyHandler(String[] attr)
 	{
-		return null;
+		return new ForwardRemoteHandler(attr);
 	}
 }

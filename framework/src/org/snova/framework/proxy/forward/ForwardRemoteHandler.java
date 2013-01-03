@@ -4,6 +4,7 @@
 package org.snova.framework.proxy.forward;
 
 import java.net.InetSocketAddress;
+import java.net.URL;
 
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
@@ -23,17 +24,18 @@ import org.snova.http.client.HttpClientException;
 import org.snova.http.client.HttpClientHandler;
 
 /**
- * @author qiyingwang
+ * @author yinqiwen
  * 
  */
 public class ForwardRemoteHandler implements RemoteProxyHandler
 {
-	private static HttpClient directHttpClient;
-
-	private LocalProxyHandler localHandler;
-	private HttpClientHandler proxyClientHandler;
-	private ChannelFuture proxyTunnel;
-
+	private static HttpClient	directHttpClient;
+	
+	private LocalProxyHandler	localHandler;
+	private HttpClientHandler	proxyClientHandler;
+	private ChannelFuture	  proxyTunnel;
+	private URL	              targetAddress;
+	
 	private static void initHttpClient() throws Exception
 	{
 		if (null != directHttpClient)
@@ -43,20 +45,28 @@ public class ForwardRemoteHandler implements RemoteProxyHandler
 		directHttpClient = new HttpClient(null,
 		        SharedObjectHelper.getClientBootstrap());
 	}
-
-	public ForwardRemoteHandler()
+	
+	public ForwardRemoteHandler(String[] attrs)
 	{
 		try
-        {
-	        initHttpClient();
-        }
-        catch (Exception e)
-        {
-	        // TODO Auto-generated catch block
-	        e.printStackTrace();
-        }
+		{
+			initHttpClient();
+			for (String attr : attrs)
+			{
+				if (attr.startsWith("http://") || attr.startsWith("socks://"))
+				{
+					targetAddress = new URL(attr);
+				}
+			}
+		}
+		catch (Exception e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 	}
-
+	
 	@Override
 	public void handleRequest(final LocalProxyHandler local,
 	        final HttpRequest req)
@@ -83,7 +93,7 @@ public class ForwardRemoteHandler implements RemoteProxyHandler
 				{
 					if (future.isSuccess())
 					{
-						byte[] established = "200 OK HTTP/1.1\r\n\r\n"
+						byte[] established = "HTTP/1.1 200 Connection established\r\n\r\n"
 						        .getBytes();
 						local.handleRawData(ForwardRemoteHandler.this,
 						        ChannelBuffers.wrappedBuffer(established));
@@ -108,13 +118,13 @@ public class ForwardRemoteHandler implements RemoteProxyHandler
 						        local.handleResponse(ForwardRemoteHandler.this,
 						                res);
 					        }
-
+					        
 					        public void onBody(HttpChunk chunk)
 					        {
 						        local.handleChunk(ForwardRemoteHandler.this,
 						                chunk);
 					        }
-
+					        
 					        public void onError(String error)
 					        {
 						        close();
@@ -129,9 +139,9 @@ public class ForwardRemoteHandler implements RemoteProxyHandler
 				e.printStackTrace();
 			}
 		}
-
+		
 	}
-
+	
 	@Override
 	public void handleChunk(LocalProxyHandler local, HttpChunk chunk)
 	{
@@ -143,9 +153,9 @@ public class ForwardRemoteHandler implements RemoteProxyHandler
 		{
 			doClose();
 		}
-
+		
 	}
-
+	
 	@Override
 	public void handleRawData(LocalProxyHandler local, ChannelBuffer raw)
 	{
@@ -158,7 +168,7 @@ public class ForwardRemoteHandler implements RemoteProxyHandler
 			doClose();
 		}
 	}
-
+	
 	@Override
 	public void close()
 	{
@@ -172,9 +182,9 @@ public class ForwardRemoteHandler implements RemoteProxyHandler
 			proxyTunnel.getChannel().close();
 		}
 		proxyTunnel = null;
-
+		
 	}
-
+	
 	private void doClose()
 	{
 		close();
@@ -184,11 +194,11 @@ public class ForwardRemoteHandler implements RemoteProxyHandler
 			localHandler = null;
 		}
 	}
-
+	
 	@Override
-    public String getName()
-    {
-	    return "";
-    }
-
+	public String getName()
+	{
+		return "";
+	}
+	
 }
