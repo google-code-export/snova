@@ -45,6 +45,7 @@ public class PullServlet extends HttpServlet
 	protected void doPost(HttpServletRequest req, final HttpServletResponse resp)
 	        throws ServletException, IOException
 	{
+		
 		long begin = System.currentTimeMillis();
 		Buffer buf = new Buffer(4096);
 		String userToken = req.getHeader(C4Constants.USER_TOKEN_HEADER);
@@ -92,6 +93,7 @@ public class PullServlet extends HttpServlet
 				{
 					flushContent(resp, buf);
 					sentData = true;
+					buf.clear();
 				}
 				timeout = deadline - System.currentTimeMillis();
 				if (timeout <= 0)
