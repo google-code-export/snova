@@ -27,7 +27,6 @@ import org.snova.c4.common.event.TCPChunkEvent;
  */
 public class RemoteProxySession
 {
-
 	private String user;
 	private int groupIndex;
 	private int sid;
@@ -226,6 +225,8 @@ public class RemoteProxySession
 		{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			key.cancel();
+			doClose();
 		}
 	}
 
@@ -237,14 +238,13 @@ public class RemoteProxySession
 		try
 		{
 			int n = socketChannel.read(buffer);
-			// System.out.println("#####" + remoteAddr + " onread:" + n);
+			//System.out.println("#####" + remoteAddr + " onread:" + n);
 			if (n < 0)
 			{
 				key.cancel();
 			}
 			else if (n > 0)
 			{
-
 				buffer.flip();
 				TCPChunkEvent chunk = new TCPChunkEvent();
 				chunk.sequence = sequence;
@@ -263,6 +263,29 @@ public class RemoteProxySession
 		{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			pause();
+			doClose();
+		}
+	}
+	
+	private void doClose()
+	{
+		if(null != client)
+		{
+			try
+            {
+	            client.close();
+            }
+            catch (IOException e)
+            {
+	            // TODO Auto-generated catch block
+	            e.printStackTrace();
+            }
+			SocketConnectionEvent closeEv = new SocketConnectionEvent();
+			closeEv.setHash(sid);
+			closeEv.status = SocketConnectionEvent.TCP_CONN_CLOSED;
+			sessionManager.offerReadyEvent(user, groupIndex, closeEv);
+			
 		}
 	}
 
