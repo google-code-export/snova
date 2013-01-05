@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.c4.common.C4Constants;
 import org.snova.c4.server.session.RemoteProxySessionV2;
+import org.snova.c4.server.session.v3.RemoteProxySessionManager;
 
 /**
  * @author wqy
@@ -38,6 +39,9 @@ public class PushServlet extends HttpServlet
 		{
 			userToken = "";
 		}
+		String miscInfo = req.getHeader("C4MiscInfo");
+		String[] misc = miscInfo.split("_");
+		int index = Integer.parseInt(misc[0]);
 		int bodylen = req.getContentLength();
 		if (bodylen > 0)
 		{
@@ -52,7 +56,8 @@ public class PushServlet extends HttpServlet
 			{
 				try
 				{
-					RemoteProxySessionV2.dispatchEvent(userToken, content);
+					RemoteProxySessionManager.getInstance().dispatchEvent(
+					        userToken, index, content);
 				}
 				catch (Exception e)
 				{
