@@ -16,7 +16,6 @@ import java.util.Set;
 import org.arch.config.IniProperties;
 import org.arch.dns.ResolveOptions;
 import org.arch.dns.Resolver;
-import org.arch.dns.exception.NamingException;
 import org.arch.util.ListSelector;
 import org.snova.framework.config.SnovaConfiguration;
 
@@ -83,15 +82,15 @@ public class HostsService
 		}
 	}
 	
-	public static String getRealHost(String host) throws NamingException
-	{
-		if (enable > 0)
-		{
-			ResolveOptions option = new ResolveOptions();
-			String[] hosts = Resolver.resolveIPv4(trustedDNS, host, option);
-		}
-		return host;
-	}
+//	public static String getRealHost(String host) throws NamingException
+//	{
+//		if (enable > 0)
+//		{
+//			ResolveOptions option = new ResolveOptions();
+//			String[] hosts = Resolver.resolveIPv4(trustedDNS, host, option);
+//		}
+//		return host;
+//	}
 	
 	public static boolean init()
 	{
