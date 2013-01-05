@@ -137,11 +137,13 @@ public class HttpTunnelService
 	        while(!sendEventQueue[index].isEmpty())
 	        {
 	        	sendEventQueue[index].removeFirst().encode(buffer);
-	        	
 	        }
         }
+		if(buffer.readable())
+		{
+			pusher[index].start(buffer);
+		}
 		
-		pusher[index].start(buffer);
 	}
 
 }

@@ -53,7 +53,6 @@ public class PullWorker implements FutureCallback
 		IniProperties cfg = SnovaConfiguration.getInstance().getIniProperties();
 		HttpRequest request = new DefaultHttpRequest(HttpVersion.HTTP_1_1,
 		        HttpMethod.POST, serv.server.url.toString() + "pull");
-		System.out.println(request);
 		int port = 80;
 		if (serv.server.url.getPort() > 0)
 		{
@@ -130,7 +129,7 @@ public class PullWorker implements FutureCallback
 						}
 						else
 						{
-							logger.error("Unexpected event received since session closed:" + ev.getHash());
+							//logger.error("Unexpected event received since session closed:" + ev.getHash());
 						}
 					}
 					catch (Exception e)
@@ -147,8 +146,9 @@ public class PullWorker implements FutureCallback
 
 			resBuffer.discardReadedBytes();
 			chunkLength = -1;
+			return true;
 		}
-		return true;
+		return false;
 	}
 
 	private void fillResponseBuffer(ChannelBuffer buffer)

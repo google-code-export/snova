@@ -43,44 +43,44 @@ import org.snova.http.client.common.SimpleSocketAddress;
  */
 public class C4RemoteHandler implements RemoteProxyHandler, EventHandler
 {
-	protected static Logger logger = LoggerFactory
-	        .getLogger(C4RemoteHandler.class);
-	private static Map<Integer, C4RemoteHandler> sessionTable = new ConcurrentHashMap<Integer, C4RemoteHandler>();
-
-	private C4ServerAuth server;
-	private LocalProxyHandler localHandler;
-	private int sequence = 0;
-
-	private HttpTunnelService http;
-	private SimpleSocketAddress proxyAddr;
-	private boolean isHttps;
-	private boolean isClosed;
-	private CheckHttpStatus checkStatus;
-
+	protected static Logger	                     logger	         = LoggerFactory
+	                                                                     .getLogger(C4RemoteHandler.class);
+	private static Map<Integer, C4RemoteHandler>	sessionTable	= new ConcurrentHashMap<Integer, C4RemoteHandler>();
+	
+	private C4ServerAuth	                     server;
+	private LocalProxyHandler	                 localHandler;
+	private int	                                 sequence	     = 0;
+	
+	private HttpTunnelService	                 http;
+	private SimpleSocketAddress	                 proxyAddr;
+	private boolean	                             isHttps;
+	private boolean	                             isClosed;
+	private CheckHttpStatus	                     checkStatus;
+	
 	class CheckHttpStatus
 	{
-		int length = -1;
-		int restBody = -1;
-		boolean chunked;
+		int		length		= -1;
+		int		restBody	= -1;
+		boolean	chunked;
 	}
-
+	
 	public static C4RemoteHandler getSession(int sid)
 	{
 		return sessionTable.get(sid);
 	}
-
+	
 	public C4RemoteHandler(C4ServerAuth s)
 	{
 		this.server = s;
 		http = HttpTunnelService.getHttpTunnelService(s);
 	}
-
+	
 	private boolean isWebsocketServer()
 	{
 		return (server.url.getProtocol().equalsIgnoreCase("ws") || server.url
 		        .getProtocol().equalsIgnoreCase("wss"));
 	}
-
+	
 	private HTTPRequestEvent buildHttpRequestEvent(HttpRequest request)
 	{
 		HTTPRequestEvent event = new HTTPRequestEvent();
@@ -118,7 +118,7 @@ public class C4RemoteHandler implements RemoteProxyHandler, EventHandler
 		}
 		return event;
 	}
-
+	
 	@Override
 	public void handleRequest(LocalProxyHandler local, HttpRequest req)
 	{
@@ -141,12 +141,12 @@ public class C4RemoteHandler implements RemoteProxyHandler, EventHandler
 		}
 		requestEvent(ev);
 	}
-
+	
 	void requestEvent(Event ev)
 	{
 		if (isWebsocketServer())
 		{
-
+			
 		}
 		else
 		{
@@ -156,13 +156,13 @@ public class C4RemoteHandler implements RemoteProxyHandler, EventHandler
 			}
 		}
 	}
-
+	
 	@Override
 	public void handleChunk(LocalProxyHandler local, HttpChunk chunk)
 	{
 		handleRawData(local, chunk.getContent());
 	}
-
+	
 	@Override
 	public void handleRawData(LocalProxyHandler local, ChannelBuffer raw)
 	{
@@ -174,7 +174,7 @@ public class C4RemoteHandler implements RemoteProxyHandler, EventHandler
 		buf.readBytes(ev.content);
 		requestEvent(ev);
 	}
-
+	
 	@Override
 	public void close()
 	{
@@ -190,7 +190,7 @@ public class C4RemoteHandler implements RemoteProxyHandler, EventHandler
 			sessionTable.remove(sid);
 		}
 	}
-
+	
 	private void checkHttpBody(TCPChunkEvent chunk)
 	{
 		if (isHttps)
@@ -253,9 +253,9 @@ public class C4RemoteHandler implements RemoteProxyHandler, EventHandler
 				}
 			}
 		}
-
+		
 	}
-
+	
 	@Override
 	public void onEvent(EventHeader header, Event event)
 	{
@@ -288,7 +288,7 @@ public class C4RemoteHandler implements RemoteProxyHandler, EventHandler
 			}
 		}
 	}
-
+	
 	@Override
 	public String getName()
 	{
