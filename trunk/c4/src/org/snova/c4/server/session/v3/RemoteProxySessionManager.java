@@ -30,20 +30,14 @@ import org.snova.c4.common.event.UserLoginEvent;
  */
 public class RemoteProxySessionManager implements Runnable
 {
-	class RegisteTask
-	{
-		SocketChannel		ch;
-		int		           op;
-		RemoteProxySession	attach;
-	}
-	
-	Selector	                     selector;
-	
-	private Map	                     userSessionGroup	 = new HashMap();
-	private Map	                     userReadyEventQueue	= new HashMap();
-	private LinkedList<RegisteTask>	 registQueue	     = new LinkedList<RegisteTask>();
-	static RemoteProxySessionManager	instance	     = new RemoteProxySessionManager();
-	
+	Selector selector;
+
+	private Map userSessionGroup = new HashMap();
+	private Map userReadyEventQueue = new HashMap();
+
+	private LinkedList<Runnable> invokations = new LinkedList<Runnable>();
+	static RemoteProxySessionManager instance = new RemoteProxySessionManager();
+
 	private RemoteProxySessionManager()
 	{
 		try
@@ -58,20 +52,19 @@ public class RemoteProxySessionManager implements Runnable
 			e.printStackTrace();
 		}
 	}
-	
+
 	private void processRegisteTask()
 	{
-		synchronized (registQueue)
+		synchronized (invokations)
 		{
-			while (!registQueue.isEmpty())
+			while (!invokations.isEmpty())
 			{
-				RegisteTask task = registQueue.removeFirst();
+				Runnable task = invokations.removeFirst();
 				try
 				{
-					task.attach.key = task.ch.register(selector, task.op,
-					        task.attach);
+					task.run();
 				}
-				catch (ClosedChannelException e)
+				catch (Exception e)
 				{
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -79,12 +72,12 @@ public class RemoteProxySessionManager implements Runnable
 			}
 		}
 	}
-	
+
 	public static RemoteProxySessionManager getInstance()
 	{
 		return instance;
 	}
-	
+
 	private synchronized LinkedList<Event> getEventQueue(String user,
 	        int groupIdx)
 	{
@@ -102,7 +95,7 @@ public class RemoteProxySessionManager implements Runnable
 		}
 		return queue;
 	}
-	
+
 	boolean offerReadyEvent(String user, int groupIdx, Event ev)
 	{
 		EncryptEventV2 encrypt = new EncryptEventV2();
@@ -117,7 +110,7 @@ public class RemoteProxySessionManager implements Runnable
 			return queue.size() <= 10;
 		}
 	}
-	
+
 	public void consumeReadyEvent(String user, int groupIndex, Buffer buf,
 	        long timeout)
 	{
@@ -129,7 +122,7 @@ public class RemoteProxySessionManager implements Runnable
 				try
 				{
 					resumeSessions(user, groupIndex);
-					queue.wait(1);
+					queue.wait(timeout);
 				}
 				catch (InterruptedException e)
 				{
@@ -145,7 +138,7 @@ public class RemoteProxySessionManager implements Runnable
 			}
 		}
 	}
-	
+
 	public void resumeSessions(String user, int groupIdx)
 	{
 		synchronized (userSessionGroup)
@@ -166,7 +159,7 @@ public class RemoteProxySessionManager implements Runnable
 			}
 		}
 	}
-	
+
 	public void pauseSessions(String user, int groupIdx)
 	{
 		synchronized (userSessionGroup)
@@ -187,20 +180,16 @@ public class RemoteProxySessionManager implements Runnable
 			}
 		}
 	}
-	
-	void registeSelector(int ops, RemoteProxySession session)
+
+	void addInvokcation(Runnable invoke)
 	{
-		synchronized (registQueue)
+		synchronized (invokations)
 		{
-			RegisteTask task = new RegisteTask();
-			task.attach = session;
-			task.ch = session.client;
-			task.op = ops;
-			registQueue.add(task);
+			invokations.add(invoke);
+			selector.wakeup();
 		}
-		selector.wakeup();
 	}
-	
+
 	RemoteProxySession getSession(String user, int groupIdx, int sid)
 	{
 		synchronized (userSessionGroup)
@@ -215,7 +204,7 @@ public class RemoteProxySessionManager implements Runnable
 			if (null == sessionMap)
 			{
 				sessionMap = new HashMap();
-				sessionGroup.put(user, sessionMap);
+				sessionGroup.put(groupIdx, sessionMap);
 			}
 			RemoteProxySession session = (RemoteProxySession) sessionMap
 			        .get(sid);
@@ -227,7 +216,7 @@ public class RemoteProxySessionManager implements Runnable
 			return session;
 		}
 	}
-	
+
 	private void clearUser(String user)
 	{
 		HashMap sessionGroup = (HashMap) userSessionGroup.remove(user);
@@ -250,9 +239,17 @@ public class RemoteProxySessionManager implements Runnable
 				}
 			}
 		}
-		userReadyEventQueue.remove(user);
+		HashMap eqs = (HashMap) userReadyEventQueue.get(user);
+		if (null != eqs)
+		{
+			for (Object key : eqs.keySet())
+			{
+				LinkedList<Event> queue = (LinkedList<Event>) eqs.get(key);
+				queue.clear();
+			}
+		}
 	}
-	
+
 	public void dispatchEvent(String user, int groupIdx, final Buffer content)
 	        throws Exception
 	{
@@ -274,7 +271,7 @@ public class RemoteProxySessionManager implements Runnable
 			}
 		}
 	}
-	
+
 	@Override
 	public void run()
 	{
@@ -291,17 +288,34 @@ public class RemoteProxySessionManager implements Runnable
 					{
 						SelectionKey key = (SelectionKey) keys.next();
 						keys.remove();
-						RemoteProxySession session = (RemoteProxySession) key
+						SessionAddressPair pair = (SessionAddressPair) key
 						        .attachment();
-						if (key.isReadable())
+						pair.session.key = key;
+						if (!key.isValid())
 						{
-							session.onRead();
+							continue;
 						}
-						else if (key.isConnectable())
+						try
 						{
-							session.onConnected();
+							if (key.isConnectable())
+							{
+								pair.session.onConnected();
+							}
+							else if (key.isReadable())
+							{
+								pair.session.onRead(key, pair.address);
+							}
 						}
+						catch (Exception e)
+						{
+							e.printStackTrace();
+						}
+
 					}
+				}
+				else
+				{
+
 				}
 			}
 			catch (IOException e)
@@ -311,5 +325,5 @@ public class RemoteProxySessionManager implements Runnable
 			}
 		}
 	}
-	
+
 }

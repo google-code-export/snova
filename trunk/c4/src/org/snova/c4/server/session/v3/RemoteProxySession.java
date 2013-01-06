@@ -9,7 +9,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
-import java.util.LinkedList;
 
 import org.arch.common.KeyValuePair;
 import org.arch.event.Event;
@@ -52,7 +51,7 @@ public class RemoteProxySession
 
 	void close()
 	{
-
+		doClose(key,client, remoteAddr);
 	}
 
 	protected static byte[] buildRequestContent(HTTPRequestEvent ev)
@@ -86,7 +85,11 @@ public class RemoteProxySession
 		{
 			try
 			{
-				client.write(ByteBuffer.wrap(content));
+				int n = client.write(ByteBuffer.wrap(content));
+				if (n < content.length)
+				{
+					System.out.println("###########Not finish write.");
+				}
 				return true;
 			}
 			catch (IOException e)
@@ -100,18 +103,52 @@ public class RemoteProxySession
 
 	void resume()
 	{
-		if (null != client)
+		if (null == client)
 		{
-			sessionManager.registeSelector(SelectionKey.OP_READ, this);
+			return;
 		}
+		sessionManager.addInvokcation(new Runnable()
+		{
+			public void run()
+			{
+				try
+				{
+					key = client.register(sessionManager.selector,
+					        SelectionKey.OP_READ, new SessionAddressPair(
+					                RemoteProxySession.this, remoteAddr));
+				}
+				catch (ClosedChannelException e)
+				{
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		});
 	}
 
 	void pause()
 	{
-		if (null != key)
+		if (null == client)
 		{
-			key.cancel();
+			return;
 		}
+		sessionManager.addInvokcation(new Runnable()
+		{
+			public void run()
+			{
+				try
+				{
+					key = client.register(sessionManager.selector, 0,
+					        new SessionAddressPair(RemoteProxySession.this,
+					                remoteAddr));
+				}
+				catch (ClosedChannelException e)
+				{
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		});
 	}
 
 	boolean handleEvent(TypeVersion tv, Event ev)
@@ -142,14 +179,13 @@ public class RemoteProxySession
 				SocketConnectionEvent event = (SocketConnectionEvent) ev;
 				if (event.status == SocketConnectionEvent.TCP_CONN_CLOSED)
 				{
-
+					doClose(key,client, remoteAddr);
 				}
 				break;
 			}
 			case HTTPEventContants.HTTP_REQUEST_EVENT_TYPE:
 			{
-				final HTTPRequestEvent req = (HTTPRequestEvent) ev;
-
+				HTTPRequestEvent req = (HTTPRequestEvent) ev;
 				String host = req.getHeader("Host");
 				int port = 80;
 				method = req.method;
@@ -174,6 +210,7 @@ public class RemoteProxySession
 				{
 					httpRequestContent = buildRequestContent(req);
 				}
+				// System.out.println("Session[" + sid + "] rec req " + req);
 				if (checkClient(host, port))
 				{
 					if (null != httpRequestContent)
@@ -206,7 +243,8 @@ public class RemoteProxySession
 				socketChannel.finishConnect();
 			}
 			key = socketChannel.register(sessionManager.selector,
-			        SelectionKey.OP_READ, this);
+			        SelectionKey.OP_READ, new SessionAddressPair(this,
+			                remoteAddr));
 			if (isHttps)
 			{
 				TCPChunkEvent chunk = new TCPChunkEvent();
@@ -219,29 +257,33 @@ public class RemoteProxySession
 			else
 			{
 				writeContent(httpRequestContent);
+				httpRequestContent = null;
 			}
 		}
 		catch (IOException e)
 		{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-			key.cancel();
-			doClose();
+			doClose(key,client, remoteAddr);
 		}
 	}
 
-	void onRead()
+	void onWrite(SelectionKey key)
+	{
+
+	}
+
+	void onRead(SelectionKey key, String address)
 	{
 		buffer.clear();
-
 		SocketChannel socketChannel = (SocketChannel) key.channel();
 		try
 		{
 			int n = socketChannel.read(buffer);
-			//System.out.println("#####" + remoteAddr + " onread:" + n);
+			// System.out.println("#####" + remoteAddr + " onread:" + n);
 			if (n < 0)
 			{
-				key.cancel();
+				doClose(key,socketChannel, address);
 			}
 			else if (n > 0)
 			{
@@ -258,35 +300,56 @@ public class RemoteProxySession
 					pause();
 				}
 			}
+			else
+			{
+				System.out.println("#############read 0 for " + sid + " :"
+				        + remoteAddr);
+			}
 		}
 		catch (IOException e)
 		{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-			pause();
-			doClose();
+			System.out.println("#####Close " + address);
+			doClose(key, socketChannel, address);
 		}
 	}
-	
-	private void doClose()
+
+	private void doClose(SelectionKey key, SocketChannel channel, String address)
 	{
-		if(null != client)
+		if (null != channel)
 		{
 			try
-            {
-	            client.close();
-            }
-            catch (IOException e)
-            {
-	            // TODO Auto-generated catch block
-	            e.printStackTrace();
-            }
+			{
+				channel.close();
+				key.cancel();
+			}
+			catch (IOException e)
+			{
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		if (address.equals(remoteAddr))
+		{
 			SocketConnectionEvent closeEv = new SocketConnectionEvent();
 			closeEv.setHash(sid);
 			closeEv.status = SocketConnectionEvent.TCP_CONN_CLOSED;
 			sessionManager.offerReadyEvent(user, groupIndex, closeEv);
-			
+			client = null;
+			key = null;
 		}
+		// if (null != key)
+		// {
+		// sessionManager.addInvokcation(new Runnable()
+		// {
+		// public void run()
+		// {
+		// key.cancel();
+		// key = null;
+		// }
+		// });
+		// }
 	}
 
 	private boolean checkClient(String host, int port)
@@ -296,10 +359,17 @@ public class RemoteProxySession
 		{
 			return true;
 		}
+		remoteAddr = addr;
 		if (null != key)
 		{
-			key.cancel();
-			key = null;
+			sessionManager.addInvokcation(new Runnable()
+			{
+				public void run()
+				{
+					key.cancel();
+					key = null;
+				}
+			});
 		}
 		if (null != client)
 		{
@@ -319,7 +389,24 @@ public class RemoteProxySession
 			client = SocketChannel.open();
 			client.configureBlocking(false);
 			client.connect(new InetSocketAddress(host, port));
-			sessionManager.registeSelector(SelectionKey.OP_CONNECT, this);
+			sessionManager.addInvokcation(new Runnable()
+			{
+				public void run()
+				{
+					try
+					{
+						key = client.register(sessionManager.selector,
+						        SelectionKey.OP_CONNECT,
+						        new SessionAddressPair(RemoteProxySession.this,
+						                remoteAddr));
+					}
+					catch (ClosedChannelException e)
+					{
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+			});
 		}
 		catch (IOException e)
 		{
