@@ -18,7 +18,6 @@ import org.arch.event.Event;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.c4.common.C4Constants;
-import org.snova.c4.server.session.RemoteProxySessionV2;
 import org.snova.c4.server.session.v3.RemoteProxySessionManager;
 
 /**

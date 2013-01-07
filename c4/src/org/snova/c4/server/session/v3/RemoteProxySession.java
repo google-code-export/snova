@@ -26,14 +26,14 @@ import org.snova.c4.common.event.TCPChunkEvent;
  */
 public class RemoteProxySession
 {
-	private String user;
-	private int groupIndex;
-	private int sid;
+	String user;
+	int groupIndex;
+	int sid;
 	private int sequence;
-	private String method;
 	private String remoteAddr;
 	SocketChannel client = null;
 	SelectionKey key;
+	int ops;
 	private boolean isHttps;
 	private ByteBuffer buffer = ByteBuffer.allocate(65536);
 	private byte[] httpRequestContent = null;
@@ -51,7 +51,7 @@ public class RemoteProxySession
 
 	void close()
 	{
-		doClose(key,client, remoteAddr);
+		doClose(key, client, remoteAddr);
 	}
 
 	protected static byte[] buildRequestContent(HTTPRequestEvent ev)
@@ -113,9 +113,13 @@ public class RemoteProxySession
 			{
 				try
 				{
-					key = client.register(sessionManager.selector,
-					        SelectionKey.OP_READ, new SessionAddressPair(
-					                RemoteProxySession.this, remoteAddr));
+					if (null != client)
+					{
+						ops = ops | SelectionKey.OP_READ;
+						key = client.register(sessionManager.selector, ops,
+						        new SessionAddressPair(RemoteProxySession.this,
+						                remoteAddr));
+					}
 				}
 				catch (ClosedChannelException e)
 				{
@@ -138,9 +142,13 @@ public class RemoteProxySession
 			{
 				try
 				{
-					key = client.register(sessionManager.selector, 0,
-					        new SessionAddressPair(RemoteProxySession.this,
-					                remoteAddr));
+					if (null != client)
+					{
+						ops = ops & ~SelectionKey.OP_READ;
+						key = client.register(sessionManager.selector, ops,
+						        new SessionAddressPair(RemoteProxySession.this,
+						                remoteAddr));
+					}
 				}
 				catch (ClosedChannelException e)
 				{
@@ -179,7 +187,7 @@ public class RemoteProxySession
 				SocketConnectionEvent event = (SocketConnectionEvent) ev;
 				if (event.status == SocketConnectionEvent.TCP_CONN_CLOSED)
 				{
-					doClose(key,client, remoteAddr);
+					doClose(key, client, remoteAddr);
 				}
 				break;
 			}
@@ -188,7 +196,6 @@ public class RemoteProxySession
 				HTTPRequestEvent req = (HTTPRequestEvent) ev;
 				String host = req.getHeader("Host");
 				int port = 80;
-				method = req.method;
 				if (host.indexOf(":") != -1)
 				{
 					String[] ss = host.split(":");
@@ -197,12 +204,12 @@ public class RemoteProxySession
 				}
 				else
 				{
-					if (method.equalsIgnoreCase("Connect"))
+					if (req.method.equalsIgnoreCase("Connect"))
 					{
 						port = 443;
 					}
 				}
-				if (method.equalsIgnoreCase("Connect"))
+				if (req.method.equalsIgnoreCase("Connect"))
 				{
 					isHttps = true;
 				}
@@ -242,9 +249,9 @@ public class RemoteProxySession
 			{
 				socketChannel.finishConnect();
 			}
-			key = socketChannel.register(sessionManager.selector,
-			        SelectionKey.OP_READ, new SessionAddressPair(this,
-			                remoteAddr));
+			ops = SelectionKey.OP_READ;
+			key = socketChannel.register(sessionManager.selector, ops,
+			        new SessionAddressPair(this, remoteAddr));
 			if (isHttps)
 			{
 				TCPChunkEvent chunk = new TCPChunkEvent();
@@ -264,13 +271,18 @@ public class RemoteProxySession
 		{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-			doClose(key,client, remoteAddr);
+			if (isHttps)
+			{
+				TCPChunkEvent chunk = new TCPChunkEvent();
+				chunk.sequence = sequence;
+				sequence++;
+				chunk.setHash(sid);
+				chunk.content = "HTTP/1.1 503 Service Unavailable\r\n\r\n"
+				        .getBytes();
+				sessionManager.offerReadyEvent(user, groupIndex, chunk);
+			}
+			doClose(key, client, remoteAddr);
 		}
-	}
-
-	void onWrite(SelectionKey key)
-	{
-
 	}
 
 	void onRead(SelectionKey key, String address)
@@ -283,7 +295,7 @@ public class RemoteProxySession
 			// System.out.println("#####" + remoteAddr + " onread:" + n);
 			if (n < 0)
 			{
-				doClose(key,socketChannel, address);
+				doClose(key, socketChannel, address);
 			}
 			else if (n > 0)
 			{
@@ -317,6 +329,10 @@ public class RemoteProxySession
 
 	private void doClose(SelectionKey key, SocketChannel channel, String address)
 	{
+		if (null == address)
+		{
+			return;
+		}
 		if (null != channel)
 		{
 			try
@@ -334,10 +350,10 @@ public class RemoteProxySession
 		{
 			SocketConnectionEvent closeEv = new SocketConnectionEvent();
 			closeEv.setHash(sid);
+			closeEv.addr = remoteAddr;
 			closeEv.status = SocketConnectionEvent.TCP_CONN_CLOSED;
 			sessionManager.offerReadyEvent(user, groupIndex, closeEv);
 			client = null;
-			key = null;
 		}
 		// if (null != key)
 		// {
@@ -359,30 +375,9 @@ public class RemoteProxySession
 		{
 			return true;
 		}
+		String oldAddr = remoteAddr;
 		remoteAddr = addr;
-		if (null != key)
-		{
-			sessionManager.addInvokcation(new Runnable()
-			{
-				public void run()
-				{
-					key.cancel();
-					key = null;
-				}
-			});
-		}
-		if (null != client)
-		{
-			try
-			{
-				client.close();
-			}
-			catch (IOException e)
-			{
-				e.printStackTrace();
-			}
-			client = null;
-		}
+		doClose(key, client, oldAddr);
 		try
 		{
 			remoteAddr = addr;
@@ -395,8 +390,8 @@ public class RemoteProxySession
 				{
 					try
 					{
-						key = client.register(sessionManager.selector,
-						        SelectionKey.OP_CONNECT,
+						ops = SelectionKey.OP_CONNECT;
+						key = client.register(sessionManager.selector, ops,
 						        new SessionAddressPair(RemoteProxySession.this,
 						                remoteAddr));
 					}
