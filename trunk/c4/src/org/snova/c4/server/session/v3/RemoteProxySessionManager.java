@@ -78,6 +78,23 @@ public class RemoteProxySessionManager implements Runnable
 		return instance;
 	}
 
+	private void removeSession(RemoteProxySession session)
+	{
+		synchronized (userSessionGroup)
+		{
+			HashMap sessionGroup = (HashMap) userSessionGroup.get(session.user);
+			if (null != sessionGroup)
+			{
+				HashMap sessionMap = (HashMap) sessionGroup
+				        .get(session.groupIndex);
+				if (null != sessionMap)
+				{
+					sessionMap.remove(session.sid);
+				}
+			}
+		}
+	}
+
 	private synchronized LinkedList<Event> getEventQueue(String user,
 	        int groupIdx)
 	{
