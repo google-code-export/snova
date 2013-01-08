@@ -95,7 +95,8 @@ public class ProxyHandler extends SimpleChannelUpstreamHandler implements
 		candidateProxyManager = SPAC.selectProxy(request, serverType, attr);
 		if (null == candidateProxyManager || candidateProxyManager.length == 0)
 		{
-			logger.error("No proxy service found for " + request.getHeader("Host"));
+			logger.error("No proxy service found for "
+			        + request.getHeader("Host"));
 			close();
 			return;
 		}
@@ -138,8 +139,7 @@ public class ProxyHandler extends SimpleChannelUpstreamHandler implements
 	{
 		if (localChannel != null)
 		{
-			
-			if (localChannel.isConnected())
+			if (localChannel.isOpen())
 			{
 				localChannel.close();
 			}

@@ -29,19 +29,19 @@ import org.snova.framework.util.SharedObjectHelper;
  */
 public class IOWorker extends SimpleChannelUpstreamHandler
 {
-	WSTunnelService serv;
-	int index;
-	ChannelFuture conn;
-	Buffer unsentContent = new Buffer();
-	boolean connected;
-	private CumulateReader cumulater = new CumulateReader();
-
+	WSTunnelService	       serv;
+	int	                   index;
+	ChannelFuture	       conn;
+	Buffer	               unsentContent	= new Buffer();
+	boolean	               connected;
+	private CumulateReader	cumulater	 = new CumulateReader();
+	
 	public IOWorker(WSTunnelService wsTunnelService, int i)
 	{
 		this.serv = wsTunnelService;
 		this.index = i;
 	}
-
+	
 	synchronized void write(Buffer buf)
 	{
 		unsentContent.write(buf, buf.readableBytes());
@@ -54,19 +54,18 @@ public class IOWorker extends SimpleChannelUpstreamHandler
 			System.out.println("#######Not connected!");
 		}
 	}
-
-	private void tryWriteCache()
+	
+	private synchronized void tryWriteCache()
 	{
-		if (connected)
+		if (connected && unsentContent.readable())
 		{
-			conn.getChannel().write(
-			        ChannelBuffers.wrappedBuffer(unsentContent.getRawBuffer(),
-			                unsentContent.getReadIndex(),
-			                unsentContent.readableBytes()));
+			byte[] tmp = new byte[unsentContent.readableBytes()];
+			unsentContent.read(tmp);
 			unsentContent.clear();
+			conn.getChannel().write(ChannelBuffers.wrappedBuffer(tmp));
 		}
 	}
-
+	
 	public void start()
 	{
 		if (null != conn && conn.getChannel().isConnected())
@@ -96,7 +95,7 @@ public class IOWorker extends SimpleChannelUpstreamHandler
 		        .append("\r\n\r\n");
 		final ChannelBuffer request = ChannelBuffers.wrappedBuffer(buffer
 		        .toString().getBytes());
-
+		
 		conn = SharedObjectHelper.getClientBootstrap().connect(
 		        new InetSocketAddress(host, port));
 		conn.getChannel().getPipeline()
@@ -111,25 +110,15 @@ public class IOWorker extends SimpleChannelUpstreamHandler
 				{
 					future.getChannel().write(request);
 				}
-				else
-				{
-					SharedObjectHelper.getGlobalTimer().schedule(new Runnable()
-					{
-						public void run()
-						{
-							start();
-						}
-					}, 1, TimeUnit.SECONDS);
-				}
 			}
 		});
 	}
-
+	
 	@Override
 	public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
 	        throws Exception
 	{
-
+		
 		if (!connected)
 		{
 			HttpResponse res = (HttpResponse) e.getMessage();
@@ -157,20 +146,24 @@ public class IOWorker extends SimpleChannelUpstreamHandler
 			ChannelBuffer content = (ChannelBuffer) e.getMessage();
 			cumulater.fillResponseBuffer(content);
 		}
-
+		
 	}
-
+	
 	@Override
 	public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e)
 	        throws Exception
 	{
-		connected = false;
-		SharedObjectHelper.getGlobalTimer().schedule(new Runnable()
+		
+		if (connected)
 		{
-			public void run()
+			connected = false;
+			SharedObjectHelper.getGlobalTimer().schedule(new Runnable()
 			{
-				start();
-			}
-		}, 1, TimeUnit.SECONDS);
+				public void run()
+				{
+					start();
+				}
+			}, 100, TimeUnit.MILLISECONDS);
+		}
 	}
 }
