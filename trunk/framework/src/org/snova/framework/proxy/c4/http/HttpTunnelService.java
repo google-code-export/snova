@@ -92,7 +92,10 @@ public class HttpTunnelService
 		{
 			this.server = server;
 			initHttpClient();
-			sendEventQueue = new LinkedList[5];
+			IniProperties cfg = SnovaConfiguration.getInstance()
+			        .getIniProperties();
+			int maxConn = cfg.getIntProperty("C4", "MaxConn", 5);
+			sendEventQueue = new LinkedList[maxConn];
 			for (int i = 0; i < sendEventQueue.length; i++)
 			{
 				sendEventQueue[i] = new LinkedList<Event>();

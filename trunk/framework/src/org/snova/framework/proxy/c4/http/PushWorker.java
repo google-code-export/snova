@@ -56,7 +56,7 @@ public class PushWorker extends FutureCallback.FutureCallbackAdapter
 		}
 		else
 		{
-			if (serv.server.url.getProtocol().equalsIgnoreCase("https"))
+			if (serv.server.url.getScheme().equalsIgnoreCase("https"))
 			{
 				port = 443;
 			}

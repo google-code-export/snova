@@ -3,14 +3,10 @@
  */
 package org.snova.framework.proxy.c4.http;
 
-import org.arch.buffer.Buffer;
-import org.arch.buffer.BufferHelper;
+import java.util.concurrent.TimeUnit;
+
 import org.arch.config.IniProperties;
-import org.arch.event.Event;
-import org.arch.event.EventDispatcher;
-import org.arch.event.EventHeader;
 import org.arch.util.NetworkHelper;
-import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.handler.codec.http.DefaultHttpRequest;
 import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
@@ -21,7 +17,8 @@ import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.framework.config.SnovaConfiguration;
-import org.snova.framework.proxy.c4.C4RemoteHandler;
+import org.snova.framework.proxy.c4.CumulateReader;
+import org.snova.framework.util.SharedObjectHelper;
 import org.snova.http.client.FutureCallback;
 import org.snova.http.client.HttpClient;
 import org.snova.http.client.HttpClientException;
@@ -36,10 +33,7 @@ public class PullWorker implements FutureCallback
 	protected static Logger logger = LoggerFactory.getLogger(PullWorker.class);
 	private HttpTunnelService serv;
 	HttpClientHandler httpClientHandler;
-	private Buffer resBuffer = new Buffer(256);
-	private int chunkLength = -1;
-	private int waitTime = 1;
-	private long startTime;
+	private CumulateReader cumulater = new CumulateReader();
 	private int index;
 
 	public PullWorker(HttpTunnelService serv, int index)
@@ -60,7 +54,7 @@ public class PullWorker implements FutureCallback
 		}
 		else
 		{
-			if (serv.server.url.getProtocol().equalsIgnoreCase("https"))
+			if (serv.server.url.getScheme().equalsIgnoreCase("https"))
 			{
 				port = 443;
 			}
@@ -90,89 +84,12 @@ public class PullWorker implements FutureCallback
 		}
 	}
 
-	private boolean tryHandleBuffer()
-	{
-		if (chunkLength == -1)
-		{
-			if (resBuffer.readableBytes() >= 4)
-			{
-				chunkLength = BufferHelper.readFixInt32(resBuffer, true);
-			}
-			else
-			{
-				return false;
-			}
-		}
-		if (chunkLength > 0)
-		{
-			if (resBuffer.readableBytes() < chunkLength)
-			{
-				return false;
-			}
-			Buffer content = new Buffer(chunkLength);
-			content.write(resBuffer, chunkLength);
-			try
-			{
-				while (content.readable())
-				{
-					Event ev = EventDispatcher.getSingletonInstance().parse(
-					        content);
-					ev = Event.extractEvent(ev);
-					EventHeader header = Event.getHeader(ev);
-					try
-					{
-						C4RemoteHandler session = C4RemoteHandler.getSession(ev
-						        .getHash());
-						if (null != session)
-						{
-							session.onEvent(header, ev);
-						}
-						else
-						{
-							//logger.error("Unexpected event received since session closed:" + ev.getHash());
-						}
-					}
-					catch (Exception e)
-					{
-						logger.error("Ignore event handle exception ", e);
-					}
-
-				}
-			}
-			catch (Exception e)
-			{
-				logger.error("Failed to parse recv content", e);
-			}
-
-			resBuffer.discardReadedBytes();
-			chunkLength = -1;
-			return true;
-		}
-		return false;
-	}
-
-	private void fillResponseBuffer(ChannelBuffer buffer)
-	{
-		int contentlen = buffer.readableBytes();
-		startTime = System.currentTimeMillis();
-		if (contentlen > 0)
-		{
-			resBuffer.ensureWritableBytes(contentlen);
-			buffer.readBytes(resBuffer.getRawBuffer(),
-			        resBuffer.getWriteIndex(), contentlen);
-			resBuffer.advanceWriteIndex(contentlen);
-			while (resBuffer.readable() && tryHandleBuffer())
-				;
-		}
-	}
-
 	@Override
 	public void onResponse(HttpResponse res)
 	{
 		if (res.getStatus().getCode() == 200)
 		{
-			fillResponseBuffer(res.getContent());
-
+			cumulater.fillResponseBuffer(res.getContent());
 		}
 		else
 		{
@@ -187,19 +104,24 @@ public class PullWorker implements FutureCallback
 	@Override
 	public void onBody(HttpChunk chunk)
 	{
-		fillResponseBuffer(chunk.getContent());
+		cumulater.fillResponseBuffer(chunk.getContent());
 	}
 
 	@Override
 	public void onComplete(HttpResponse res)
 	{
 		start();
-
 	}
 
 	@Override
 	public void onError(String error)
 	{
-		start();
+		SharedObjectHelper.getGlobalTimer().schedule(new Runnable()
+		{
+			public void run()
+			{
+				start();
+			}
+		}, 1, TimeUnit.SECONDS);
 	}
 }

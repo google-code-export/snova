@@ -1,6 +1,6 @@
 [
   {
-    "URL" : ["www.google.*/imgres", "www.google.*/images", "www.google.*/alerts", "www.google.*/custom"],
+    "URL" : ["www.google.*/imgres", "www.google.*/alerts", "www.google.*/custom"],
     "Proxy":["Direct", "Default"]
   },
   {
@@ -32,5 +32,9 @@
     "Protocol" : "https",
     "Host": ["twitter.com"],
     "Proxy": ["Default"]
+  },
+  {
+    "Filter" : ["!IsBlockedByGFW"],
+    "Proxy":["Direct", "Default"]
   }
 ]
