@@ -26,6 +26,7 @@ import org.snova.framework.event.TCPChunkEvent;
 import org.snova.framework.proxy.LocalProxyHandler;
 import org.snova.framework.proxy.RemoteProxyHandler;
 import org.snova.framework.proxy.c4.http.HttpTunnelService;
+import org.snova.framework.proxy.c4.ws.WSTunnelService;
 import org.snova.framework.server.ProxyHandler;
 import org.snova.http.client.HttpClientHelper;
 import org.snova.http.client.common.SimpleSocketAddress;
@@ -45,6 +46,7 @@ public class C4RemoteHandler implements RemoteProxyHandler, EventHandler
 	private int sequence = 0;
 
 	private HttpTunnelService http;
+	private WSTunnelService ws;
 	private SimpleSocketAddress proxyAddr;
 	private boolean isClosed;
 
@@ -56,13 +58,21 @@ public class C4RemoteHandler implements RemoteProxyHandler, EventHandler
 	public C4RemoteHandler(C4ServerAuth s)
 	{
 		this.server = s;
-		http = HttpTunnelService.getHttpTunnelService(s);
+		if (isWebsocketServer())
+		{
+			ws = WSTunnelService.getWSTunnelService(s);
+		}
+		else
+		{
+			http = HttpTunnelService.getHttpTunnelService(s);
+		}
+
 	}
 
 	private boolean isWebsocketServer()
 	{
-		return (server.url.getProtocol().equalsIgnoreCase("ws") || server.url
-		        .getProtocol().equalsIgnoreCase("wss"));
+		return (server.url.getScheme().equalsIgnoreCase("ws") || server.url
+		        .getScheme().equalsIgnoreCase("wss"));
 	}
 
 	private HTTPRequestEvent buildHttpRequestEvent(HttpRequest request)
@@ -141,7 +151,10 @@ public class C4RemoteHandler implements RemoteProxyHandler, EventHandler
 	{
 		if (isWebsocketServer())
 		{
-
+			if (null != ws)
+			{
+				ws.write(ev);
+			}
 		}
 		else
 		{
@@ -180,7 +193,7 @@ public class C4RemoteHandler implements RemoteProxyHandler, EventHandler
 			closeEv.status = SocketConnectionEvent.TCP_CONN_CLOSED;
 			closeEv.addr = proxyAddr.toString();
 			closeEv.setHash(localHandler.getId());
-			http.write(closeEv);
+			requestEvent(closeEv);
 			int sid = null != localHandler ? localHandler.getId() : 0;
 			sessionTable.remove(sid);
 		}
@@ -207,7 +220,7 @@ public class C4RemoteHandler implements RemoteProxyHandler, EventHandler
 				SocketConnectionEvent ev = (SocketConnectionEvent) event;
 				if (ev.status == SocketConnectionEvent.TCP_CONN_CLOSED)
 				{
-					
+
 					if (null != proxyAddr
 					        && proxyAddr.toString().equals(ev.addr))
 					{
