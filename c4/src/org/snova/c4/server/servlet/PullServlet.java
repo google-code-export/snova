@@ -17,7 +17,6 @@ import org.arch.buffer.BufferHelper;
 import org.arch.event.Event;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.snova.c4.common.C4Constants;
 import org.snova.c4.server.session.v3.RemoteProxySessionManager;
 
 /**
@@ -47,7 +46,7 @@ public class PullServlet extends HttpServlet
 		
 		long begin = System.currentTimeMillis();
 		Buffer buf = new Buffer(4096);
-		String userToken = req.getHeader(C4Constants.USER_TOKEN_HEADER);
+		String userToken = req.getHeader("UserToken");
 		String miscInfo = req.getHeader("C4MiscInfo");
 		if (null == userToken)
 		{

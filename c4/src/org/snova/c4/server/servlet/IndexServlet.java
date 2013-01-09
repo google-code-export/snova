@@ -11,7 +11,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.snova.c4.common.C4PluginVersion;
+import org.snova.c4.server.Version;
+
 
 /**
  * @author wqy
@@ -35,7 +36,7 @@ public class IndexServlet extends HttpServlet
             {
 	            int len = is.read(buffer);
 	            content = new String(buffer,0 , len);
-	            content = content.replace("${version}", C4PluginVersion.value);
+	            content = content.replace("${version}", Version.value);
             }
             catch (IOException e)
             {
