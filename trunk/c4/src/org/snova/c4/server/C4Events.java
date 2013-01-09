@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.snova.c4.common.event;
+package org.snova.c4.server;
 
 import org.arch.event.Event;
 import org.arch.event.EventDispatcher;
@@ -20,6 +20,10 @@ import org.arch.event.misc.EncryptEventV2;
 import org.arch.event.socket.SocketCloseEvent;
 import org.arch.event.socket.SocketConnectEvent;
 import org.arch.event.socket.SocketDataEvent;
+import org.snova.framework.event.SocketConnectionEvent;
+import org.snova.framework.event.SocketReadEvent;
+import org.snova.framework.event.TCPChunkEvent;
+import org.snova.framework.event.UserLoginEvent;
 
 /**
  * @author qiyingwang

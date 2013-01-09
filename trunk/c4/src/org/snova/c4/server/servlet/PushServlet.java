@@ -11,7 +11,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.arch.buffer.Buffer;
-import org.snova.c4.common.C4Constants;
 import org.snova.c4.server.session.v3.RemoteProxySessionManager;
 
 /**
@@ -24,7 +23,7 @@ public class PushServlet extends HttpServlet
 	protected void doPost(HttpServletRequest req, final HttpServletResponse resp)
 	        throws ServletException, IOException
 	{
-		String userToken = req.getHeader(C4Constants.USER_TOKEN_HEADER);
+		String userToken = req.getHeader("UserToken");
 		if (null == userToken)
 		{
 			userToken = "";
