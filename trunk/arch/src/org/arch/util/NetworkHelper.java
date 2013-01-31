@@ -3,16 +3,24 @@
  */
 package org.arch.util;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
 import java.net.NetworkInterface;
+import java.net.Proxy;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.StringTokenizer;
@@ -822,5 +830,43 @@ public class NetworkHelper
 			macAddress = RandomHelper.generateRandomString(8);
 		}
 		return macAddress;
+	}
+	
+	public static byte[] httpGet(String url, Proxy proxy) throws Exception
+	{
+		URL u = new URL(url);
+		if(null == proxy)
+		{
+			proxy = Proxy.NO_PROXY;
+		}
+		try {
+			HttpURLConnection conn = (HttpURLConnection) u.openConnection(proxy);
+			conn.setRequestMethod("GET");
+			conn.connect();
+			if(conn.getResponseCode() > 300)
+			{
+				return null;
+			}
+			ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			byte[] buffer = new byte[8192];
+			while(true)
+			{
+				try {
+					int n = conn.getInputStream().read(buffer);
+					if(n > 0)
+					{
+						bos.write(buffer, 0, n);
+					}else{
+						break;
+					}
+				} catch (Exception e) {
+					break;
+				}
+			}
+			return bos.toByteArray();
+			
+		} catch (Exception e) {
+			throw e;
+		}
 	}
 }
