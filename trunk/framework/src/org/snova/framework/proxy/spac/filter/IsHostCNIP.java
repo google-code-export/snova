@@ -9,13 +9,18 @@ import org.jboss.netty.handler.codec.http.HttpRequest;
  * @author qiyingwang
  *
  */
-public  class IsHostCNIP implements SpacFilter
+public  class IsHostCNIP extends SpacFilter
 {
+    private static IsHostCNIP instance = new IsHostCNIP();
+	private IsHostCNIP() {
+	}
 
+	static IsHostCNIP getInstacne() {
+		return instance;
+	}
 	@Override
     public boolean filter(HttpRequest req)
     {
-	    // TODO Auto-generated method stub
 	    return false;
     }
 
