@@ -89,16 +89,45 @@ public class StringHelper
 		}
 		return null;
 	}
+	
+	public static Pattern prepareRegexPattern(String ss)
+	{
+		String s = ss.replace(".", "\\.");
+		s = s.replace("*", ".*");
+		return Pattern.compile(s);
+	}
 
-	public static Pattern[] prepareRegexPattern(String[] ss)
+	public static Pattern[] prepareRegexPatterns(String[] ss)
 	{
 		Pattern[] ps = new Pattern[ss.length];
 		for (int i = 0; i < ss.length; i++)
 		{
-			String s = ss[i].replace(".", "\\.");
-			s = s.replace("*", ".*");
-			ps[i] = Pattern.compile(s);
+			ps[i] = prepareRegexPattern(ss[i]);
 		}
 		return ps;
 	}
+	
+	public static boolean wildCardMatch(String text, String pattern)
+    {
+        // Create the cards by splitting using a RegEx. If more speed 
+        // is desired, a simpler character based splitting can be done.
+        String [] cards = pattern.split("\\*");
+
+        // Iterate over the cards.
+        for (String card : cards)
+        {
+            int idx = text.indexOf(card);
+            
+            // Card not detected in the text.
+            if(idx == -1)
+            {
+                return false;
+            }
+            
+            // Move ahead, towards the right of the text.
+            text = text.substring(idx + card.length());
+        }
+        
+        return true;
+    }
 }
