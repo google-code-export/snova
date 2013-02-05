@@ -4,6 +4,14 @@
 _You can download the latest version of the Snova/GSnova [http://code.google.com/p/snova/downloads/list here]
 
 Snova/GSnova - Release Notes
+===Version 0.20.0 - (2013.02.05)===
+ * `[C4]`: 支持RC4加密，可替换密钥；默认加密改为RC4加密（Server需要重新部署）
+ * `[C4]`: 修改为读写分离的Proxy实现，提高性能
+ * `[C4]`: 支持websocket（仅保证在dotcloud和vps上能运行）
+ * `[SPAC]`: 提高在SPAC下对google站点的proxy性能
+ * `[ALL]`: 移植GSnova(Go)部分特性到Snova(Java)中，配置统一
+ * 一些Bug fix以及默认设置的优化
+
 ===Version 0.19.4 - (2012.12.16)===
  * Google站点的连接重试机制优化，对`[GAE], [Google]`有较好的改善
  * 一些Bug fix以及默认设置的优化
