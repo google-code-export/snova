@@ -30,3 +30,8 @@
   * 首先仔细看下wiki，看看是否是哪一步执行错误。
   * 其次到这些PaaS的官方网站上搜索这类错误的解决方法。一般都能找到答案。
   * 最后强调一下，这类PaaS的部署对于一般用户来说是相当困难的，大部分是全程需要命令行操作。
+ == 如何修改C4的默认RC4密钥？==
+  * 首先将服务端的压缩包（Java的war文件或者nodejs的zip文件）放到gsnova的安装目录下（和gsnova.exe同一目录）
+  * 启动gsnova后，在gsnova的web界面中选择Config/C4 ([http://127.0.0.1:48100/setting.html?target=c4]), 点击Generate按钮，则会生成一个用密钥作为文件名前缀的新压缩文件；
+  * 用生成的文件用同样的部署方法部署
+  * 修改gsnova的gsnova.conf（snova用户修改snova,conf）,将`[Misc]`下的RC4Key修改为生成的key
