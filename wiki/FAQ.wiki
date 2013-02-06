@@ -35,3 +35,6 @@
   * 启动gsnova后，在gsnova的web界面中选择Config/C4 ([http://127.0.0.1:48100/setting.html?target=c4]), 点击Generate按钮，则会生成一个用密钥作为文件名前缀的新压缩文件；
   * 用生成的文件用同样的部署方法部署
   * 修改gsnova的gsnova.conf（snova用户修改snova,conf）,将`[Misc]`下的RC4Key修改为生成的key
+ == 如何切换C4使用https或者websocket协议？==
+  * Https: 将`WorkerNode[0]=xx.xx.com改为WorkerNode[0]=https://xx.xx.com`
+  * Websocket: 将`WorkerNode[0]=xx.xx.com改为WorkerNode[0]=ws://xx.xx.com`
