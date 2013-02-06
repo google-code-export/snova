@@ -8,7 +8,9 @@ import java.util.concurrent.TimeUnit;
 
 import org.arch.buffer.Buffer;
 import org.arch.config.IniProperties;
+import org.arch.encrypt.RC4;
 import org.arch.event.Event;
+import org.arch.misc.crypto.base64.Base64;
 import org.arch.util.NetworkHelper;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.handler.codec.http.DefaultHttpRequest;
@@ -29,18 +31,18 @@ import org.snova.http.client.HttpClientException;
  */
 public class PushWorker extends FutureCallback.FutureCallbackAdapter
 {
-	boolean isReady = true;
-	int waitTime = 1;
-	Buffer cachedBuffer = null;
-	HttpTunnelService serv;
-	int index;
-
+	boolean	          isReady	   = true;
+	int	              waitTime	   = 1;
+	Buffer	          cachedBuffer	= null;
+	HttpTunnelService	serv;
+	int	              index;
+	
 	public PushWorker(HttpTunnelService serv, int index)
 	{
 		this.serv = serv;
 		this.index = index;
 	}
-
+	
 	public void start(Buffer buf)
 	{
 		isReady = false;
@@ -48,7 +50,7 @@ public class PushWorker extends FutureCallback.FutureCallbackAdapter
 		IniProperties cfg = SnovaConfiguration.getInstance().getIniProperties();
 		HttpRequest request = new DefaultHttpRequest(HttpVersion.HTTP_1_1,
 		        HttpMethod.POST, serv.server.url.toString() + "push");
-
+		
 		int port = 80;
 		if (serv.server.url.getPort() > 0)
 		{
@@ -61,9 +63,16 @@ public class PushWorker extends FutureCallback.FutureCallbackAdapter
 				port = 443;
 			}
 		}
+		String enc = cfg.getProperty("C4", "Encrypter", "RC4");
+		if (enc.equalsIgnoreCase("RC4"))
+		{
+			String key = cfg.getProperty("Misc", "RC4Key");
+			RC4.setDefaultKey(key);
+			byte[] tmp = RC4.encrypt(key.getBytes());
+			request.setHeader("RC4Key", Base64.encodeToString(tmp, false));
+		}
 		request.setHeader(HttpHeaders.Names.HOST, serv.server.url.getHost()
 		        + ":" + port);
-
 		request.setHeader(HttpHeaders.Names.CONNECTION, "keep-alive");
 		request.setHeader("UserToken", NetworkHelper.getMacAddress());
 		request.setHeader("C4MiscInfo", String.format("%d_%d", index, 25));
@@ -87,7 +96,7 @@ public class PushWorker extends FutureCallback.FutureCallbackAdapter
 			e.printStackTrace();
 		}
 	}
-
+	
 	@Override
 	public void onResponse(HttpResponse res)
 	{
@@ -112,7 +121,7 @@ public class PushWorker extends FutureCallback.FutureCallbackAdapter
 			serv.tryWriteEvent(index);
 		}
 	}
-
+	
 	@Override
 	public void onError(String error)
 	{

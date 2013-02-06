@@ -43,7 +43,6 @@ public class PullServlet extends HttpServlet
 	protected void doPost(HttpServletRequest req, final HttpServletResponse resp)
 	        throws ServletException, IOException
 	{
-		
 		long begin = System.currentTimeMillis();
 		Buffer buf = new Buffer(4096);
 		String userToken = req.getHeader("UserToken");

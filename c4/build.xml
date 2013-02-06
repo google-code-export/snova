@@ -20,7 +20,6 @@
 
 	<tstamp />
 	<target name="prepare">
-		<mkdir dir="${clientclasses}" />
 		<mkdir dir="${distroot}" />
 		<mkdir dir="${warclasses}" />
 		<echo
@@ -33,8 +32,7 @@
 	</target>
 
 	<target name="compile-server" depends="prepare">
-
-		<javac debug="on" destdir="${warclasses}">
+		<javac debug="on" destdir="${warclasses}" target="1.5" source="1.5">
 			<src path="${srcroot}" />
 			<exclude name="org/snova/c4/client/**/*" />
 			<classpath>
@@ -54,7 +52,6 @@
 	</target>
 
 	<target name="compile" depends="compile-server" />
-
 
 	<target name="war" depends="compile">
 		<copy todir="${warlib}" file="${root}/../framework/lib/snova-common.jar" />

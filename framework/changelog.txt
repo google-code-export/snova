@@ -1,5 +1,16 @@
 Snova Changelog
 ===================
+Changes in version 0.20.0(2013.02.05)
+-------------------------------------------
+** Features
+   * Rebuild, port features from gsnova.
+   
+** Improvement
+   * NA
+      
+** Task
+   * NA
+
 Changes in version 0.19.0(2012.11.23)
 -------------------------------------------
 ** Features

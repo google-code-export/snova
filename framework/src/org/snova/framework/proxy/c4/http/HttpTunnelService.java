@@ -31,13 +31,13 @@ import org.snova.http.client.ProxyCallback;
  */
 public class HttpTunnelService
 {
-	static HttpClient httpClient = null;
-	static Map<String, HttpTunnelService> tunnelServices = new ConcurrentHashMap<String, HttpTunnelService>();
-	C4ServerAuth server;
-	private LinkedList<Event>[] sendEventQueue = new LinkedList[0];
-	private PushWorker[] pusher;
-	private PullWorker[] puller;
-
+	static HttpClient	                  httpClient	   = null;
+	static Map<String, HttpTunnelService>	tunnelServices	= new ConcurrentHashMap<String, HttpTunnelService>();
+	C4ServerAuth	                      server;
+	private LinkedList<Event>[]	          sendEventQueue	= new LinkedList[0];
+	private PushWorker[]	              pusher;
+	private PullWorker[]	              puller;
+	
 	private static void initHttpClient() throws Exception
 	{
 		if (null != httpClient)
@@ -75,7 +75,7 @@ public class HttpTunnelService
 		httpClient = new HttpClient(options,
 		        SharedObjectHelper.getClientBootstrap());
 	}
-
+	
 	public static HttpTunnelService getHttpTunnelService(C4ServerAuth server)
 	{
 		if (!tunnelServices.containsKey(server.url.toString()))
@@ -85,7 +85,7 @@ public class HttpTunnelService
 		}
 		return tunnelServices.get(server.url.toString());
 	}
-
+	
 	private HttpTunnelService(C4ServerAuth server)
 	{
 		try
@@ -111,7 +111,7 @@ public class HttpTunnelService
 				puller[i] = new PullWorker(this, i);
 				puller[i].start();
 			}
-
+			
 		}
 		catch (Exception e)
 		{
@@ -119,39 +119,53 @@ public class HttpTunnelService
 			e.printStackTrace();
 		}
 	}
-
+	
 	public void write(Event ev)
 	{
 		int index = ev.getHash() % sendEventQueue.length;
 		EncryptEventV2 encrypt = new EncryptEventV2();
-		encrypt.type = EncryptType.SE1;
+		IniProperties cfg = SnovaConfiguration.getInstance().getIniProperties();
+		String enc = cfg.getProperty("C4", "Encrypter", "RC4");
+		if (enc.equalsIgnoreCase("RC4"))
+		{
+			encrypt.type = EncryptType.RC4;
+		}
+		else if (enc.equalsIgnoreCase("SE1"))
+		{
+			encrypt.type = EncryptType.SE1;
+		}
+		else
+		{
+			encrypt.type = EncryptType.NONE;
+		}
+		
 		encrypt.ev = ev;
 		encrypt.setHash(ev.getHash());
 		synchronized (sendEventQueue[index])
-        {
+		{
 			sendEventQueue[index].add(encrypt);
-        }
+		}
 		if (pusher[index].isReady)
 		{
 			tryWriteEvent(index);
 		}
 	}
-
+	
 	void tryWriteEvent(int index)
 	{
 		Buffer buffer = new Buffer(4096);
 		synchronized (sendEventQueue[index])
-        {
-	        while(!sendEventQueue[index].isEmpty())
-	        {
-	        	sendEventQueue[index].removeFirst().encode(buffer);
-	        }
-        }
-		if(buffer.readable())
+		{
+			while (!sendEventQueue[index].isEmpty())
+			{
+				sendEventQueue[index].removeFirst().encode(buffer);
+			}
+		}
+		if (buffer.readable())
 		{
 			pusher[index].start(buffer);
 		}
 		
 	}
-
+	
 }

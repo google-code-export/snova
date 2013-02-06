@@ -99,8 +99,8 @@ public class MainFrame extends javax.swing.JFrame
 		        new C4GUIHolder()));
 		installPluginsUIPanel.add(new InstalledPluginPanel(this,
 		        new SpacGUIHolder()));
-		installPluginsUIPanel.add(new InstalledPluginPanel(this,
-		        new SSHGUIHolder()));
+		//installPluginsUIPanel.add(new InstalledPluginPanel(this,
+		//        new SSHGUIHolder()));
 		// displayInstalledPlugins();
 		jTabbedPane2.addChangeListener(new ChangeListener()
 		{

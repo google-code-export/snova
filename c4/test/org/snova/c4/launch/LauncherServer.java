@@ -13,7 +13,6 @@ import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.snova.c4.server.servlet.IndexServlet;
 import org.snova.c4.server.servlet.PullServlet;
 import org.snova.c4.server.servlet.PushServlet;
-import org.snova.c4.server.servlet.TestServlet;
 import org.snova.httpdns.DNSServlet;
 
 
@@ -40,7 +39,6 @@ public class LauncherServer
 		context.setContextPath("/");
 		server.setHandler(context);
 		context.addServlet(new ServletHolder(new IndexServlet()), "/*");
-		context.addServlet(new ServletHolder(new TestServlet()), "/test");
 		context.addServlet(new ServletHolder(new PullServlet()), "/pull");
 		context.addServlet(new ServletHolder(new PushServlet()), "/push");
 		context.addServlet(new ServletHolder(new DNSServlet()), "/dns");

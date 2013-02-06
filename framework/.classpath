@@ -6,7 +6,9 @@
 	<classpathentry kind="lib" path="lib/slf4j-api-1.6.4.jar"/>
 	<classpathentry kind="lib" path="lib/slf4j-jdk14-1.6.4.jar"/>
 	<classpathentry kind="lib" path="lib/bcprov-jdk16-146.jar"/>
-	<classpathentry kind="lib" path="lib/netty-3.1.5.GA.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/arch"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/httpclient"/>
+	<classpathentry kind="lib" path="lib/netty-3.6.0.Final.jar" sourcepath="C:/Doc/Java/NIO/netty-3.6.0.Final/jar/netty-3.6.0.Final-sources.jar"/>
+	<classpathentry kind="lib" path="lib/commons-cli-1.2.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

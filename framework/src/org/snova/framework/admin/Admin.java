@@ -9,11 +9,17 @@
  */
 package org.snova.framework.admin;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.Console;
 import java.io.IOException;
+import java.io.InputStreamReader;
 
+import org.snova.framework.admin.gae.GAEAdmin;
 import org.snova.framework.common.Version;
+import org.snova.framework.event.CommonEvents;
 import org.snova.framework.launch.ApplicationLauncher;
+import org.snova.framework.proxy.hosts.HostsService;
 import org.snova.framework.trace.TUITrace;
 import org.snova.framework.util.SharedObjectHelper;
 
@@ -31,6 +37,8 @@ public class Admin
 	{
 		ApplicationLauncher.initLoggerConfig();
 		SharedObjectHelper.setTrace(new TUITrace());
+		HostsService.init();
+		CommonEvents.init(null, false);
 
 		Console console = System.console();
 		while (true)
@@ -42,7 +50,8 @@ public class Admin
 			System.out.println("[3] SPAC");
 			System.out.println("[0] Exit");
 			System.out.print("Please enter 0-3:");
-			String s = console.readLine();
+			BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+			String s = reader.readLine();
 			try
 			{
 				int choice = Integer.parseInt(s);
@@ -56,6 +65,7 @@ public class Admin
 					{
 						case 1:
 						{
+							new GAEAdmin().run();
 							break;
 						}
 						default:

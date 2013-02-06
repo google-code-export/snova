@@ -115,7 +115,7 @@ public class RemoteProxySessionManager implements Runnable
 	boolean offerReadyEvent(String user, int groupIdx, Event ev)
 	{
 		EncryptEventV2 encrypt = new EncryptEventV2();
-		encrypt.type = EncryptType.SE1;
+		encrypt.type = EncryptType.RC4;
 		encrypt.ev = ev;
 		encrypt.setHash(ev.getHash());
 		LinkedList<Event> queue = getEventQueue(user, groupIdx);

@@ -12,6 +12,7 @@ import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.snova.framework.proxy.spac.filter.SpacFilter;
 
 /**
  * @author yinqiwen
@@ -27,6 +28,7 @@ public class SpacRule
 	String[]	      proxyies	       = new String[0];
 	String[]	      attrs	           = new String[0];
 	String[]	      filters	       = new String[0];
+	public JSONObject	orig;
 	
 	private static String[] toStringArray(JSONArray array) throws JSONException
 	{
@@ -40,17 +42,18 @@ public class SpacRule
 	
 	public SpacRule(JSONObject obj) throws JSONException
 	{
+		orig = obj;
 		if (obj.has("URL"))
 		{
 			JSONArray urls = obj.getJSONArray("URL");
 			String[] ss = toStringArray(urls);
-			urlPatterns = StringHelper.prepareRegexPattern(ss);
+			urlPatterns = StringHelper.prepareRegexPatterns(ss);
 		}
 		if (obj.has("Host"))
 		{
 			JSONArray hosts = obj.getJSONArray("Host");
 			String[] ss = toStringArray(hosts);
-			hostPatterns = StringHelper.prepareRegexPattern(ss);
+			hostPatterns = StringHelper.prepareRegexPatterns(ss);
 		}
 		if (obj.has("Method"))
 		{
@@ -76,6 +79,23 @@ public class SpacRule
 			JSONArray ms = obj.getJSONArray("Filter");
 			filters = toStringArray(ms);
 		}
+	}
+	
+	private boolean matchFilter(HttpRequest req)
+	{
+		boolean ret = true;
+		for (String filter : filters)
+		{
+			ret = ret && SpacFilter.invokeFilter(filter, req);
+			
+			if (!ret)
+			{
+				return false;
+			}
+			
+		}
+		
+		return ret;
 	}
 	
 	private boolean matchUrl(HttpRequest req)
@@ -136,7 +156,7 @@ public class SpacRule
 		return false;
 	}
 	
-	private boolean matchProtocol(HttpRequest req)
+	private boolean matchProtocol(HttpRequest req,boolean isHttps)
 	{
 		if (null == protocolPattern)
 		{
@@ -147,12 +167,16 @@ public class SpacRule
 		{
 			protocol = "https";
 		}
+		if (isHttps)
+		{
+			protocol = "https";
+		}
 		return protocol.equalsIgnoreCase(protocolPattern);
 	}
 	
-	public boolean match(HttpRequest req)
+	public boolean match(HttpRequest req, boolean isHttps)
 	{
-		return matchUrl(req) && matchHost(req) && matchMethod(req)
-		        && matchProtocol(req);
+		return matchFilter(req) && matchUrl(req) && matchHost(req)
+		        && matchMethod(req) && matchProtocol(req, isHttps);
 	}
 }

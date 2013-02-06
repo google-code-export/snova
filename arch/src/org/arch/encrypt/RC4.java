@@ -1,57 +1,86 @@
 package org.arch.encrypt;
 
+import org.arch.buffer.Buffer;
+
 public class RC4
 {
-	private final byte[]	S	= new byte[256];
-	private final byte[]	T	= new byte[256];
-	private final int	 keylen;
 	
-	public RC4(final byte[] key)
+	private static String	defaultKey	= "8976501f8451f03c5c4067b47882f2e5";
+	
+	public static void setDefaultKey(String key)
 	{
-		if (key.length < 1 || key.length > 256)
-		{
-			throw new IllegalArgumentException(
-			        "key must be between 1 and 256 bytes");
-		}
-		else
-		{
-			keylen = key.length;
-			for (int i = 0; i < 256; i++)
-			{
-				S[i] = (byte) i;
-				T[i] = key[i % keylen];
-			}
-			int j = 0;
-			for (int i = 0; i < 256; i++)
-			{
-				j = (j + S[i] + T[i]) & 0xFF;
-				S[i] ^= S[j];
-				S[j] ^= S[i];
-				S[i] ^= S[j];
-			}
-		}
+		defaultKey = key;
 	}
 	
-	public byte[] encrypt(final byte[] plaintext)
+	public static String getDefaultKey()
 	{
-		final byte[] ciphertext = new byte[plaintext.length];
-		int i = 0, j = 0, k, t;
-		for (int counter = 0; counter < plaintext.length; counter++)
-		{
-			i = (i + 1) & 0xFF;
-			j = (j + S[i]) & 0xFF;
-			S[i] ^= S[j];
-			S[j] ^= S[i];
-			S[i] ^= S[j];
-			t = (S[i] + S[j]) & 0xFF;
-			k = S[t];
-			ciphertext[counter] = (byte) (plaintext[counter] ^ k);
-		}
-		return ciphertext;
+		return defaultKey;
 	}
 	
-	public byte[] decrypt(final byte[] ciphertext)
+	public static byte[] decrypt(byte[] value, int off, int len)
 	{
-		return encrypt(ciphertext);
+		byte[] src = new byte[len];
+		System.arraycopy(value, off, src, 0, len);
+		RC4.rc4(defaultKey, src);
+		return src;
+	}
+	
+	public static byte[] encrypt(byte[] value)
+	{
+		RC4.rc4(defaultKey, value);
+		return value;
+	}
+	
+	public static Buffer encrypt(Buffer buf)
+	{
+		byte[] array = buf.getRawBuffer();
+		RC4.rc4(defaultKey, array);
+		return Buffer.wrapReadableContent(array);
+	}
+	
+	public static Buffer decrypt(Buffer buf)
+	{
+		byte[] array = buf.getRawBuffer();
+		RC4.rc4(defaultKey, array);
+		return Buffer.wrapReadableContent(array);
+	}
+	
+	public static void rc4(String key, byte[] data)
+	{
+		int[] s = new int[256];
+		int i, j = 0;
+		for (i = 0; i < 256; i++)
+		{
+			s[i] = i;
+		}
+		
+		for (i = 0; i < 256; i++)
+		{
+			j = (j + s[i] + key.codePointAt(i % key.length())) % 256;
+			int x = s[i];
+			s[i] = s[j];
+			s[j] = x;
+		}
+		i = 0;
+		j = 0;
+		for (int y = 0; y < data.length; y++)
+		{
+			i = (i + 1) % 256;
+			j = (j + s[i]) % 256;
+			int x = s[i];
+			s[i] = s[j];
+			s[j] = x;
+			int k = data[y];
+			if (k < 0)
+			{
+				k += 256;
+			}
+			int tmp = k ^ s[(s[i] + s[j]) % 256];
+			while (tmp >= 256)
+			{
+				tmp -= 256;
+			}
+			data[y] = (byte) tmp;
+		}
 	}
 }

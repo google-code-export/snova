@@ -207,10 +207,9 @@ public class C4RemoteHandler implements RemoteProxyHandler, EventHandler
 			case CommonEventConstants.EVENT_TCP_CHUNK_TYPE:
 			{
 				TCPChunkEvent chunk = (TCPChunkEvent) event;
-				// checkHttpBody(chunk);
 				localHandler.handleRawData(this,
 				        ChannelBuffers.wrappedBuffer(chunk.content));
-				logger.info(String.format("Session[%d]Handle chunk %d:%d",
+				logger.info(String.format("Session[%d]Handle TCP chunk %d:%d",
 				        localHandler.getId(), chunk.sequence,
 				        chunk.content.length));
 				break;

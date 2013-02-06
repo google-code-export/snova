@@ -18,6 +18,8 @@ import org.arch.event.misc.EncryptEventV2;
 import org.snova.framework.event.gae.AdminResponseEvent;
 import org.snova.framework.event.gae.AuthRequestEvent;
 import org.snova.framework.event.gae.AuthResponseEvent;
+import org.snova.framework.event.gae.ListGroupResponseEvent;
+import org.snova.framework.event.gae.ListUserResponseEvent;
 import org.snova.framework.event.gae.RequestAllSharedAppIDEvent;
 import org.snova.framework.event.gae.RequestSharedAppIDEvent;
 import org.snova.framework.event.gae.RequestSharedAppIDResultEvent;
@@ -50,9 +52,9 @@ public class CommonEvents
 			registerEventHandler(HTTPErrorEvent.class, handler);
 			registerEventHandler(AuthResponseEvent.class, handler);
 			registerEventHandler(AdminResponseEvent.class, handler);
-			// registerEventHandler(ListGroupResponseEvent.class, handler);
+			registerEventHandler(ListGroupResponseEvent.class, handler);
 			
-			// registerEventHandler(ListUserResponseEvent.class, handler);
+			registerEventHandler(ListUserResponseEvent.class, handler);
 			
 			registerEventHandler(EventSegment.class, handler);
 			

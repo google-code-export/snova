@@ -7,7 +7,6 @@ import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
@@ -108,8 +107,6 @@ public class GoogleRemoteHandler implements RemoteProxyHandler
 					ChannelFuture future = SharedObjectHelper
 					        .getClientBootstrap().connect(
 					                new InetSocketAddress(remoteHost, 443));
-					final DefaultChannelFuture returnFuture = new DefaultChannelFuture(
-					        future.getChannel(), false);
 					SSLContext sslContext = null;
 					try
 					{
@@ -123,41 +120,7 @@ public class GoogleRemoteHandler implements RemoteProxyHandler
 					sslEngine.setUseClientMode(true);
 					final SslHandler ssl = new SslHandler(sslEngine);
 					future.getChannel().getPipeline().addLast("ssl", ssl);
-					future.addListener(new ChannelFutureListener()
-					{
-						public void operationComplete(ChannelFuture future)
-						        throws Exception
-						{
-							if (future.isSuccess())
-							{
-								ssl.handshake().addListener(
-								        new ChannelFutureListener()
-								        {
-									        public void operationComplete(
-									                ChannelFuture future)
-									                throws Exception
-									        {
-										        if (future.isSuccess())
-										        {
-											        returnFuture.setSuccess();
-										        }
-										        else
-										        {
-											        returnFuture.setFailure(future
-											                .getCause());
-										        }
-										        
-									        }
-								        });
-							}
-							else
-							{
-								returnFuture.setFailure(future.getCause());
-							}
-							
-						}
-					});
-					return returnFuture;
+					return future;
 				}
 			};
 			httpOptions.connector = new Connector()

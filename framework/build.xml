@@ -6,7 +6,8 @@
 	<property name="srcroot" value="${root}/src" />
 	<property name="releasedir" value="${root}/release" />
 	<property name="classes" value="${root}/build" />
-	<property name="jar" value="framework.jar" />
+	<property name="jar" value="snova.jar" />
+	<property name="common-jar" value="snova-common.jar" />
 	<property name="distroot" value="${root}/lib" />
 	<property name="docdir" value="${root}/doc" />
 	<property name="lib" value="${root}/lib" />
@@ -22,16 +23,16 @@
 	<target name="prepare">
 		<mkdir dir="${classes}" />
 		<mkdir dir="${distroot}" />
-		<!--
-		<copy todir="${srcroot}/com/hyk/proxy/framework/shell/gui">
-			<fileset dir="${root}/../hyk-proxy-gui/src/com/hyk/proxy/framework/shell/gui" includes="**/*.java"/>
-		</copy>
-		-->
-		<echo message="package org.snova.framework.common;
+		<!-- <copy todir="${srcroot}/com/hyk/proxy/framework/shell/gui"> <fileset 
+			dir="${root}/../hyk-proxy-gui/src/com/hyk/proxy/framework/shell/gui" includes="**/*.java"/> 
+			</copy> -->
+		<echo
+			message="package org.snova.framework.common;
 			 public class Version
 			 {
 			   public static final String value = &quot;${version}&quot;;
-			 }" file="${srcroot}/${versionfile}" />
+			 }"
+			file="${srcroot}/${versionfile}" />
 	</target>
 
 
@@ -51,14 +52,25 @@
 		</copy>
 	</target>
 
+	<target name="common-jar" depends="compile">
+		<jar destfile="${distroot}/${common-jar}">
+			<fileset dir="${classes}">
+				<include name="org/snova/framework/common/**/*.class" />
+				<include name="org/snova/framework/event/**/*.class" />
+			</fileset>
+		</jar>
+	</target>
+
 	<target name="jar" depends="compile">
 		<jar destfile="${distroot}/${jar}" basedir="${classes}">
 			<manifest>
 				<attribute name="Version" value="${version}" />
-				<attribute name="Main-Class" value="org.snova.framework.launch.ApplicationLauncher" />
-				<attribute name="Class-Path" value="../conf  
-					arch.jar jboss-netty.jar bcprov-jdk16-146.jar
-					slf4j-api-1.6.4.jar slf4j-jdk14-1.6.4.jar jsocks.jar commons-lang-2.4.jar" />
+				<attribute name="Main-Class"
+					value="org.snova.framework.launch.ApplicationLauncher" />
+				<attribute name="Class-Path"
+					value="../conf  
+					arch.jar jboss-netty.jar bcprov-jdk16-146.jar httpclient.jar
+					slf4j-api-1.6.4.jar slf4j-jdk14-1.6.4.jar commons-cli-1.2.jar" />
 			</manifest>
 		</jar>
 		<delete dir="${classes}" />
@@ -85,21 +97,35 @@
 			</zipfileset>
 		</jar>
 		<mkdir dir="${binreleasedir}" />
-		<mkdir dir="${binreleasedir}/plugins" />
+		<mkdir dir="${binreleasedir}/spac" />
+		<mkdir dir="${binreleasedir}/cert" />
 		<mkdir dir="${binreleasedir}/log" />
 		<copy todir="${binreleasedir}/lib">
 			<fileset dir="${lib}">
 				<exclude name="netty-3.6.0.Final.jar" />
+				<exclude name="snova-common.jar" />
 			</fileset>
 		</copy>
 		<copy todir="${binreleasedir}/conf">
-			<fileset dir="${conf}" />
+			<fileset dir="${conf}">
+				<exclude name="*.json" />
+				<exclude name="*.txt" />
+				<exclude name="*.cer" />
+				<exclude name="*.kst" />
+			</fileset>
 		</copy>
-		<!--
-		<copy todir="${binreleasedir}/docs">
-			<fileset dir="${docs}"/>
+		<copy todir="${binreleasedir}/spac">
+			<fileset dir="${conf}">
+				<include name="*.json" />
+				<include name="*.txt" />
+			</fileset>
 		</copy>
-		-->
+		<copy todir="${binreleasedir}/cert">
+			<fileset dir="${conf}">
+				<include name="*.cer" />
+				<include name="*.kst" />
+			</fileset>
+		</copy>
 		<copy todir="${binreleasedir}/bin">
 			<fileset dir="${shell}" />
 		</copy>

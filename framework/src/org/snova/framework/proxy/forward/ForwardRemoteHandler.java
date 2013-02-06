@@ -10,12 +10,21 @@ import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
+import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.channel.ChannelStateEvent;
+import org.jboss.netty.channel.MessageEvent;
+import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.snova.framework.proxy.LocalProxyHandler;
 import org.snova.framework.proxy.RemoteProxyHandler;
+import org.snova.framework.proxy.google.GoogleRemoteHandler;
+import org.snova.framework.proxy.hosts.HostsService;
+import org.snova.framework.proxy.spac.filter.GFWList;
 import org.snova.framework.server.ProxyHandler;
 import org.snova.framework.util.SharedObjectHelper;
 import org.snova.http.client.FutureCallback;
@@ -29,6 +38,8 @@ import org.snova.http.client.HttpClientHandler;
  */
 public class ForwardRemoteHandler implements RemoteProxyHandler
 {
+	protected static Logger	  logger	= LoggerFactory
+	                                         .getLogger(ForwardRemoteHandler.class);
 	private static HttpClient	directHttpClient;
 	
 	private LocalProxyHandler	localHandler;
@@ -78,14 +89,19 @@ public class ForwardRemoteHandler implements RemoteProxyHandler
 			p.switchRawHandler();
 			String address = req.getUri();
 			String host = address;
+			final String x = host;
 			int port = 443;
 			if (address.indexOf(":") != -1)
 			{
 				host = address.split(":")[0];
 				port = Integer.parseInt(address.split(":")[1]);
 			}
+			host = HostsService.getRealHost(host, port);
+			logger.info("Find " + host + " for " + x);
+			final InetSocketAddress remote = new InetSocketAddress(host, port);
 			proxyTunnel = SharedObjectHelper.getClientBootstrap().connect(
-			        new InetSocketAddress(host, port));
+			        remote);
+			proxyTunnel.getChannel().getConfig().setConnectTimeoutMillis(5000);
 			proxyTunnel.addListener(new ChannelFutureListener()
 			{
 				public void operationComplete(ChannelFuture future)
@@ -102,9 +118,27 @@ public class ForwardRemoteHandler implements RemoteProxyHandler
 					{
 						close();
 						local.onProxyFailed(ForwardRemoteHandler.this, req);
+						logger.warn("Failed to connect " + remote);
 					}
 				}
 			});
+			proxyTunnel.getChannel().getPipeline()
+			        .addLast("Forward", new SimpleChannelUpstreamHandler()
+			        {
+				        public void channelClosed(ChannelHandlerContext ctx,
+				                ChannelStateEvent e) throws Exception
+				        {
+					        doClose();
+				        }
+				        
+				        public void messageReceived(ChannelHandlerContext ctx,
+				                MessageEvent e) throws Exception
+				        {
+					        localHandler.handleRawData(
+					                ForwardRemoteHandler.this,
+					                (ChannelBuffer) e.getMessage());
+				        }
+			        });
 		}
 		else
 		{
@@ -198,7 +232,7 @@ public class ForwardRemoteHandler implements RemoteProxyHandler
 	@Override
 	public String getName()
 	{
-		return "";
+		return "Forward";
 	}
 	
 }

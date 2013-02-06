@@ -35,6 +35,7 @@ public class SnovaConfiguration implements ReloadableFileMonitor
 	public static String getHome()
 	{
 		getInstance();
+		home = System.getProperty(Constants.APP_HOME);
 		if (null == home)
 		{
 			home = ".";
