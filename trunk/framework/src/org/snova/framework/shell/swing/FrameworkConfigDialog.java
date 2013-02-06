@@ -22,6 +22,7 @@ import org.arch.event.NamedEventHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.framework.config.SnovaConfiguration;
+import org.snova.framework.proxy.spac.SPAC;
 import org.snova.framework.util.PreferenceHelper;
 import org.snova.http.client.HttpClientHelper;
 import org.snova.http.client.common.SimpleSocketAddress;
@@ -32,9 +33,9 @@ import org.snova.http.client.common.SimpleSocketAddress;
  */
 public class FrameworkConfigDialog extends javax.swing.JDialog
 {
-
-	public static final String AUTO_CONNECT = "GUIAutoConnectProxyServer";
-
+	
+	public static final String	AUTO_CONNECT	= "GUIAutoConnectProxyServer";
+	
 	/** Creates new form ConfigJDialog */
 	public FrameworkConfigDialog(java.awt.Frame parent, boolean modal)
 	{
@@ -43,13 +44,13 @@ public class FrameworkConfigDialog extends javax.swing.JDialog
 		setIconImage(ImageUtil.CONFIG.getImage());
 		setDefaultValueFromConfig();
 	}
-
+	
 	public void start()
 	{
 		setDefaultValueFromConfig();
 		setVisible(true);
 	}
-
+	
 	private void setDefaultValueFromConfig()
 	{
 		IniProperties cfg = SnovaConfiguration.getInstance().getIniProperties();
@@ -58,17 +59,25 @@ public class FrameworkConfigDialog extends javax.swing.JDialog
 		localServerHostText.setText(addr.host);
 		localServerPortText.setText("" + addr.port);
 		tpTextField.setText("20");
-
+		
 		List<String> serviceNames = new ArrayList<String>();
-		for (NamedEventHandler handler : EventDispatcher.getSingletonInstance()
-		        .getAllNamedEventHandlers())
-		{
-			serviceNames.add(handler.getName());
-		}
+		serviceNames.add("GAE");
+		serviceNames.add("C4");
+		serviceNames.add("SPAC");
+		// for (NamedEventHandler handler :
+		// EventDispatcher.getSingletonInstance()
+		// .getAllNamedEventHandlers())
+		// {
+		// serviceNames.add(handler.getName());
+		// }
 		serviceFactoryComboBox.setModel(new DefaultComboBoxModel(serviceNames
 		        .toArray()));
-		serviceFactoryComboBox.setSelectedItem(cfg.getProperty("SPAC",
-		        "Default"));
+		String choice = cfg.getProperty("SPAC", "Default", "Auto");
+		if (choice.equals("Auto"))
+		{
+			choice = "SPAC";
+		}
+		serviceFactoryComboBox.setSelectedItem(choice);
 		String value = PreferenceHelper.getPreference(AUTO_CONNECT);
 		if (null != value)
 		{
@@ -76,7 +85,7 @@ public class FrameworkConfigDialog extends javax.swing.JDialog
 			        .toString()));
 		}
 	}
-
+	
 	/**
 	 * This method is called from within the constructor to initialize the form.
 	 * WARNING: Do NOT modify this code. The content of this method is always
@@ -87,7 +96,7 @@ public class FrameworkConfigDialog extends javax.swing.JDialog
 	// desc="Generated Code">//GEN-BEGIN:initComponents
 	private void initComponents()
 	{
-
+		
 		applyButton = new javax.swing.JButton();
 		jPanel6 = new javax.swing.JPanel();
 		jLabel5 = new javax.swing.JLabel();
@@ -100,13 +109,13 @@ public class FrameworkConfigDialog extends javax.swing.JDialog
 		jLabel1 = new javax.swing.JLabel();
 		serviceFactoryComboBox = new javax.swing.JComboBox();
 		autoConnectCheckBox = new javax.swing.JCheckBox();
-
+		
 		setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
 		setTitle("Configuration - snova");
 		setAlwaysOnTop(true);
 		setLocationByPlatform(true);
 		setResizable(false);
-
+		
 		applyButton.setText("Apply");
 		applyButton.setIcon(ImageUtil.OK);
 		applyButton.addActionListener(new java.awt.event.ActionListener()
@@ -116,22 +125,22 @@ public class FrameworkConfigDialog extends javax.swing.JDialog
 				applyButtonActionPerformed(evt);
 			}
 		});
-
+		
 		jPanel6.setBorder(javax.swing.BorderFactory
 		        .createTitledBorder("Local Server Setting"));
-
+		
 		jLabel5.setText("Host:");
-
+		
 		localServerHostText.setText("localhost");
-
+		
 		jLabel6.setText("Port:");
-
+		
 		localServerPortText.setText("48100");
-
+		
 		jLabel2.setText("ThreadPoolSize:");
-
+		
 		tpTextField.setText("25");
-
+		
 		javax.swing.GroupLayout jPanel6Layout = new javax.swing.GroupLayout(
 		        jPanel6);
 		jPanel6.setLayout(jPanel6Layout);
@@ -218,14 +227,14 @@ public class FrameworkConfigDialog extends javax.swing.JDialog
 		                                                        javax.swing.GroupLayout.DEFAULT_SIZE,
 		                                                        javax.swing.GroupLayout.PREFERRED_SIZE))
 		                                .addContainerGap(20, Short.MAX_VALUE)));
-
+		
 		jPanel1.setBorder(javax.swing.BorderFactory
 		        .createTitledBorder("Proxy Service"));
-
+		
 		jLabel1.setText("Service Factory:");
-
+		
 		autoConnectCheckBox.setText("Auto Connect Proxy Server");
-
+		
 		javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(
 		        jPanel1);
 		jPanel1.setLayout(jPanel1Layout);
@@ -283,7 +292,7 @@ public class FrameworkConfigDialog extends javax.swing.JDialog
 		                                .addGap(18, 18, 18)
 		                                .addComponent(autoConnectCheckBox)
 		                                .addContainerGap(10, Short.MAX_VALUE)));
-
+		
 		javax.swing.GroupLayout layout = new javax.swing.GroupLayout(
 		        getContentPane());
 		getContentPane().setLayout(layout);
@@ -340,10 +349,10 @@ public class FrameworkConfigDialog extends javax.swing.JDialog
 		                                javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
 		                        .addComponent(applyButton)
 		                        .addContainerGap(18, Short.MAX_VALUE)));
-
+		
 		pack();
 	}// </editor-fold>//GEN-END:initComponents
-
+	
 	private void applyButtonActionPerformed(java.awt.event.ActionEvent evt)
 	{// GEN-FIRST:event_applyButtonActionPerformed
 		try
@@ -353,9 +362,18 @@ public class FrameworkConfigDialog extends javax.swing.JDialog
 			String listen = localServerHostText.getText() + ":"
 			        + localServerPortText.getText().trim();
 			cfg.setProperty("LocalServer", "Listen", listen);
-			cfg.setProperty("SPAC", "Default", serviceFactoryComboBox.getSelectedItem()
-			        .toString());
-			//cfg.setThreadPoolSize(Integer.parseInt(tpTextField.getText()));
+			String s = serviceFactoryComboBox.getSelectedItem().toString();
+			if (s.equals("SPAC"))
+			{
+				s = "Auto";
+				SPAC.spacEnbale = false;
+			}
+			else
+			{
+				SPAC.spacEnbale = true;
+			}
+			cfg.setProperty("SPAC", "Default", s);
+			// cfg.setThreadPoolSize(Integer.parseInt(tpTextField.getText()));
 			SnovaConfiguration.getInstance().save();
 			PreferenceHelper.savePreference(AUTO_CONNECT,
 			        Boolean.valueOf(autoConnectCheckBox.isSelected())
@@ -367,7 +385,7 @@ public class FrameworkConfigDialog extends javax.swing.JDialog
 			logger.error("Failed to save config!", ex);
 		}
 	}// GEN-LAST:event_applyButtonActionPerformed
-
+	
 	/**
 	 * @param args
 	 *            the command line arguments
@@ -391,20 +409,21 @@ public class FrameworkConfigDialog extends javax.swing.JDialog
 			}
 		});
 	}
-
+	
 	// Variables declaration - do not modify//GEN-BEGIN:variables
-	private javax.swing.JButton applyButton;
-	private javax.swing.JCheckBox autoConnectCheckBox;
-	private javax.swing.JLabel jLabel1;
-	private javax.swing.JLabel jLabel2;
-	private javax.swing.JLabel jLabel5;
-	private javax.swing.JLabel jLabel6;
-	private javax.swing.JPanel jPanel1;
-	private javax.swing.JPanel jPanel6;
-	private javax.swing.JTextField localServerHostText;
-	private javax.swing.JTextField localServerPortText;
-	private javax.swing.JComboBox serviceFactoryComboBox;
-	private javax.swing.JTextField tpTextField;
+	private javax.swing.JButton	   applyButton;
+	private javax.swing.JCheckBox	autoConnectCheckBox;
+	private javax.swing.JLabel	   jLabel1;
+	private javax.swing.JLabel	   jLabel2;
+	private javax.swing.JLabel	   jLabel5;
+	private javax.swing.JLabel	   jLabel6;
+	private javax.swing.JPanel	   jPanel1;
+	private javax.swing.JPanel	   jPanel6;
+	private javax.swing.JTextField	localServerHostText;
+	private javax.swing.JTextField	localServerPortText;
+	private javax.swing.JComboBox	serviceFactoryComboBox;
+	private javax.swing.JTextField	tpTextField;
 	// End of variables declaration//GEN-END:variables
-	protected Logger logger = LoggerFactory.getLogger(getClass());
+	protected Logger	           logger	= LoggerFactory
+	                                              .getLogger(getClass());
 }

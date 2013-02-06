@@ -11,7 +11,7 @@ package org.arch.event.misc;
 
 import org.arch.buffer.Buffer;
 import org.arch.buffer.BufferHelper;
-import org.arch.encrypt.RC4Encrypt;
+import org.arch.encrypt.RC4;
 import org.arch.encrypt.SimpleEncrypt;
 import org.arch.event.Event;
 import org.arch.event.EventConstants;
@@ -61,8 +61,7 @@ public class EncryptEventV2 extends Event
 				}
 				case RC4:
 				{
-					RC4Encrypt rc4 = new RC4Encrypt();
-					byte[] dst = rc4.decrypt(buffer.getRawBuffer(),
+					byte[] dst = RC4.decrypt(buffer.getRawBuffer(),
 					        buffer.getReadIndex(), size);
 					content = Buffer.wrapReadableContent(dst);
 					break;
@@ -73,6 +72,7 @@ public class EncryptEventV2 extends Event
 				}
 			}
 			ev = EventDispatcher.getSingletonInstance().parse(content);
+			buffer.skipBytes(size);
 			return true;
 		}
 		catch (Exception e)
@@ -100,8 +100,7 @@ public class EncryptEventV2 extends Event
 			}
 			case RC4:
 			{
-				RC4Encrypt rc4 = new RC4Encrypt();
-				content = rc4.encrypt(content);
+				content = RC4.encrypt(content);
 				break;
 			}
 			default:

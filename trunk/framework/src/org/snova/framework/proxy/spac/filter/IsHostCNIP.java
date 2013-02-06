@@ -18,7 +18,6 @@ public  class IsHostCNIP extends SpacFilter
 	static IsHostCNIP getInstacne() {
 		return instance;
 	}
-	@Override
     public boolean filter(HttpRequest req)
     {
 	    return false;

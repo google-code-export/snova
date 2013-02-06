@@ -11,7 +11,7 @@ SNOVA_BIN=`dirname $0 | sed -e "s#^\\([^/]\\)#${PWD}/\\1#"` # sed makes absolute
 SNOVA_HOME=$SNOVA_BIN/..
 SNOVA_LIB=$HYK_PROXY_HOME/lib
 SNOVA_CONFIG=$SNOVA_HOME/conf
-CLASSPATH="$SNOVA_HOME/lib/framework.jar:$SNOVA_CONFIG"
+CLASSPATH="$SNOVA_HOME/lib/snova.jar:$SNOVA_CONFIG"
 if $cygwin; then
   if [ "$OS" = "Windows_NT" ] && cygpath -m .>/dev/null 2>/dev/null ; then
     format=mixed

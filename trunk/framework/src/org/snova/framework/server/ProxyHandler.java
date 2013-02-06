@@ -9,24 +9,31 @@
  */
 package org.snova.framework.server;
 
+import java.nio.channels.ClosedChannelException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.arch.util.NetworkHelper;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.handler.codec.http.HttpChunk;
+import org.jboss.netty.handler.codec.http.HttpHeaders;
+import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
+import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.framework.proxy.LocalProxyHandler;
 import org.snova.framework.proxy.RemoteProxyHandler;
 import org.snova.framework.proxy.RemoteProxyManager;
 import org.snova.framework.proxy.spac.SPAC;
+import org.snova.framework.util.MiscHelper;
 
 /**
  * @author yinqiwen
@@ -43,6 +50,7 @@ public class ProxyHandler extends SimpleChannelUpstreamHandler implements
 	private String[]	         proxyAttr;
 	private RemoteProxyHandler	 remoteHandler	          = null;
 	private Channel	             localChannel	          = null;
+	private boolean	             isHttps;
 	
 	public Channel getLocalChannel()
 	{
@@ -57,6 +65,11 @@ public class ProxyHandler extends SimpleChannelUpstreamHandler implements
 	{
 		id = seed.getAndIncrement();
 		serverType = type;
+	}
+	
+	public boolean isHttps()
+	{
+		return isHttps;
 	}
 	
 	private void handleChunks(Object e)
@@ -84,22 +97,27 @@ public class ProxyHandler extends SimpleChannelUpstreamHandler implements
 	
 	private void processHttpRequest(RemoteProxyManager rm, HttpRequest request)
 	{
+		logger.info(String.format("Session[%d]Select [%s] for %s", id,
+		        rm.getName(), MiscHelper.getURLString(request, true)));
 		remoteHandler = rm.createProxyHandler(proxyAttr);
 		remoteHandler.handleRequest(this, request);
 	}
 	
 	private void handleHttpRequest(HttpRequest request)
 	{
+		if (request.getMethod().equals(HttpMethod.CONNECT))
+		{
+			isHttps = true;
+		}
 		request.removeHeader("Proxy-Connection");
 		Object[] attr = new Object[1];
-		candidateProxyManager = SPAC.selectProxy(request, serverType, attr);
-		if (null == candidateProxyManager || candidateProxyManager.length == 0)
+		candidateProxyManager = SPAC.selectProxy(request, serverType, attr,
+		        this);
+		if (null == candidateProxyManager)
 		{
-			logger.error("No proxy service found for "
-			        + request.getHeader("Host"));
-			close();
 			return;
 		}
+		
 		proxyAttr = (String[]) attr[0];
 		if (remoteHandler != null)
 		{
@@ -139,7 +157,7 @@ public class ProxyHandler extends SimpleChannelUpstreamHandler implements
 	{
 		if (localChannel != null)
 		{
-			if (localChannel.isOpen())
+			if (localChannel.isConnected())
 			{
 				localChannel.close();
 			}
@@ -164,6 +182,10 @@ public class ProxyHandler extends SimpleChannelUpstreamHandler implements
 	public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
 	        throws Exception
 	{
+		if (e.getCause() instanceof ClosedChannelException)
+		{
+			return;
+		}
 		logger.error("Browser connection[" + id + "] exceptionCaught.",
 		        e.getCause());
 	}
@@ -201,8 +223,6 @@ public class ProxyHandler extends SimpleChannelUpstreamHandler implements
 	@Override
 	public void handleChunk(RemoteProxyHandler remote, final HttpChunk chunk)
 	{
-		logger.info("Write chunk:" + chunk.getContent().readableBytes()
-		        + localChannel);
 		if (null != localChannel && localChannel.isConnected())
 		{
 			localChannel.write(chunk);
@@ -236,8 +256,14 @@ public class ProxyHandler extends SimpleChannelUpstreamHandler implements
 	{
 		if (null != localChannel)
 		{
-			localChannel.getPipeline().remove("encoder");
-			localChannel.getPipeline().remove("decoder");
+			if (localChannel.getPipeline().get("encoder") != null)
+			{
+				localChannel.getPipeline().remove("encoder");
+			}
+			if (localChannel.getPipeline().get("decoder") != null)
+			{
+				localChannel.getPipeline().remove("decoder");
+			}
 		}
 	}
 	
@@ -245,6 +271,8 @@ public class ProxyHandler extends SimpleChannelUpstreamHandler implements
 	public void onProxyFailed(RemoteProxyHandler remote,
 	        HttpRequest proxyRequest)
 	{
+		logger.warn("Proxy:" + remote + " failed for "
+		        + HttpHeaders.getHost(proxyRequest));
 		if (null != candidateProxyManager)
 		{
 			for (int i = 0; i < candidateProxyManager.length; i++)

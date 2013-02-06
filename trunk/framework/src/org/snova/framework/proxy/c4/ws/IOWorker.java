@@ -8,6 +8,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.arch.buffer.Buffer;
 import org.arch.config.IniProperties;
+import org.arch.encrypt.RC4;
+import org.arch.misc.crypto.base64.Base64;
 import org.arch.util.NetworkHelper;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
@@ -78,6 +80,14 @@ public class IOWorker extends SimpleChannelUpstreamHandler
 		buffer.append("GET ").append(serv.server.url.getPath())
 		        .append("HTTP/1.1\r\n");
 		buffer.append("Upgrade: WebSocket\r\n");
+		String enc = cfg.getProperty("C4", "Encrypter", "RC4");
+		if (enc.equalsIgnoreCase("RC4"))
+		{
+			String key = cfg.getProperty("Misc", "RC4Key");
+			RC4.setDefaultKey(key);
+			byte[] tmp = RC4.encrypt(key.getBytes());
+			buffer.append("RC4Key:").append(Base64.encodeToString(tmp, false)).append("\r\n");
+		}
 		String host = serv.server.url.getHost();
 		int port = serv.server.url.getPort();
 		if (port < 0)

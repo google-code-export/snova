@@ -63,7 +63,20 @@ public class WSTunnelService
 	{
 		int index = ev.getHash() % workers.length;
 		EncryptEventV2 encrypt = new EncryptEventV2();
-		encrypt.type = EncryptType.SE1;
+		IniProperties cfg = SnovaConfiguration.getInstance().getIniProperties();
+		String enc = cfg.getProperty("C4", "Encrypter", "RC4");
+		if (enc.equalsIgnoreCase("RC4"))
+		{
+			encrypt.type = EncryptType.RC4;
+		}
+		else if (enc.equalsIgnoreCase("SE1"))
+		{
+			encrypt.type = EncryptType.SE1;
+		}
+		else
+		{
+			encrypt.type = EncryptType.NONE;
+		}
 		encrypt.ev = ev;
 		encrypt.setHash(ev.getHash());
 		Buffer buf = new Buffer(256);

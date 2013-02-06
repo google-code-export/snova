@@ -32,7 +32,7 @@ public class ApplicationLauncher
 		public JDKLoggingConfig() throws Exception
 		{
 			String home = SnovaConfiguration.getHome();
-			String loggingCfgFile = home + "/conf/logging properties";
+			String loggingCfgFile = home + "/conf/logging.properties";
 			FileInputStream fis = new FileInputStream(loggingCfgFile);
 			Properties props = new Properties();
 			props.load(fis);

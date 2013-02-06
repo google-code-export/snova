@@ -11,7 +11,7 @@ package org.arch.event.misc;
 
 import org.arch.buffer.Buffer;
 import org.arch.buffer.BufferHelper;
-import org.arch.encrypt.RC4Encrypt;
+import org.arch.encrypt.RC4;
 import org.arch.encrypt.SimpleEncrypt;
 import org.arch.event.Event;
 import org.arch.event.EventConstants;
@@ -58,8 +58,7 @@ public class EncryptEvent extends Event
 				}
 				case RC4:
 				{
-					RC4Encrypt rc4 = new RC4Encrypt();
-					content = rc4.decrypt(buffer);
+					content = RC4.decrypt(buffer);
 					break;
 				}
 				default:
@@ -94,8 +93,7 @@ public class EncryptEvent extends Event
 			}
 			case RC4:
 			{
-				RC4Encrypt rc4 = new RC4Encrypt();
-				content = rc4.encrypt(buffer);
+				content = RC4.encrypt(buffer);
 				break;
 			}
 			default:

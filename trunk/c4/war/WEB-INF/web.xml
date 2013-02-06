@@ -8,10 +8,15 @@ http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
 	<servlet>
 		<servlet-name>Push</servlet-name>
 		<servlet-class>org.snova.c4.server.servlet.PushServlet</servlet-class>
+		<load-on-startup>1</load-on-startup>
 	</servlet>
 	<servlet>
 		<servlet-name>Pull</servlet-name>
 		<servlet-class>org.snova.c4.server.servlet.PullServlet</servlet-class>
+		<load-on-startup>1</load-on-startup>
+		<!--  
+		<async-supported>true</async-supported>
+		-->
 	</servlet>
 	<servlet>
 		<servlet-name>Index</servlet-name>
