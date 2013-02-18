@@ -71,8 +71,7 @@ public class PushWorker extends FutureCallback.FutureCallbackAdapter
 			byte[] tmp = RC4.encrypt(key.getBytes());
 			request.setHeader("RC4Key", Base64.encodeToString(tmp, false));
 		}
-		request.setHeader(HttpHeaders.Names.HOST, serv.server.url.getHost()
-		        + ":" + port);
+		request.setHeader(HttpHeaders.Names.HOST, serv.server.url.getHost());
 		request.setHeader(HttpHeaders.Names.CONNECTION, "keep-alive");
 		request.setHeader("UserToken", NetworkHelper.getMacAddress());
 		request.setHeader("C4MiscInfo", String.format("%d_%d", index, 25));

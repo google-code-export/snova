@@ -47,6 +47,7 @@ public class PullWorker implements FutureCallback
 		IniProperties cfg = SnovaConfiguration.getInstance().getIniProperties();
 		HttpRequest request = new DefaultHttpRequest(HttpVersion.HTTP_1_1,
 		        HttpMethod.POST, serv.server.url.toString() + "pull");
+		
 		int port = 80;
 		if (serv.server.url.getPort() > 0)
 		{
@@ -60,7 +61,7 @@ public class PullWorker implements FutureCallback
 			}
 		}
 		request.setHeader(HttpHeaders.Names.HOST, serv.server.url.getHost()
-		        + ":" + port);
+		        );
 
 		request.setHeader(HttpHeaders.Names.CONNECTION, "keep-alive");
 		request.setHeader("UserToken", NetworkHelper.getMacAddress());
@@ -95,7 +96,7 @@ public class PullWorker implements FutureCallback
 		{
 			if (res.getStatus().getCode() != 200)
 			{
-				System.out.println("##########" + res.getStatus());
+				System.out.println("##########@@@" + res.getStatus());
 			}
 		}
 
