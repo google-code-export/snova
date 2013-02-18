@@ -3,6 +3,8 @@
  */
 package org.snova.framework.proxy;
 
+import java.util.Map;
+
 /**
  * @author yinqiwen
  * 
@@ -10,6 +12,6 @@ package org.snova.framework.proxy;
 public interface RemoteProxyManager
 {
 	public String getName();
-
-	public RemoteProxyHandler createProxyHandler(String[] attr);
+	
+	public RemoteProxyHandler createProxyHandler(Map<String, String> attr);
 }

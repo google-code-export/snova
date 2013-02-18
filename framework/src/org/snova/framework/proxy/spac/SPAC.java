@@ -2,6 +2,7 @@ package org.snova.framework.proxy.spac;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Map;
 
 import org.arch.config.IniProperties;
 import org.arch.misc.crypto.base64.Base64;
@@ -110,7 +111,7 @@ public class SPAC
 	}
 	
 	public static RemoteProxyManager[] selectProxy(HttpRequest req,
-	        ProxyServerType serverType, Object[] attr, ProxyHandler h)
+	        ProxyServerType serverType, Map<String, String> attr, ProxyHandler h)
 	{
 		if (req.getUri().endsWith("/pac/gfwlist"))
 		{
@@ -222,9 +223,20 @@ public class SPAC
 				}
 				proxyAattr = ArraysHelper.append(proxyAattr, attrtmp);
 			}
+			if (name.startsWith("GAE:") || name.startsWith("C4:"))
+			{
+				String[] ss = name.split(":", 2);
+				name = ss[0];
+				attr.put("App", ss[1]);
+			}
+			
 			rms[i] = RemoteProxyManagerHolder.getRemoteProxyManager(name);
 		}
-		attr[0] = proxyAattr;
+		for (String a : proxyAattr)
+		{
+			attr.put(a, a);
+		}
+		// attr[0] = proxyAattr;
 		if (null == rms || rms.length == 0)
 		{
 			logger.error("No proxy service found for " + req.getHeader("Host"));

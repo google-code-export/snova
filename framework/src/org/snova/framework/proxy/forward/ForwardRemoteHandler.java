@@ -5,6 +5,7 @@ package org.snova.framework.proxy.forward;
 
 import java.net.InetSocketAddress;
 import java.net.URL;
+import java.util.Map;
 
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
@@ -57,12 +58,12 @@ public class ForwardRemoteHandler implements RemoteProxyHandler
 		        SharedObjectHelper.getClientBootstrap());
 	}
 	
-	public ForwardRemoteHandler(String[] attrs)
+	public ForwardRemoteHandler(Map<String, String> attrs)
 	{
 		try
 		{
 			initHttpClient();
-			for (String attr : attrs)
+			for (String attr : attrs.keySet())
 			{
 				if (attr.startsWith("http://") || attr.startsWith("socks://"))
 				{

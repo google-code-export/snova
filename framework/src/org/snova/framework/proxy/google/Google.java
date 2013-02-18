@@ -1,5 +1,7 @@
 package org.snova.framework.proxy.google;
 
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.framework.proxy.RemoteProxyHandler;
@@ -20,7 +22,7 @@ public class Google
 		}
 		
 		@Override
-		public RemoteProxyHandler createProxyHandler(String[] attr)
+		public RemoteProxyHandler createProxyHandler(Map<String, String> attr)
 		{
 			return new GoogleRemoteHandler(attr);
 		}

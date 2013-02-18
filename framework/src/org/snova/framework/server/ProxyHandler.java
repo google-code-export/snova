@@ -10,6 +10,8 @@
 package org.snova.framework.server;
 
 import java.nio.channels.ClosedChannelException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.arch.util.NetworkHelper;
@@ -47,7 +49,7 @@ public class ProxyHandler extends SimpleChannelUpstreamHandler implements
 	
 	private ProxyServerType	     serverType;
 	private RemoteProxyManager[]	candidateProxyManager	= null;
-	private String[]	         proxyAttr;
+	private Map<String, String>	 proxyAttr	              = new HashMap<String, String>();
 	private RemoteProxyHandler	 remoteHandler	          = null;
 	private Channel	             localChannel	          = null;
 	private boolean	             isHttps;
@@ -110,15 +112,13 @@ public class ProxyHandler extends SimpleChannelUpstreamHandler implements
 			isHttps = true;
 		}
 		request.removeHeader("Proxy-Connection");
-		Object[] attr = new Object[1];
-		candidateProxyManager = SPAC.selectProxy(request, serverType, attr,
+		candidateProxyManager = SPAC.selectProxy(request, serverType, proxyAttr,
 		        this);
 		if (null == candidateProxyManager)
 		{
 			return;
 		}
 		
-		proxyAttr = (String[]) attr[0];
 		if (remoteHandler != null)
 		{
 			boolean match = false;
