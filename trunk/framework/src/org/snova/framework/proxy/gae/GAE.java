@@ -2,6 +2,7 @@ package org.snova.framework.proxy.gae;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.arch.event.Event;
 import org.arch.event.EventHandler;
@@ -24,10 +25,11 @@ import org.snova.framework.proxy.c4.C4;
 
 public class GAE
 {
-	protected static Logger logger = LoggerFactory.getLogger(GAE.class);
-	public static boolean enable;
-	static ListSelector<GAEServerAuth> servers = new ListSelector<GAEServerAuth>();
-
+	protected static Logger	           logger	= LoggerFactory
+	                                                    .getLogger(GAE.class);
+	public static boolean	           enable;
+	static ListSelector<GAEServerAuth>	servers	= new ListSelector<GAEServerAuth>();
+	
 	public static class GAERemoteProxyManager implements RemoteProxyManager
 	{
 		@Override
@@ -35,14 +37,25 @@ public class GAE
 		{
 			return "GAE";
 		}
-
+		
 		@Override
-		public RemoteProxyHandler createProxyHandler(String[] attr)
+		public RemoteProxyHandler createProxyHandler(Map<String, String> attr)
 		{
+			if (attr.containsKey("App"))
+			{
+				String appid = attr.get("App");
+				for (int i = 0; i < servers.size(); i++)
+				{
+					if (servers.get(i).appid.equals(appid))
+					{
+						return new GAERemoteHandler(servers.get(i));
+					}
+				}
+			}
 			return new GAERemoteHandler(servers.select());
 		}
 	}
-
+	
 	private static boolean auth(final GAEServerAuth server)
 	{
 		AuthRequestEvent event = new AuthRequestEvent();
@@ -87,7 +100,7 @@ public class GAE
 		}
 		return !StringHelper.isEmptyString(server.token);
 	}
-
+	
 	private static List<GAEServerAuth> fetchSharedAppIDs()
 	{
 		GAEServerAuth auth = new GAEServerAuth();
@@ -136,10 +149,10 @@ public class GAE
 			return appids;
 		}
 	}
-
+	
 	public static boolean init()
 	{
-
+		
 		if (!GAEConfig.init())
 		{
 			return false;
@@ -155,7 +168,7 @@ public class GAE
 			}
 			GAEConfig.appids = fetchSharedAppIDs();
 		}
-
+		
 		for (GAEServerAuth server : GAEConfig.appids)
 		{
 			if (auth(server))
@@ -168,11 +181,11 @@ public class GAE
 			logger.warn("Failed to init GAE since none appid fetched.");
 			return false;
 		}
-
+		
 		RemoteProxyManagerHolder
 		        .registerRemoteProxyManager(new GAERemoteProxyManager());
 		enable = true;
 		return true;
 	}
-
+	
 }

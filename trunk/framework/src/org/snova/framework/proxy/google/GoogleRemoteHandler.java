@@ -7,6 +7,7 @@ import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.NoSuchAlgorithmException;
+import java.util.Map;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
@@ -143,7 +144,7 @@ public class GoogleRemoteHandler implements RemoteProxyHandler
 		        SharedObjectHelper.getClientBootstrap());
 	}
 	
-	public GoogleRemoteHandler(String[] attr)
+	public GoogleRemoteHandler(Map<String, String> attr)
 	{
 		try
 		{
@@ -155,7 +156,7 @@ public class GoogleRemoteHandler implements RemoteProxyHandler
 		}
 		if (null != attr)
 		{
-			for (String s : attr)
+			for (String s : attr.keySet())
 			{
 				if (s.equalsIgnoreCase("https"))
 				{
