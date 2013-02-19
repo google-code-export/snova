@@ -4,7 +4,7 @@
 package org.snova.c4.server.session.v3;
 
 /**
- * @author qiyingwang
+ * @author yinqiwen
  *
  */
 public class SessionAddressPair

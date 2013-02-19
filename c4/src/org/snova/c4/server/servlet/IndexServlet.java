@@ -15,7 +15,7 @@ import org.snova.c4.server.Version;
 
 
 /**
- * @author wqy
+ * @author yinqiwen
  *
  */
 public class IndexServlet extends HttpServlet 
