@@ -97,7 +97,7 @@ public class RemoteProxySessionManager implements Runnable
 		}
 	}
 
-	private synchronized LinkedList<Event> getEventQueue(String user,
+	public synchronized LinkedList<Event> getEventQueue(String user,
 	        int groupIdx)
 	{
 		HashMap eqs = (HashMap) userReadyEventQueue.get(user);

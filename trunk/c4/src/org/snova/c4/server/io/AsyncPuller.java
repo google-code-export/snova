@@ -35,33 +35,35 @@ public class AsyncPuller extends Puller implements AsyncListener
 	public void doWork(LinkedList<Event> evs) throws IOException
 	{
 		working = true;
-		if (null != evs)
+		if (null == evs)
 		{
-			Buffer buf = new Buffer(4096);
-			while (!evs.isEmpty())
+			evs = RemoteProxySessionManager.getInstance().getEventQueue(
+			        userToken, index);
+		}
+		Buffer buf = new Buffer(4096);
+		while (!evs.isEmpty())
+		{
+			if (closing)
 			{
-				if (closing)
+				return;
+			}
+			Event ev = evs.removeFirst();
+			if (RemoteProxySessionManager.getInstance().sessionExist(userToken,
+			        index, ev.getHash()))
+			{
+				ev.encode(buf);
+				try
 				{
-					return;
+					flushContent(ctx.getResponse(), buf);
 				}
-				Event ev = evs.removeFirst();
-				if (RemoteProxySessionManager.getInstance().sessionExist(
-				        userToken, index, ev.getHash()))
+				catch (Exception e)
 				{
-					ev.encode(buf);
-					try
-					{
-						flushContent(ctx.getResponse(), buf);
-					}
-					catch (Exception e)
-					{
-						evs.addFirst(ev);
-						e.printStackTrace();
-						ctx.complete();
-						break;
-					}
-					buf.clear();
+					evs.addFirst(ev);
+					e.printStackTrace();
+					ctx.complete();
+					break;
 				}
+				buf.clear();
 			}
 		}
 		working = false;
