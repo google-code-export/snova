@@ -80,15 +80,28 @@ public class PullServlet extends HttpServlet
 			resp.setStatus(200);
 			resp.setContentType("image/jpeg");
 			resp.setHeader("C4LenHeader", "1");
-			LinkedList<Event> evs = new LinkedList<Event>();
 			do
 			{
-				evs.clear();
-				RemoteProxySessionManager.getInstance().consumeReadyEvent(
-				        userToken, index, buf, timeout);
+				Event ev = RemoteProxySessionManager.getInstance()
+				        .consumeReadyEvent(userToken, index, buf, timeout);
 				if (buf.readable())
 				{
-					flushContent(resp, buf);
+					try
+					{
+						flushContent(resp, buf);
+					}
+					catch (Exception e)
+					{
+						resp.getOutputStream().close();
+						LinkedList<Event> eq = RemoteProxySessionManager
+						        .getInstance().getEventQueue(userToken, index);
+						synchronized (eq)
+						{
+							eq.addFirst(ev);
+						}
+						return;
+					}
+					
 					sentData = true;
 					buf.clear();
 				}
