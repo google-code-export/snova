@@ -15,10 +15,10 @@
 
 === Step 2: 部署启动 ===
   * 下载`snova-c4-server-[version].war`， 放在任意地方
-  * 下载JettyRunner [http://repo2.maven.org/maven2/org/mortbay/jetty/jetty-runner/7.6.8.v20121106/jetty-runner-7.6.8.v20121106.jar 下载地址]，下载的文件放到war文件同一目录
+  * 下载`JettyRunner`[http://repo2.maven.org/maven2/org/mortbay/jetty/jetty-runner/8.1.9.v20130131/jetty-runner-8.1.9.v20130131.jar 下载地址]，下载的文件放到war文件同一目录
   * 在命令行下进入war文件所在目录，执行下面命令启动
     {{{
-       java -jar jetty-runner-7.6.8.v20121106.jar snova-c4-server-[version].war
+       java -jar jetty-runner-8.1.9.v20130131.jar snova-c4-server-[version].war
     }}}
 
   * 注意默认绑定端口为8080，需要绑定其它端口参考jetty runner帮助；同时记住VPS的外网IP
