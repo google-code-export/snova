@@ -129,7 +129,7 @@ public class RemoteProxySessionManager implements Runnable
 		return queue.size() <= MAX_QUEUE_EVENTS;
 	}
 	
-	public void consumeReadyEvent(String user, int groupIndex, Buffer buf,
+	public Event consumeReadyEvent(String user, int groupIndex, Buffer buf,
 	        long timeout)
 	{
 		LinkedList<Event> queue = getEventQueue(user, groupIndex);
@@ -157,9 +157,11 @@ public class RemoteProxySessionManager implements Runnable
 				if (sessionExist(user, groupIndex, ev.getHash()))
 				{
 					ev.encode(buf);
+					return ev;
 				}
 			}
 		}
+		return null;
 	}
 	
 	public void resumeSessions(String user, int groupIdx)
