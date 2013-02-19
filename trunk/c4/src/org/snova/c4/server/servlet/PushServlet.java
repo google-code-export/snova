@@ -18,7 +18,7 @@ import org.arch.misc.crypto.base64.Base64;
 import org.snova.c4.server.session.v3.RemoteProxySessionManager;
 
 /**
- * @author wqy
+ * @author yinqiwen
  * 
  */
 public class PushServlet extends HttpServlet

@@ -21,26 +21,25 @@ import org.snova.framework.event.SocketReadEvent;
 import org.snova.framework.event.TCPChunkEvent;
 
 /**
- * @author wqy
+ * @author yinqiwen
  * 
  */
 public class RemoteProxySession
 {
-	String	                          user;
-	int	                              groupIndex;
-	int	                              sid;
-	private int	                      sequence;
-	private String	                  remoteAddr;
-	SocketChannel	                  client	         = null;
-	SelectionKey	                  key;
-	int	                              ops;
-	private boolean	                  isHttps;
-	private ByteBuffer	              buffer	         = ByteBuffer
-	                                                             .allocate(65536);
-	private byte[]	                  httpRequestContent	= null;
-	
-	private RemoteProxySessionManager	sessionManager	 = null;
-	
+	String user;
+	int groupIndex;
+	int sid;
+	private int sequence;
+	private String remoteAddr;
+	SocketChannel client = null;
+	SelectionKey key;
+	int ops;
+	private boolean isHttps;
+	private ByteBuffer buffer = ByteBuffer.allocate(65536);
+	private byte[] httpRequestContent = null;
+
+	private RemoteProxySessionManager sessionManager = null;
+
 	public RemoteProxySession(RemoteProxySessionManager sessionManager,
 	        String user, int groupIdx, int sid)
 	{
@@ -49,12 +48,12 @@ public class RemoteProxySession
 		this.sid = sid;
 		this.user = user;
 	}
-	
+
 	void close()
 	{
 		doClose(key, client, remoteAddr);
 	}
-	
+
 	protected static byte[] buildRequestContent(HTTPRequestEvent ev)
 	{
 		StringBuilder buffer = new StringBuilder();
@@ -79,7 +78,7 @@ public class RemoteProxySession
 			return header;
 		}
 	}
-	
+
 	private boolean writeContent(byte[] content)
 	{
 		if (null != client)
@@ -95,13 +94,13 @@ public class RemoteProxySession
 			}
 			catch (IOException e)
 			{
-				
+
 				return false;
 			}
 		}
 		return false;
 	}
-	
+
 	void resume()
 	{
 		if (null == client)
@@ -130,7 +129,7 @@ public class RemoteProxySession
 			}
 		});
 	}
-	
+
 	void pause()
 	{
 		if (null == client)
@@ -159,7 +158,7 @@ public class RemoteProxySession
 			}
 		});
 	}
-	
+
 	boolean handleEvent(TypeVersion tv, Event ev)
 	{
 		switch (tv.type)
@@ -239,10 +238,9 @@ public class RemoteProxySession
 		}
 		return true;
 	}
-	
+
 	void onConnected()
 	{
-		System.out.println("#####" + remoteAddr + " connected!");
 		SocketChannel socketChannel = (SocketChannel) key.channel();
 		try
 		{
@@ -288,7 +286,7 @@ public class RemoteProxySession
 			doClose(key, client, remoteAddr);
 		}
 	}
-	
+
 	void onRead(SelectionKey key, String address)
 	{
 		buffer.clear();
@@ -312,7 +310,6 @@ public class RemoteProxySession
 				buffer.get(chunk.content);
 				if (!sessionManager.offerReadyEvent(user, groupIndex, chunk))
 				{
-					System.out.println("#############pause since busy!");
 					pause();
 				}
 			}
@@ -330,7 +327,7 @@ public class RemoteProxySession
 			doClose(key, socketChannel, address);
 		}
 	}
-	
+
 	private void doClose(SelectionKey key, SocketChannel channel, String address)
 	{
 		if (null == address)
@@ -358,6 +355,7 @@ public class RemoteProxySession
 			closeEv.status = SocketConnectionEvent.TCP_CONN_CLOSED;
 			sessionManager.offerReadyEvent(user, groupIndex, closeEv);
 			client = null;
+			sessionManager.removeSession(this);
 		}
 		// if (null != key)
 		// {
@@ -371,7 +369,7 @@ public class RemoteProxySession
 		// });
 		// }
 	}
-	
+
 	private boolean checkClient(String host, int port)
 	{
 		String addr = host + ":" + port;

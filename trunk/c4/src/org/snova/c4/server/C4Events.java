@@ -26,7 +26,7 @@ import org.snova.framework.event.TCPChunkEvent;
 import org.snova.framework.event.UserLoginEvent;
 
 /**
- * @author qiyingwang
+ * @author yinqiwen
  * 
  */
 public class C4Events
