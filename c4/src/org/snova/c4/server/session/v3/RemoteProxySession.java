@@ -188,6 +188,7 @@ public class RemoteProxySession
 				if (event.status == SocketConnectionEvent.TCP_CONN_CLOSED)
 				{
 					doClose(key, client, remoteAddr);
+					sessionManager.removeSession(this);
 				}
 				break;
 			}
