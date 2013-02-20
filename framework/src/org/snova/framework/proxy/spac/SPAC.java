@@ -198,6 +198,13 @@ public class SPAC
 		for (int i = 0; i < rms.length; i++)
 		{
 			String name = proxy[i];
+			if (name.startsWith("GAE:") || name.startsWith("C4:")
+			        || name.startsWith("Default:"))
+			{
+				String[] ss = name.split(":", 2);
+				name = ss[0];
+				attr.put("App", ss[1]);
+			}
 			if (name.equalsIgnoreCase("Default"))
 			{
 				name = SpacConfig.defaultProxy;
@@ -222,12 +229,6 @@ public class SPAC
 					attrtmp = "HTTP";
 				}
 				proxyAattr = ArraysHelper.append(proxyAattr, attrtmp);
-			}
-			if (name.startsWith("GAE:") || name.startsWith("C4:"))
-			{
-				String[] ss = name.split(":", 2);
-				name = ss[0];
-				attr.put("App", ss[1]);
 			}
 			
 			rms[i] = RemoteProxyManagerHolder.getRemoteProxyManager(name);
