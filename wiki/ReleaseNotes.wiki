@@ -4,6 +4,12 @@
 _You can download the latest version of the Snova/GSnova [http://code.google.com/p/snova/downloads/list here]
 
 Snova/GSnova - Release Notes
+===Version 0.20.3 - (2013.02.20)===
+ * `[C4]`: 服务端优化（Java&C4）
+ * `[SPAC]`: 修正firefox通过forward访问某些站点的问题
+ * `[SPAC]`: GAE/C4配置多app情况下，支持指定某些站点通过指定app，配置参考[http://code.google.com/p/snova/issues/detail?id=360&colspec=ID%20Type%20Status%20Priority%20Modified%20Owner%20Summary Issue360]
+ * 一些Bug fix以及默认设置的优化
+
 ===Version 0.20.0 - (2013.02.05)===
  * `[C4]`: 支持RC4加密，可替换密钥；默认加密改为RC4加密（Server需要重新部署）
  * `[C4]`: 修改为读写分离的Proxy实现，提高性能
