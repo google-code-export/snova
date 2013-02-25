@@ -35,6 +35,7 @@ public class RemoteProxySession
 	SelectionKey key;
 	int ops;
 	private boolean isHttps;
+	private boolean paused = false;
 	private ByteBuffer buffer = ByteBuffer.allocate(65536);
 	private byte[] httpRequestContent = null;
 
@@ -107,6 +108,10 @@ public class RemoteProxySession
 		{
 			return;
 		}
+		if (!paused)
+		{
+			return;
+		}
 		sessionManager.addInvokcation(new Runnable()
 		{
 			public void run()
@@ -119,6 +124,7 @@ public class RemoteProxySession
 						key = client.register(sessionManager.selector, ops,
 						        new SessionAddressPair(RemoteProxySession.this,
 						                remoteAddr));
+						paused = false;
 					}
 				}
 				catch (ClosedChannelException e)
@@ -136,6 +142,10 @@ public class RemoteProxySession
 		{
 			return;
 		}
+		if (paused)
+		{
+			return;
+		}
 		sessionManager.addInvokcation(new Runnable()
 		{
 			public void run()
@@ -148,6 +158,7 @@ public class RemoteProxySession
 						key = client.register(sessionManager.selector, ops,
 						        new SessionAddressPair(RemoteProxySession.this,
 						                remoteAddr));
+						paused = true;
 					}
 				}
 				catch (ClosedChannelException e)
