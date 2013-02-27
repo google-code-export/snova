@@ -189,21 +189,7 @@ Checking appnamexxx... OK
      Default=C4
     }}}
 ==snova(Java)==
-  * 从snova-0.12.0120开始自动集成c4 plugin，无需单独安装
-  * 修改`<snova>/plugins/c4/conf/c4-client.conf`
-    {{{
-       [C4]
-	   #修改domain为Step2创建的域名, 可加多个域名
-       WorkerNode[0]=xyz.herokuapp.com
-       WorkerNode[1]=xyz.cloudfoundry.com
-    }}}
-  * 修改`<snova>/conf/snova.conf`，将C4改为默认proxy实现(可选)
-   {{{
-      [Framework]
-      .........
-      ##Can choose in plugins, default is GAE
-      ProxyService=C4
-    }}}
+  * 修改`<snova>/conf/snova.conf`，修改方法参考以上gsnova部分
 == SPAC(可选) ==
   * gsnova用户参考SPAC的说明[SpecialProxyAutoConfigOnGSnova SpecialProxyAutoConfigOnGSnova]修改json配置打造自己的proxy环境
   * snova用户参考SPAC的说明[http://code.google.com/p/snova/wiki/SpecialProxyAutoConfig SpecialProxyAutoConfig]修改`SelectProxy`方法打造自己的proxy环境
