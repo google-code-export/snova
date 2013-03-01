@@ -183,7 +183,7 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 	private HttpResponse buildHttpResponse(HTTPResponseEvent ev)
 	{
 		int status = ev.statusCode;
-		if (null != originRangeHeader
+		if (null == originRangeHeader
 		        && HttpResponseStatus.PARTIAL_CONTENT.getCode() == status)
 		{
 			status = HttpResponseStatus.OK.getCode();
@@ -455,6 +455,10 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 		{
 			originRangeHeader = new RangeHeaderValue(
 			        req.getHeader(HttpHeaders.Names.RANGE));
+			if (originRangeHeader.getLastBytePos() == -1)
+			{
+				originRangeHeader = null;
+			}
 		}
 		clearStatus();
 		proxyRequest = buildHttpRequestEvent(req);
@@ -477,11 +481,14 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 	@Override
 	public void close()
 	{
-		for (HttpClientHandler ch : workingHttpClientHandlers)
+		synchronized (workingHttpClientHandlers)
 		{
-			ch.closeChannel();
+			for (HttpClientHandler ch : workingHttpClientHandlers)
+			{
+				ch.closeChannel();
+			}
+			workingHttpClientHandlers.clear();
 		}
-		workingHttpClientHandlers.clear();
 		closed = true;
 	}
 	
@@ -771,12 +778,16 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 		
 		private void onError()
 		{
+			removeHttpClientHandler();
+			if (closed)
+			{
+				return;
+			}
 			failedCount++;
 			if (failedCount < 2 && null != backupEvent && !closed)
 			{
 				backupEvent.content.setReadIndex(0);
-				requestEvent(backupEvent, GAERemoteHandler.this,
-				        this);
+				requestEvent(backupEvent, GAERemoteHandler.this, this);
 				bodyContent.clear();
 			}
 			else
@@ -786,7 +797,6 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 					local.close();
 				}
 			}
-			removeHttpClientHandler();
 		}
 		
 		private void fillBodyContent(ChannelBuffer buf)
@@ -840,7 +850,7 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 		@Override
 		public void onError(String error)
 		{
-			logger.warn("Recv error:" + error+ " for " + hashCode());
+			logger.warn("Recv error:" + error + " for " + hashCode());
 			onError();
 		}
 		
