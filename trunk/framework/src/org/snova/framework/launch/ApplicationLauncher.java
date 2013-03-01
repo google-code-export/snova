@@ -45,22 +45,28 @@ public class ApplicationLauncher
 			        new ByteArrayInputStream(bos.toByteArray()));
 		}
 	}
-
+	
 	public static void initLoggerConfig() throws IOException
 	{
 		System.setProperty("java.util.logging.config.class",
 		        JDKLoggingConfig.class.getName());
 	}
-
+	
 	public static void main(String[] args) throws IOException
 	{
 		initLoggerConfig();
-
+		
 		Snova fr = null;
 		if (args.length == 0 || args[0].equals("cli"))
 		{
-			fr = new Snova(new TUITrace());
-			fr.start();
+			TUITrace trace = new TUITrace();
+			fr = new Snova(trace);
+			if (!fr.start())
+			{
+				trace.info("Press any key to exit.");
+				System.in.read();
+				System.exit(-11);
+			}
 		}
 		else if (args[0].equals("gui"))
 		{
