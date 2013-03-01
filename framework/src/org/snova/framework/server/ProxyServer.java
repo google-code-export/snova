@@ -26,43 +26,37 @@ import org.snova.http.client.common.SimpleSocketAddress;
  */
 public class ProxyServer
 {
-	protected static Logger logger = LoggerFactory.getLogger(ProxyServer.class);
-
-	private ServerBootstrap bootstrap = new ServerBootstrap();
-	private Channel server = null;
-
-	public ProxyServer(SimpleSocketAddress listenAddress, final ProxyServerType type)
+	protected static Logger	logger	  = LoggerFactory
+	                                          .getLogger(ProxyServer.class);
+	
+	private ServerBootstrap	bootstrap	= new ServerBootstrap();
+	private Channel	        server	  = null;
+	
+	public ProxyServer(SimpleSocketAddress listenAddress,
+	        final ProxyServerType type)
 	{
 		String host = listenAddress.host;
 		int port = listenAddress.port;
-		try
+		bootstrap = new ServerBootstrap(new NioServerSocketChannelFactory(
+		        Executors.newCachedThreadPool(),
+		        Executors.newCachedThreadPool()));
+		bootstrap.setPipelineFactory(new ChannelPipelineFactory()
 		{
-			bootstrap = new ServerBootstrap(new NioServerSocketChannelFactory(
-			        Executors.newCachedThreadPool(),
-			        Executors.newCachedThreadPool()));
-			bootstrap.setPipelineFactory(new ChannelPipelineFactory()
+			@Override
+			public ChannelPipeline getPipeline() throws Exception
 			{
-				@Override
-				public ChannelPipeline getPipeline() throws Exception
-				{
-					ChannelPipeline pipeline = Channels.pipeline();
-					pipeline.addLast("decoder", new HttpRequestDecoder());
-					pipeline.addLast("encoder", new HttpResponseEncoder());
-					pipeline.addLast("handler", new ProxyHandler(type));
-					return pipeline;
-				}
-			});
-
-			// Bind and start to accept incoming connections.
-			bootstrap.bind(new InetSocketAddress(host, port));
-
-		}
-		catch (Exception e)
-		{
-			logger.error("Failed to start proxy server.", e);
-		}
+				ChannelPipeline pipeline = Channels.pipeline();
+				pipeline.addLast("decoder", new HttpRequestDecoder());
+				pipeline.addLast("encoder", new HttpResponseEncoder());
+				pipeline.addLast("handler", new ProxyHandler(type));
+				return pipeline;
+			}
+		});
+		
+		// Bind and start to accept incoming connections.
+		bootstrap.bind(new InetSocketAddress(host, port));
 	}
-
+	
 	public void close()
 	{
 		if (null != server)
