@@ -28,7 +28,7 @@
 
 == Openshift ==
 === Step 1: 注册`OpenShift`环境, 安装`OpenShift`部署工具 ===
-到官方链接[https://openshift.redhat.com OpenShift注册]注册帐号,参考说明[https://openshift.redhat.com/app/express#quickstart  rhc安装]安装部署工具
+到官方链接[https://openshift.redhat.com OpenShift注册]注册帐号,参考说明[https://openshift.redhat.com/community/developers/rhc-client-tools-install  rhc安装]安装部署工具
 
 === Step 2: 部署服务到`OpenShift` ===
   * 将`snova-c4-server-[version].war`放到任意的空目录下，然后在命令行下进入该目录，逐个执行下面的命令
