@@ -30,18 +30,19 @@ import org.snova.http.client.HttpClientHandler;
  */
 public class PullWorker implements FutureCallback
 {
-	protected static Logger logger = LoggerFactory.getLogger(PullWorker.class);
-	private HttpTunnelService serv;
-	HttpClientHandler httpClientHandler;
-	private CumulateReader cumulater = new CumulateReader();
-	private int index;
-
+	protected static Logger	  logger	= LoggerFactory
+	                                            .getLogger(PullWorker.class);
+	private HttpTunnelService	serv;
+	HttpClientHandler	      httpClientHandler;
+	private CumulateReader	  cumulater	= new CumulateReader();
+	private int	              index;
+	
 	public PullWorker(HttpTunnelService serv, int index)
 	{
 		this.serv = serv;
 		this.index = index;
 	}
-
+	
 	public void start()
 	{
 		IniProperties cfg = SnovaConfiguration.getInstance().getIniProperties();
@@ -60,12 +61,14 @@ public class PullWorker implements FutureCallback
 				port = 443;
 			}
 		}
-		request.setHeader(HttpHeaders.Names.HOST, serv.server.url.getHost()
-		        );
-
+		request.setHeader(HttpHeaders.Names.HOST, serv.server.url.getHost());
+		
 		request.setHeader(HttpHeaders.Names.CONNECTION, "keep-alive");
 		request.setHeader("UserToken", NetworkHelper.getMacAddress());
-		request.setHeader("C4MiscInfo", String.format("%d_%d", index, 25));
+		request.setHeader(
+		        "C4MiscInfo",
+		        String.format("%d_%d", index,
+		                cfg.getIntProperty("C4", "ReadTimeout", 120)));
 		request.setHeader(
 		        HttpHeaders.Names.USER_AGENT,
 		        cfg.getProperty("C4", "UserAgent",
@@ -84,7 +87,7 @@ public class PullWorker implements FutureCallback
 			e.printStackTrace();
 		}
 	}
-
+	
 	@Override
 	public void onResponse(HttpResponse res)
 	{
@@ -99,21 +102,21 @@ public class PullWorker implements FutureCallback
 				System.out.println("##########@@@" + res.getStatus());
 			}
 		}
-
+		
 	}
-
+	
 	@Override
 	public void onBody(HttpChunk chunk)
 	{
 		cumulater.fillResponseBuffer(chunk.getContent());
 	}
-
+	
 	@Override
 	public void onComplete(HttpResponse res)
 	{
 		start();
 	}
-
+	
 	@Override
 	public void onError(String error)
 	{

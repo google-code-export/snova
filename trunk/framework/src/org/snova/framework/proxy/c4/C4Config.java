@@ -22,6 +22,7 @@ public class C4Config
 	protected static Logger	  logger	= LoggerFactory
 	                                           .getLogger(C4Config.class);
 	static List<C4ServerAuth>	appids	= new ArrayList<C4ServerAuth>();
+	static String[] injectRange = null;
 	
 	public static boolean init()
 	{
@@ -52,6 +53,11 @@ public class C4Config
 				break;
 			}
 			appids.add(auth);
+		}
+		String tmp = cfg.getProperty("C4", "InjectRange");
+		if (!StringHelper.isEmptyString(tmp))
+		{
+			injectRange = tmp.split("[,|;|\\|]");
 		}
 		return true;
 	}

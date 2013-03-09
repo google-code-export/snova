@@ -63,6 +63,8 @@ import org.snova.framework.proxy.RemoteProxyHandler;
 import org.snova.framework.proxy.common.RangeChunk;
 import org.snova.framework.proxy.common.RangeFetchStatus;
 import org.snova.framework.proxy.hosts.HostsService;
+import org.snova.framework.proxy.range.MultiRangeFetchTask;
+import org.snova.framework.proxy.range.RangeCallback;
 import org.snova.framework.util.SharedObjectHelper;
 import org.snova.framework.util.SslCertificateHelper;
 import org.snova.http.client.Connector;
@@ -79,7 +81,8 @@ import org.snova.http.client.common.SimpleSocketAddress;
  * @author wqy
  * 
  */
-public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
+public class GAERemoteHandler implements RemoteProxyHandler, EventHandler,
+        RangeCallback
 {
 	protected static Logger	       logger	                  = LoggerFactory
 	                                                                  .getLogger(GAERemoteHandler.class);
@@ -91,15 +94,9 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 	private HTTPRequestEvent	   proxyRequest;
 	private Set<HttpClientHandler>	workingHttpClientHandlers	= Collections
 	                                                                  .synchronizedSet(new HashSet<HttpClientHandler>());
-	
-	private RangeFetchStatus	   rangeStatus;
-	private RangeHeaderValue	   originRangeHeader;
-	private long	               fetchChunkPos	          = 0;
-	private long	               expectedChunkPos	          = 0;
-	private AtomicInteger	       rangeFetchWorkerNum	      = new AtomicInteger(
-	                                                                  0);
-	private Map<Long, RangeChunk>	restChunks	              = new ConcurrentHashMap<Long, RangeChunk>();
+	private MultiRangeFetchTask	   rangeTask	              = null;
 	private boolean	               closed	                  = false;
+	boolean	                       injectRange	              = false;
 	
 	public GAERemoteHandler(GAEServerAuth auth)
 	{
@@ -112,15 +109,6 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 		{
 			logger.error("Failed to init http client.", e);
 		}
-	}
-	
-	private void clearStatus()
-	{
-		fetchChunkPos = 0;
-		expectedChunkPos = 0;
-		rangeFetchWorkerNum.set(0);
-		restChunks.clear();
-		rangeStatus = RangeFetchStatus.WAITING_NORMAL_RESPONSE;
 	}
 	
 	private static void initHttpClient() throws Exception
@@ -183,11 +171,6 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 	private HttpResponse buildHttpResponse(HTTPResponseEvent ev)
 	{
 		int status = ev.statusCode;
-		if (null == originRangeHeader
-		        && HttpResponseStatus.PARTIAL_CONTENT.getCode() == status)
-		{
-			status = HttpResponseStatus.OK.getCode();
-		}
 		HttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1,
 		        HttpResponseStatus.valueOf(status));
 		
@@ -207,56 +190,16 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 			}
 			else
 			{
-				if (null != header.getValue()
-				        && null != header.getName()
-				        && !header.getName().equals(
-				                HttpHeaders.Names.CONTENT_LENGTH))
-				{
-					response.addHeader(header.getName(), header.getValue());
-				}
+				response.addHeader(header.getName(), header.getValue());
 			}
 		}
-		String contentRangeValue = ev
-		        .getHeader(HttpHeaders.Names.CONTENT_RANGE);
-		if (null != contentRangeValue)
-		{
-			ContentRangeHeaderValue contentRange = new ContentRangeHeaderValue(
-			        contentRangeValue);
-			if (null == originRangeHeader)
-			{
-				response.removeHeader(HttpHeaders.Names.CONTENT_RANGE);
-				response.removeHeader(HttpHeaders.Names.ACCEPT_RANGES);
-				response.setHeader(HttpHeaders.Names.CONTENT_LENGTH,
-				        String.valueOf(contentRange.getInstanceLength()));
-			}
-			else
-			{
-				String rangeValue = proxyRequest
-				        .getHeader(HttpHeaders.Names.RANGE);
-				RangeHeaderValue range = new RangeHeaderValue(rangeValue);
-				if (range.getLastBytePos() > 0)
-				{
-					contentRange.setLastBytePos(range.getLastBytePos());
-				}
-				else
-				{
-					contentRange.setLastBytePos(contentRange
-					        .getInstanceLength() - 1);
-				}
-				response.setHeader(HttpHeaders.Names.CONTENT_RANGE,
-				        contentRange.toString());
-				response.setHeader(
-				        HttpHeaders.Names.CONTENT_LENGTH,
-				        ""
-				                + (contentRange.getLastBytePos()
-				                        - contentRange.getFirstBytePos() + 1));
-			}
-		}
-		else
+		
+		if (null == response.getHeader(HttpHeaders.Names.CONTENT_LENGTH))
 		{
 			response.setHeader(HttpHeaders.Names.CONTENT_LENGTH, ""
 			        + ev.content.readableBytes());
 		}
+		
 		response.removeHeader(HttpHeaders.Names.TRANSFER_ENCODING);
 		if (HttpHeaders.getContentLength(response) == ev.content
 		        .readableBytes())
@@ -314,48 +257,7 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 				        .add(new KeyValuePair<String, String>(name, value));
 			}
 		}
-		IniProperties cfg = SnovaConfiguration.getInstance().getIniProperties();
-		int fetchSizeLimit = cfg.getIntProperty("GAE", "RangeFetchLimitSize",
-		        256 * 1024);
-		if (null != originRangeHeader)
-		{
-			if (originRangeHeader.getLastBytePos()
-			        - originRangeHeader.getFirstBytePos() >= fetchSizeLimit)
-			{
-				RangeHeaderValue newHeader = new RangeHeaderValue(
-				        originRangeHeader.getFirstBytePos(),
-				        originRangeHeader.getFirstBytePos() + fetchSizeLimit
-				                - 1);
-				logger.info("Replace range header from " + originRangeHeader
-				        + " to " + newHeader);
-				event.setHeader(HttpHeaders.Names.RANGE, newHeader.toString());
-			}
-		}
-		else
-		{
-			if (StringHelper.containsString(HttpHeaders.getHost(request),
-			        GAEConfig.injectRange))
-			{
-				logger.info("Inject a range header for host:"
-				        + request.getHeader(HttpHeaders.Names.HOST));
-				event.setHeader(HttpHeaders.Names.RANGE, new RangeHeaderValue(
-				        0, fetchSizeLimit - 1).toString());
-			}
-		}
 		return event;
-	}
-	
-	private HTTPRequestEvent cloneHeaders(HTTPRequestEvent event)
-	{
-		HTTPRequestEvent newEvent = new HTTPRequestEvent();
-		newEvent.method = event.method;
-		newEvent.url = event.url;
-		newEvent.headers = new ArrayList<KeyValuePair<String, String>>();
-		for (KeyValuePair<String, String> header : event.getHeaders())
-		{
-			newEvent.addHeader(header.getName(), header.getValue());
-		}
-		return newEvent;
 	}
 	
 	private void tryProxyRequest()
@@ -367,7 +269,7 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 		if (proxyRequest.getContentLength() <= proxyRequest.content
 		        .readableBytes())
 		{
-			requestEvent(wrapEvent(proxyRequest), this);
+			requestEvent(proxyRequest, this);
 			proxyRequest.content.setReadIndex(0);
 		}
 	}
@@ -424,6 +326,11 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 				local.handleResponse(this, fail);
 				return;
 			}
+			if (null == local.getLocalChannel())
+			{
+				close();
+				return;
+			}
 			local.getLocalChannel().write(establised)
 			        .addListener(new ChannelFutureListener()
 			        {
@@ -451,17 +358,27 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 			        });
 			return;
 		}
-		if (null != req.getHeader(HttpHeaders.Names.RANGE))
-		{
-			originRangeHeader = new RangeHeaderValue(
-			        req.getHeader(HttpHeaders.Names.RANGE));
-			if (originRangeHeader.getLastBytePos() == -1)
-			{
-				originRangeHeader = null;
-			}
-		}
-		clearStatus();
+		rangeTask = null;
 		proxyRequest = buildHttpRequestEvent(req);
+		
+		if (proxyRequest.method.equalsIgnoreCase("GET"))
+		{
+			if (StringHelper.containsString(HttpHeaders.getHost(req),
+			        GAEConfig.injectRange) || injectRange)
+			{
+				IniProperties cfg = SnovaConfiguration.getInstance()
+				        .getIniProperties();
+				rangeTask = new MultiRangeFetchTask();
+				rangeTask.sessionID = local.getId();
+				rangeTask.fetchLimit = cfg.getIntProperty("GAE",
+				        "RangeFetchLimitSize", 256 * 1024);
+				rangeTask.fetchWorkerNum = cfg.getIntProperty("GAE",
+				        "RangeConcurrentFetcher", 3);
+				rangeTask.asyncGet(proxyRequest, this);
+				return;
+			}
+			
+		}
 		tryProxyRequest();
 	}
 	
@@ -489,172 +406,65 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 			}
 			workingHttpClientHandlers.clear();
 		}
+		if (null != rangeTask)
+		{
+			rangeTask.close();
+		}
 		closed = true;
-	}
-	
-	private synchronized boolean rangeFetch(RangeHeaderValue originRange,
-	        long limitSize)
-	{
-		if (logger.isDebugEnabled())
-		{
-			logger.debug("Session[" + getSessionID()
-			        + "] has waitingWriteStreamPos = " + expectedChunkPos
-			        + ", waitingFetchStreamPos=" + fetchChunkPos
-			        + ", limitSize =" + limitSize + ", rangeFetchWorkerNum = "
-			        + rangeFetchWorkerNum.get());
-		}
-		
-		long limit = limitSize - 1;
-		if (null != originRange)
-		{
-			limit = originRange.getLastBytePos();
-		}
-		if (fetchChunkPos >= limit)
-		{
-			return true;
-		}
-		rangeStatus = RangeFetchStatus.WAITING_MULTI_RANGE_RESPONSE;
-		IniProperties cfg = SnovaConfiguration.getInstance().getIniProperties();
-		int fetchSizeLimit = cfg.getIntProperty("GAE", "RangeFetchLimitSize",
-		        256 * 1024);
-		int concurrentWorkerNum = cfg.getIntProperty("GAE",
-		        "RangeConcurrentFetcher", 3);
-		long start = fetchChunkPos;
-		while (rangeFetchWorkerNum.get() < concurrentWorkerNum
-		        && fetchChunkPos - expectedChunkPos < 2 * fetchSizeLimit
-		                * concurrentWorkerNum)
-		{
-			long begin = start;
-			if (begin >= limit)
-			{
-				break;
-			}
-			long end = start + fetchSizeLimit - 1;
-			if (end > limit)
-			{
-				end = limit;
-			}
-			start = end + 1;
-			final RangeHeaderValue headerValue = new RangeHeaderValue(begin,
-			        end);
-			final HTTPRequestEvent newEvent = cloneHeaders(proxyRequest);
-			newEvent.setHeader(HttpHeaders.Names.RANGE, headerValue.toString());
-			requestEvent(newEvent, this);
-			rangeFetchWorkerNum.addAndGet(1);
-			fetchChunkPos = start;
-		}
-		return true;
-	}
-	
-	private int getSessionID()
-	{
-		return local != null ? local.getId() : 0;
-	}
-	
-	private synchronized void fillCachedRangeChunks(
-	        ContentRangeHeaderValue range, Buffer buf)
-	{
-		logger.info(String.format("Session[%d]Handle range chunk %d:%d",
-		        getSessionID(), range.getFirstBytePos(), range.getLastBytePos()));
-		restChunks.put(range.getFirstBytePos(),
-		        new RangeChunk(buf, range.getFirstBytePos()));
-		while (restChunks.containsKey(expectedChunkPos))
-		{
-			RangeChunk chunk = restChunks.remove(expectedChunkPos);
-			expectedChunkPos += chunk.chunk.readableBytes();
-			HttpChunk httpchunk = new DefaultHttpChunk(
-			        ChannelBuffers.wrappedBuffer(chunk.chunk.getRawBuffer(),
-			                chunk.chunk.getReadIndex(),
-			                chunk.chunk.readableBytes()));
-			local.handleChunk(this, httpchunk);
-			if (logger.isDebugEnabled())
-			{
-				
-			}
-		}
 	}
 	
 	private void processProxyResponse(HTTPResponseEvent response)
 	{
-		ContentRangeHeaderValue contentRange = null;
-		String contentRangeStr = response
-		        .getHeader(HttpHeaders.Names.CONTENT_RANGE);
-		if (null != contentRangeStr)
+		if (null != rangeTask)
 		{
-			contentRange = new ContentRangeHeaderValue(contentRangeStr);
-		}
-		switch (rangeStatus)
-		{
-			case WAITING_NORMAL_RESPONSE:
+			if (!rangeTask.processAsyncResponse(response))
 			{
-				HttpResponse res = buildHttpResponse(response);
-				local.handleResponse(this, res);
-				if (null != contentRange
-				        && contentRange.getLastBytePos() < (contentRange
-				                .getInstanceLength() - 1))
+				close();
+			}
+			return;
+		}
+		else
+		{
+			String originRange = proxyRequest.getHeader("Range");
+			String contentRange = response.getHeader("Content-Range");
+			if (response.statusCode == 206
+			        && !StringHelper.isEmptyString(contentRange)
+			        && proxyRequest.method.equalsIgnoreCase("GET"))
+			{
+				ContentRangeHeaderValue cv = new ContentRangeHeaderValue(
+				        contentRange);
+				long length = cv.getInstanceLength();
+				if (!StringHelper.isEmptyString(originRange))
 				{
-					if (null != originRangeHeader
-					        && originRangeHeader.getLastBytePos() >= originRangeHeader
-					                .getLastBytePos())
+					RangeHeaderValue rv = new RangeHeaderValue(originRange);
+					if (rv.getLastBytePos() > 0)
 					{
-						return;
-					}
-					else
-					{
-						fillCachedRangeChunks(contentRange, response.content);
-						fetchChunkPos = contentRange.getLastBytePos() + 1;
-						expectedChunkPos = contentRange.getLastBytePos() + 1;
-						rangeStatus = RangeFetchStatus.WAITING_MULTI_RANGE_RESPONSE;
-						rangeFetch(originRangeHeader,
-						        contentRange.getInstanceLength());
+						length = rv.getLastBytePos() + 1;
 					}
 				}
-				break;
-			}
-			case WAITING_MULTI_RANGE_RESPONSE:
-			{
-				rangeFetchWorkerNum.addAndGet(-1);
-				if (null == contentRange)
+				if (length > cv.getLastBytePos() + 1)
 				{
-					if (response.statusCode >= 400)
-					{
-						logger.warn("Invalid response, try again for "
-						        + response);
-						FutureCallback f = (FutureCallback) response
-						        .getAttachment();
-						f.onError("Invalid response.");
-						rangeFetchWorkerNum.addAndGet(1);
-						return;
-					}
-					if (response.statusCode == 302)
-					{
-						String location = response.getHeader("Location");
-						String xrange = response.getHeader("X-Range");
-						if (null != location && null != xrange)
-						{
-							proxyRequest.url = location;
-							proxyRequest.setHeader("Range", xrange);
-							rangeFetchWorkerNum.addAndGet(1);
-							requestEvent(proxyRequest, this);
-							if (logger.isDebugEnabled())
-							{
-								logger.debug("Redirect in multi range fetching.");
-							}
-						}
-					}
+					IniProperties cfg = SnovaConfiguration.getInstance()
+					        .getIniProperties();
+					rangeTask = new MultiRangeFetchTask();
+					rangeTask.sessionID = local.getId();
+					rangeTask.fetchLimit = cfg.getIntProperty("GAE",
+					        "RangeFetchLimitSize", 256 * 1024);
+					rangeTask.fetchWorkerNum = cfg.getIntProperty("GAE",
+					        "RangeConcurrentFetcher", 3);
+					rangeTask.setRangeCallback(this);
+					rangeTask
+					        .setRangeState(MultiRangeFetchTask.STATE_WAIT_HEAD_RES);
+					rangeTask.processAsyncResponse(response);
 					return;
 				}
-				else
+				if (StringHelper.isEmptyString(originRange))
 				{
-					fillCachedRangeChunks(contentRange, response.content);
+					response.statusCode = 200;
+					response.removeHeader("Content-Range");
 				}
-				rangeFetch(originRangeHeader, contentRange.getInstanceLength());
-				break;
 			}
-			default:
-			{
-				break;
-			}
+			writeLocalHttpResponse(response);
 		}
 	}
 	
@@ -864,5 +674,52 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler
 	public String getName()
 	{
 		return "GAE";
+	}
+	
+	private void writeLocalHttpResponse(HTTPResponseEvent res)
+	{
+		HttpResponse httpres = buildHttpResponse(res);
+		local.handleResponse(this, httpres);
+		if (httpres.isChunked())
+		{
+			Buffer content = res.content;
+			HttpChunk chunk = new DefaultHttpChunk(
+			        ChannelBuffers.wrappedBuffer(content.getRawBuffer(),
+			                content.getReadIndex(), content.readableBytes()));
+			local.handleChunk(this, chunk);
+		}
+	}
+	
+	@Override
+	public void onHttpResponse(HTTPResponseEvent res)
+	{
+		writeLocalHttpResponse(res);
+		
+	}
+	
+	@Override
+	public void onRangeChunk(Buffer buf)
+	{
+		if (null != local)
+		{
+			HttpChunk chunk = new DefaultHttpChunk(
+			        ChannelBuffers.wrappedBuffer(buf.getRawBuffer(),
+			                buf.getReadIndex(), buf.readableBytes()));
+			local.handleChunk(this, chunk);
+		}
+		else
+		{
+			if (null != rangeTask)
+			{
+				rangeTask.close();
+			}
+		}
+		
+	}
+	
+	@Override
+	public void writeHttpReq(HTTPRequestEvent req)
+	{
+		requestEvent(req, this);
 	}
 }

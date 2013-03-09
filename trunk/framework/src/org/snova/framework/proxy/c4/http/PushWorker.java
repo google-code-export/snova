@@ -9,7 +9,6 @@ import java.util.concurrent.TimeUnit;
 import org.arch.buffer.Buffer;
 import org.arch.config.IniProperties;
 import org.arch.encrypt.RC4;
-import org.arch.event.Event;
 import org.arch.misc.crypto.base64.Base64;
 import org.arch.util.NetworkHelper;
 import org.jboss.netty.buffer.ChannelBuffers;
@@ -51,18 +50,6 @@ public class PushWorker extends FutureCallback.FutureCallbackAdapter
 		HttpRequest request = new DefaultHttpRequest(HttpVersion.HTTP_1_1,
 		        HttpMethod.POST, serv.server.url.toString() + "push");
 		
-		int port = 80;
-		if (serv.server.url.getPort() > 0)
-		{
-			port = serv.server.url.getPort();
-		}
-		else
-		{
-			if (serv.server.url.getScheme().equalsIgnoreCase("https"))
-			{
-				port = 443;
-			}
-		}
 		String enc = cfg.getProperty("C4", "Encrypter", "RC4");
 		if (enc.equalsIgnoreCase("RC4"))
 		{
@@ -93,6 +80,7 @@ public class PushWorker extends FutureCallback.FutureCallbackAdapter
 		{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			isReady = true;
 		}
 	}
 	
