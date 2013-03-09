@@ -1,5 +1,30 @@
 Snova Changelog
 ===================
+Changes in version 0.21.0(2013.03.09)
+-------------------------------------------
+** Features
+   * Add multi range fetch support for C4
+   * C4 Server performance improvement
+   
+** Improvement
+   * Bug fix
+      
+** Task
+   * NA
+
+Changes in version 0.20.3(2013.02.20)
+-------------------------------------------
+** Features
+   * Add specific app binding for SPAC rules
+   * Server performance improvement
+   
+** Improvement
+   * NA
+      
+** Task
+   * NA
+
+
 Changes in version 0.20.0(2013.02.05)
 -------------------------------------------
 ** Features

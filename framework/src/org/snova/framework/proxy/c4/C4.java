@@ -48,7 +48,9 @@ public class C4
 					}
 				}
 			}
-			return new C4RemoteHandler(servers.select());
+			C4RemoteHandler handler= new C4RemoteHandler(servers.select());
+			handler.injectRange = attr.containsKey("Range");
+			return handler;
 		}
 	}
 	
