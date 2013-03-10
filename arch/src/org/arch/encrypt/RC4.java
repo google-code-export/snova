@@ -47,40 +47,57 @@ public class RC4
 	
 	public static void rc4(String key, byte[] data)
 	{
-		int[] s = new int[256];
-		int i, j = 0;
-		for (i = 0; i < 256; i++)
-		{
-			s[i] = i;
+		_RC4 rc4 = new _RC4(key.getBytes());
+		rc4.encrypt(data);
+	}
+	
+	final static class _RC4 {
+
+	    private int _i, _j;
+		private final byte[] _s = new byte[256];
+
+		public _RC4(byte[] key) {
+			int key_length = key.length;
+
+		    for (int i = 0; i < 256; i++)
+		        _s[i] = (byte)i;
+
+		    for (int i=0, j=0; i < 256; i++) {
+		        byte temp;
+
+		        j = (j + key[i % key_length] + _s[i]) & 255;
+		        temp = _s[i];
+		        _s[i] = _s[j];
+		        _s[j] = temp;
+		    }
+
+		    _i = 0;
+		    _j = 0;
 		}
-		
-		for (i = 0; i < 256; i++)
-		{
-			j = (j + s[i] + key.codePointAt(i % key.length())) % 256;
-			int x = s[i];
-			s[i] = s[j];
-			s[j] = x;
+
+		public byte output() {
+		    byte temp;
+		    _i = (_i + 1) & 255;
+		    _j = (_j + _s[_i]) & 255;
+
+		    temp = _s[_i];
+		    _s[_i] = _s[_j];
+		    _s[_j] = temp;
+
+		    return _s[(_s[_i] + _s[_j]) & 255];
 		}
-		i = 0;
-		j = 0;
-		for (int y = 0; y < data.length; y++)
-		{
-			i = (i + 1) % 256;
-			j = (j + s[i]) % 256;
-			int x = s[i];
-			s[i] = s[j];
-			s[j] = x;
-			int k = data[y];
-			if (k < 0)
-			{
-				k += 256;
+
+		public void encrypt(byte[] in) {
+			for (int i = 0; i < in.length; i++) {
+				in[i] = (byte) (in[i] ^ output());
 			}
-			int tmp = k ^ s[(s[i] + s[j]) % 256];
-			while (tmp >= 256)
-			{
-				tmp -= 256;
+		}
+		public void encrypt(byte[] in, int offset, int len) {
+			int end = offset+len;
+			for (int i = offset; i < end; i++) {
+				in[i] = (byte) (in[i] ^ output());
 			}
-			data[y] = (byte) tmp;
+
 		}
 	}
 }
