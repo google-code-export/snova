@@ -84,20 +84,20 @@ import org.snova.http.client.common.SimpleSocketAddress;
 public class GAERemoteHandler implements RemoteProxyHandler, EventHandler,
         RangeCallback
 {
-	protected static Logger	       logger	                  = LoggerFactory
-	                                                                  .getLogger(GAERemoteHandler.class);
-	private static HttpClient	   client;
-	
-	private boolean	               isHttps;
-	private GAEServerAuth	       gaeAuth;
-	private LocalProxyHandler	   local;
-	private HTTPRequestEvent	   proxyRequest;
-	private Set<HttpClientHandler>	workingHttpClientHandlers	= Collections
-	                                                                  .synchronizedSet(new HashSet<HttpClientHandler>());
-	private MultiRangeFetchTask	   rangeTask	              = null;
-	private boolean	               closed	                  = false;
-	boolean	                       injectRange	              = false;
-	
+	protected static Logger logger = LoggerFactory
+	        .getLogger(GAERemoteHandler.class);
+	private static HttpClient client;
+
+	private boolean isHttps;
+	private GAEServerAuth gaeAuth;
+	private LocalProxyHandler local;
+	private HTTPRequestEvent proxyRequest;
+	private Set<HttpClientHandler> workingHttpClientHandlers = Collections
+	        .synchronizedSet(new HashSet<HttpClientHandler>());
+	private MultiRangeFetchTask rangeTask = null;
+	private boolean closed = false;
+	boolean injectRange = false;
+
 	public GAERemoteHandler(GAEServerAuth auth)
 	{
 		try
@@ -110,7 +110,7 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler,
 			logger.error("Failed to init http client.", e);
 		}
 	}
-	
+
 	private static void initHttpClient() throws Exception
 	{
 		if (null != client)
@@ -154,7 +154,7 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler,
 						{
 							logger.error("", e);
 						}
-						
+
 						SSLEngine sslEngine = sslContext.createSSLEngine();
 						sslEngine.setUseClientMode(true);
 						final SslHandler ssl = new SslHandler(sslEngine);
@@ -167,13 +167,13 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler,
 		client = new HttpClient(options,
 		        SharedObjectHelper.getClientBootstrap());
 	}
-	
+
 	private HttpResponse buildHttpResponse(HTTPResponseEvent ev)
 	{
 		int status = ev.statusCode;
 		HttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1,
 		        HttpResponseStatus.valueOf(status));
-		
+
 		List<KeyValuePair<String, String>> headers = ev.getHeaders();
 		for (KeyValuePair<String, String> header : headers)
 		{
@@ -193,13 +193,13 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler,
 				response.addHeader(header.getName(), header.getValue());
 			}
 		}
-		
+
 		if (null == response.getHeader(HttpHeaders.Names.CONTENT_LENGTH))
 		{
 			response.setHeader(HttpHeaders.Names.CONTENT_LENGTH, ""
 			        + ev.content.readableBytes());
 		}
-		
+
 		response.removeHeader(HttpHeaders.Names.TRANSFER_ENCODING);
 		if (HttpHeaders.getContentLength(response) == ev.content
 		        .readableBytes())
@@ -216,7 +216,7 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler,
 		}
 		return response;
 	}
-	
+
 	private HTTPRequestEvent buildHttpRequestEvent(HttpRequest request)
 	{
 		HTTPRequestEvent event = new HTTPRequestEvent();
@@ -259,7 +259,7 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler,
 		}
 		return event;
 	}
-	
+
 	private void tryProxyRequest()
 	{
 		if (null == proxyRequest)
@@ -273,7 +273,7 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler,
 			proxyRequest.content.setReadIndex(0);
 		}
 	}
-	
+
 	private boolean fillHttpRequestBody(ChannelBuffer buf)
 	{
 		if (null != proxyRequest)
@@ -287,7 +287,7 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler,
 		proxyRequest.content.advanceWriteIndex(len);
 		return true;
 	}
-	
+
 	private SSLContext prepareSslContext(HttpRequest req)
 	{
 		String httpshost = HttpHeaders.getHost(req);
@@ -303,10 +303,10 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler,
 		{
 			logger.error("Failed to init sslcontext", e);
 		}
-		
+
 		return sslContext;
 	}
-	
+
 	@Override
 	public void handleRequest(final LocalProxyHandler local,
 	        final HttpRequest req)
@@ -360,7 +360,7 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler,
 		}
 		rangeTask = null;
 		proxyRequest = buildHttpRequestEvent(req);
-		
+
 		if (proxyRequest.method.equalsIgnoreCase("GET"))
 		{
 			if (StringHelper.containsString(HttpHeaders.getHost(req),
@@ -377,24 +377,24 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler,
 				rangeTask.asyncGet(proxyRequest, this);
 				return;
 			}
-			
+
 		}
 		tryProxyRequest();
 	}
-	
+
 	@Override
 	public void handleChunk(LocalProxyHandler local, HttpChunk chunk)
 	{
 		fillHttpRequestBody(chunk.getContent());
 		tryProxyRequest();
 	}
-	
+
 	@Override
 	public void handleRawData(LocalProxyHandler local, ChannelBuffer raw)
 	{
 		logger.error("Unsupported raw data in GAE.");
 	}
-	
+
 	@Override
 	public void close()
 	{
@@ -412,7 +412,7 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler,
 		}
 		closed = true;
 	}
-	
+
 	private void processProxyResponse(HTTPResponseEvent response)
 	{
 		if (null != rangeTask)
@@ -467,7 +467,7 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler,
 			writeLocalHttpResponse(response);
 		}
 	}
-	
+
 	@Override
 	public void onEvent(EventHeader header, Event event)
 	{
@@ -492,7 +492,7 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler,
 			}
 		}
 	}
-	
+
 	private Event wrapEvent(Event ev)
 	{
 		IniProperties cfg = SnovaConfiguration.getInstance().getIniProperties();
@@ -501,7 +501,7 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler,
 		EncryptEvent enc = new EncryptEvent(encType, ev);
 		return enc;
 	}
-	
+
 	public void requestEvent(Event ev, EventHandler handler)
 	{
 		if (null == handler)
@@ -510,14 +510,14 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler,
 		}
 		requestEvent(ev, handler, new GAEFutureCallback(handler, ev));
 	}
-	
+
 	private void requestEvent(Event ev, EventHandler handler,
 	        GAEFutureCallback cb)
 	{
 		try
 		{
 			GAEServerAuth auth = gaeAuth;
-			if(null == auth)
+			if (null == auth)
 			{
 				auth = GAE.servers.select();
 			}
@@ -535,7 +535,7 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler,
 			                "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:15.0) Gecko/20100101 Firefox/15.0.1"));
 			request.setHeader(HttpHeaders.Names.CONTENT_TYPE,
 			        "application/octet-stream");
-			
+
 			EventHeaderTags tags = new EventHeaderTags();
 			tags.token = auth.token;
 			ev.setHash(sid);
@@ -554,15 +554,15 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler,
 			logger.error("Failed to proxy request.", e);
 		}
 	}
-	
+
 	class GAEFutureCallback implements FutureCallback
 	{
-		private int		          failedCount;
-		private Buffer		      bodyContent	= new Buffer(1024);
-		private long		      bodyLength	= 0;
-		private HTTPRequestEvent	backupEvent	= null;
-		private HttpClientHandler	httpHandler	= null;
-		
+		private int failedCount;
+		private Buffer bodyContent = new Buffer(1024);
+		private long bodyLength = 0;
+		private HTTPRequestEvent backupEvent = null;
+		private HttpClientHandler httpHandler = null;
+
 		public GAEFutureCallback(EventHandler handler, Event ev)
 		{
 			ev = Event.extractEvent(ev);
@@ -572,16 +572,16 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler,
 			}
 			this.handler = handler;
 		}
-		
+
 		void clear()
 		{
 			bodyLength = 0;
 			bodyContent.clear();
 			failedCount = 0;
 		}
-		
-		EventHandler	handler;
-		
+
+		EventHandler handler;
+
 		private void removeHttpClientHandler()
 		{
 			if (null != httpHandler)
@@ -590,7 +590,7 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler,
 				httpHandler = null;
 			}
 		}
-		
+
 		private void onError()
 		{
 			removeHttpClientHandler();
@@ -613,7 +613,7 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler,
 				}
 			}
 		}
-		
+
 		private void fillBodyContent(ChannelBuffer buf)
 		{
 			int len = buf.readableBytes();
@@ -639,7 +639,7 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler,
 				}
 			}
 		}
-		
+
 		@Override
 		public void onResponse(HttpResponse res)
 		{
@@ -655,35 +655,39 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler,
 				fillBodyContent(res.getContent());
 			}
 		}
-		
+
 		@Override
 		public void onBody(HttpChunk chunk)
 		{
 			fillBodyContent(chunk.getContent());
 		}
-		
+
 		@Override
 		public void onError(String error)
 		{
 			logger.warn("Recv error:" + error + " for " + hashCode());
 			onError();
 		}
-		
+
 		@Override
 		public void onComplete(HttpResponse res)
 		{
 		}
 	}
-	
+
 	@Override
 	public String getName()
 	{
 		return "GAE";
 	}
-	
+
 	private void writeLocalHttpResponse(HTTPResponseEvent res)
 	{
 		HttpResponse httpres = buildHttpResponse(res);
+		if (!httpres.containsHeader("Connection"))
+		{
+			httpres.setHeader("Connection", "close");
+		}
 		local.handleResponse(this, httpres);
 		if (httpres.isChunked())
 		{
@@ -694,13 +698,13 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler,
 			local.handleChunk(this, chunk);
 		}
 	}
-	
+
 	@Override
 	public void onHttpResponse(HTTPResponseEvent res)
 	{
 		writeLocalHttpResponse(res);
 	}
-	
+
 	@Override
 	public void onRangeChunk(Buffer buf)
 	{
@@ -718,9 +722,9 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler,
 				rangeTask.close();
 			}
 		}
-		
+
 	}
-	
+
 	@Override
 	public void writeHttpReq(HTTPRequestEvent req)
 	{
