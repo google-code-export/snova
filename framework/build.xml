@@ -15,7 +15,7 @@
 	<property name="docs" value="${root}/docs" />
 	<property name="shell" value="${root}/shell" />
 	<property name="release" value="release" />
-	<property name="version" value="0.21.0" />
+	<property name="version" value="0.22.0" />
 	<property name="versionfile" value="org/snova/framework/common/Version.java" />
 	<property name="project_name" value="snova" />
 	<property name="releasename" value="${project_name}-${version}" />
@@ -70,7 +70,7 @@
 				<attribute name="Class-Path"
 					value="../conf  
 					arch.jar jboss-netty.jar bcprov-jdk16-146.jar httpclient.jar
-					slf4j-api-1.6.4.jar slf4j-jdk14-1.6.4.jar commons-cli-1.2.jar" />
+					slf4j-api-1.6.4.jar slf4j-jdk14-1.6.4.jar" />
 			</manifest>
 		</jar>
 		<delete dir="${classes}" />

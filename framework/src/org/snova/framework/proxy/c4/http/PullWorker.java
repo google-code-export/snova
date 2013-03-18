@@ -25,7 +25,7 @@ import org.snova.http.client.HttpClientException;
 import org.snova.http.client.HttpClientHandler;
 
 /**
- * @author qiyingwang
+ * @author yinqiwen
  * 
  */
 public class PullWorker implements FutureCallback
@@ -48,19 +48,6 @@ public class PullWorker implements FutureCallback
 		IniProperties cfg = SnovaConfiguration.getInstance().getIniProperties();
 		HttpRequest request = new DefaultHttpRequest(HttpVersion.HTTP_1_1,
 		        HttpMethod.POST, serv.server.url.toString() + "pull");
-		
-		int port = 80;
-		if (serv.server.url.getPort() > 0)
-		{
-			port = serv.server.url.getPort();
-		}
-		else
-		{
-			if (serv.server.url.getScheme().equalsIgnoreCase("https"))
-			{
-				port = 443;
-			}
-		}
 		request.setHeader(HttpHeaders.Names.HOST, serv.server.url.getHost());
 		
 		request.setHeader(HttpHeaders.Names.CONNECTION, "keep-alive");
@@ -68,7 +55,7 @@ public class PullWorker implements FutureCallback
 		request.setHeader(
 		        "C4MiscInfo",
 		        String.format("%d_%d", index,
-		                cfg.getIntProperty("C4", "ReadTimeout", 120)));
+		                cfg.getIntProperty("C4", "ReadTimeout", 55)));
 		request.setHeader(
 		        HttpHeaders.Names.USER_AGENT,
 		        cfg.getProperty("C4", "UserAgent",
@@ -83,8 +70,7 @@ public class PullWorker implements FutureCallback
 		}
 		catch (HttpClientException e)
 		{
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("Pullworker Http client error.", e);
 		}
 	}
 	
@@ -99,7 +85,7 @@ public class PullWorker implements FutureCallback
 		{
 			if (res.getStatus().getCode() != 200)
 			{
-				System.out.println("##########@@@" + res.getStatus());
+				logger.error("Pullworker recv unexpected response:" + res.getStatus());
 			}
 		}
 		
@@ -120,6 +106,7 @@ public class PullWorker implements FutureCallback
 	@Override
 	public void onError(String error)
 	{
+		logger.error("Pullworker recv unexpected error:" + error);
 		SharedObjectHelper.getGlobalTimer().schedule(new Runnable()
 		{
 			public void run()
