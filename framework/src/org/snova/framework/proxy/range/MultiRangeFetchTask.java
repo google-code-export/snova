@@ -5,6 +5,7 @@ package org.snova.framework.proxy.range;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.arch.buffer.Buffer;
@@ -16,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snova.framework.common.http.ContentRangeHeaderValue;
 import org.snova.framework.common.http.RangeHeaderValue;
+import org.snova.framework.util.SharedObjectHelper;
 
 /**
  * @author wqy
@@ -136,6 +138,20 @@ public class MultiRangeFetchTask
 				{
 					logger.error("Expected 206 response, but got "
 					        + res.statusCode);
+					if(res.getHeader("X-Range") != null)
+					{
+						fetchWorkerNum = 1;
+						final HTTPRequestEvent freq = cloneRequest(req);
+						freq.setHeader("Range", res.getHeader("X-Range"));
+						SharedObjectHelper.getGlobalTimer().schedule(new Runnable()
+						{
+							public void run()
+							{
+								cb.writeHttpReq(freq);	
+							}
+						}, 1, TimeUnit.SECONDS);
+						return true;
+					}
 					return false;
 				}
 				rangeWorker.decrementAndGet();

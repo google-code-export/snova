@@ -52,7 +52,7 @@ public class GAE
 					}
 				}
 			}
-			GAERemoteHandler handler = new GAERemoteHandler(servers.select());
+			GAERemoteHandler handler = new GAERemoteHandler(null);
 			handler.injectRange = attr.containsKey("Range");
 			return handler;
 		}
