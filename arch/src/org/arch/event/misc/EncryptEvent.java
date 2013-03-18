@@ -71,9 +71,10 @@ public class EncryptEvent extends Event
 		}
 		catch (Exception e)
 		{
+			throw new Error(e);
 			// logger.error("Failed to decode encrypt event while encrypt type:"
 			// +type , e);
-			return false;
+			//return false;
 		}
 	}
 	

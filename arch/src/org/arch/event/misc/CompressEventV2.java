@@ -14,9 +14,6 @@ import java.io.IOException;
 import org.arch.buffer.Buffer;
 import org.arch.buffer.BufferHelper;
 import org.arch.compress.fastlz.JFastLZ;
-import org.arch.compress.jsnappy.SnappyBuffer;
-import org.arch.compress.jsnappy.SnappyCompressor;
-import org.arch.compress.jsnappy.SnappyDecompressor;
 import org.arch.compress.lzf.LZFDecoder;
 import org.arch.compress.lzf.LZFEncoder;
 import org.arch.compress.quicklz.QuickLZ;
@@ -25,6 +22,7 @@ import org.arch.event.EventConstants;
 import org.arch.event.EventDispatcher;
 import org.arch.event.EventType;
 import org.arch.event.EventVersion;
+import org.iq80.snappy.Snappy;
 
 /**
  *
@@ -101,11 +99,13 @@ public class CompressEventV2 extends Event
 				{
 					try
 					{
-						SnappyBuffer newbuf = SnappyDecompressor.decompress(
-						        raw, buffer.getReadIndex(),
-						        size);
-						content = Buffer.wrapReadableContent(newbuf.getData(),
-						        0, newbuf.getLength());
+						byte[] newbuf = Snappy.uncompress(raw, buffer.getReadIndex(),
+								size);
+//						SnappyBuffer newbuf = SnappyDecompressor.decompress(
+//						        raw, buffer.getReadIndex(),
+//						        size);
+						content = Buffer.wrapReadableContent(newbuf,
+						        0, newbuf.length);
 					}
 					catch (Exception e)
 					{
@@ -202,10 +202,13 @@ public class CompressEventV2 extends Event
 			{
 				try
 				{
-					SnappyBuffer newbuf = SnappyCompressor.compress(raw,
-					        content.getReadIndex(), content.readableBytes());
-					BufferHelper.writeVarInt(outbuf, newbuf.getLength());
-					outbuf.write(newbuf.getData(), 0, newbuf.getLength());
+					byte[] newbuf = new byte[Snappy.maxCompressedLength(content.readableBytes())];
+					int len = Snappy.compress(raw,
+					        content.getReadIndex(), content.readableBytes(), newbuf, 0);
+//					SnappyBuffer newbuf = SnappyCompressor.compress(raw,
+//					        content.getReadIndex(), content.readableBytes());
+					BufferHelper.writeVarInt(outbuf, len);
+					outbuf.write(newbuf, 0, len);
 				}
 				catch (Exception e)
 				{
