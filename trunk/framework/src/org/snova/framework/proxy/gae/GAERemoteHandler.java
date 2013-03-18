@@ -89,7 +89,7 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler,
 	private static HttpClient	   client;
 	
 	private boolean	               isHttps;
-	private GAEServerAuth	       auth;
+	private GAEServerAuth	       gaeAuth;
 	private LocalProxyHandler	   local;
 	private HTTPRequestEvent	   proxyRequest;
 	private Set<HttpClientHandler>	workingHttpClientHandlers	= Collections
@@ -102,7 +102,7 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler,
 	{
 		try
 		{
-			this.auth = auth;
+			this.gaeAuth = auth;
 			initHttpClient();
 		}
 		catch (Exception e)
@@ -516,6 +516,11 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler,
 	{
 		try
 		{
+			GAEServerAuth auth = gaeAuth;
+			if(null == auth)
+			{
+				auth = GAE.servers.select();
+			}
 			int sid = null == local ? 0 : local.getId();
 			IniProperties cfg = SnovaConfiguration.getInstance()
 			        .getIniProperties();
