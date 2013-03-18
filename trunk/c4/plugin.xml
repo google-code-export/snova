@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<plugin name="C4" version="0.19.0">
-   <depend/>
-   <entryClass>org.snova.c4.client.shell.swing.GUIPluginWrapper</entryClass>   
-   <description>
-      C4 plugin, 4 PaaS platforms supported.
-   </description>
-</plugin>
