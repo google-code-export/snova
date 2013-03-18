@@ -694,7 +694,6 @@ public class GAERemoteHandler implements RemoteProxyHandler, EventHandler,
 	public void onHttpResponse(HTTPResponseEvent res)
 	{
 		writeLocalHttpResponse(res);
-		
 	}
 	
 	@Override
