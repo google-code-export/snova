@@ -115,6 +115,4 @@ public class PushWorker  {
 			waitTime *= 2;
 		}
 	}
-
-	
 }
