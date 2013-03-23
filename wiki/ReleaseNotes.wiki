@@ -4,6 +4,14 @@
 _You can download the latest version of the Snova/GSnova [http://code.google.com/p/snova/downloads/list here]
 
 Snova/GSnova - Release Notes
+===Version 0.22.0 - (2013.03.23)===
+ * `[C4]`: NodeJS服务端兼容node 0.6
+ * `[GAE]`: Java服务端删除对`GoogleAppengine`的api依赖
+ * `[GAE]`: Java服务端新的部署工具（无需单独下载Appengine SDK）
+ * `[GAE]`: 替换Java的Snappy压缩库
+ * `[ALL]`: Range Fetch机制优化
+ * 一些Bug fix以及默认设置的优化
+
 ===Version 0.21.0 - (2013.03.09)===
  * `[C4]`: client&server性能优化（Java&NodeJS）
  * `[C4]`: 增加多任务并发下载支持（默认关闭，需要修改配置`MultiRangeFetchEnable=1`开启）
