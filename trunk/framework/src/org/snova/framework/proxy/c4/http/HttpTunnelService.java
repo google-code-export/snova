@@ -31,55 +31,70 @@ import org.snova.http.client.ProxyCallback;
  * @author yinqiwen
  * 
  */
-public class HttpTunnelService {
-	protected static Logger logger = LoggerFactory
-			.getLogger(HttpTunnelService.class);
-	static HttpClient httpClient = null;
-	static Map<String, HttpTunnelService> tunnelServices = new ConcurrentHashMap<String, HttpTunnelService>();
-	C4ServerAuth server;
-	private LinkedList<Event>[] sendEventQueue = new LinkedList[0];
-	private PushWorker[] pusher;
-	private PullWorker[] puller;
-
-	private static void initHttpClient() throws Exception {
-		if (null != httpClient) {
+public class HttpTunnelService
+{
+	protected static Logger	              logger	       = LoggerFactory
+	                                                               .getLogger(HttpTunnelService.class);
+	static HttpClient	                  httpClient	   = null;
+	static Map<String, HttpTunnelService>	tunnelServices	= new ConcurrentHashMap<String, HttpTunnelService>();
+	C4ServerAuth	                      server;
+	private LinkedList<Event>[]	          sendEventQueue	= new LinkedList[0];
+	private PushWorker[]	              pusher;
+	private PullWorker[]	              puller;
+	
+	private static void initHttpClient() throws Exception
+	{
+		if (null != httpClient)
+		{
 			return;
 		}
 		final IniProperties cfg = SnovaConfiguration.getInstance()
-				.getIniProperties();
+		        .getIniProperties();
 		Options options = new Options();
 		options.maxIdleConnsPerHost = cfg.getIntProperty("C4",
-				"ConnectionPoolSize", 5);
-		String proxy = cfg.getProperty("C4", "Proxy");
-		if (null != proxy) {
+		        "ConnectionPoolSize", 5);
+		final String proxy = cfg.getProperty("C4", "Proxy");
+		if (null != proxy)
+		{
 			final URL proxyUrl = new URL(proxy);
-			options.proxyCB = new ProxyCallback() {
+			options.proxyCB = new ProxyCallback()
+			{
 				@Override
-				public URL getProxy(HttpRequest request) {
+				public URL getProxy(HttpRequest request)
+				{
 					return proxyUrl;
 				}
 			};
-			options.connector = new Connector() {
+			options.connector = new Connector()
+			{
 				@Override
-				public ChannelFuture connect(String host, int port) {
+				public ChannelFuture connect(String host, int port)
+				{
 					String remoteHost = HostsService.getMappingHost(host);
+					if (null == proxy
+					        && cfg.getIntProperty("C4", "UseSysDNS", 0) == 0)
+					{
+						remoteHost = HostsService.getRealHost(host, port);
+					}
 					return SharedObjectHelper.getClientBootstrap().connect(
-							new InetSocketAddress(remoteHost, port));
+					        new InetSocketAddress(remoteHost, port));
 				}
 			};
 		}
 		httpClient = new HttpClient(options,
-				SharedObjectHelper.getClientBootstrap());
+		        SharedObjectHelper.getClientBootstrap());
 	}
-
-	public static HttpTunnelService getHttpTunnelService(C4ServerAuth server) {
-		if (!tunnelServices.containsKey(server.url.toString())) {
+	
+	public static HttpTunnelService getHttpTunnelService(C4ServerAuth server)
+	{
+		if (!tunnelServices.containsKey(server.url.toString()))
+		{
 			tunnelServices.put(server.url.toString(), new HttpTunnelService(
-					server));
+			        server));
 		}
 		return tunnelServices.get(server.url.toString());
 	}
-
+	
 	private HttpTunnelService(C4ServerAuth server)
 	{
 		try
@@ -109,41 +124,53 @@ public class HttpTunnelService {
 		}
 		catch (Exception e)
 		{
-			logger.error("Failed to init http tunnel service.",e);
+			logger.error("Failed to init http tunnel service.", e);
 		}
 	}
-
-	public void write(Event ev) {
+	
+	public void write(Event ev)
+	{
 		int index = ev.getHash() % sendEventQueue.length;
 		EncryptEventV2 encrypt = new EncryptEventV2();
 		IniProperties cfg = SnovaConfiguration.getInstance().getIniProperties();
 		String enc = cfg.getProperty("C4", "Encrypter", "RC4");
-		if (enc.equalsIgnoreCase("RC4")) {
+		if (enc.equalsIgnoreCase("RC4"))
+		{
 			encrypt.type = EncryptType.RC4;
-		} else if (enc.equalsIgnoreCase("SE1")) {
+		}
+		else if (enc.equalsIgnoreCase("SE1"))
+		{
 			encrypt.type = EncryptType.SE1;
-		} else {
+		}
+		else
+		{
 			encrypt.type = EncryptType.NONE;
 		}
-
+		
 		encrypt.ev = ev;
 		encrypt.setHash(ev.getHash());
-		synchronized (sendEventQueue[index]) {
+		synchronized (sendEventQueue[index])
+		{
 			sendEventQueue[index].add(encrypt);
 		}
-		if (pusher[index].isReady) {
+		if (pusher[index].isReady)
+		{
 			tryWriteEvent(index);
 		}
 	}
-
-	void tryWriteEvent(int index) {
+	
+	void tryWriteEvent(int index)
+	{
 		Buffer buffer = new Buffer(4096);
-		synchronized (sendEventQueue[index]) {
-			while (!sendEventQueue[index].isEmpty()) {
+		synchronized (sendEventQueue[index])
+		{
+			while (!sendEventQueue[index].isEmpty())
+			{
 				sendEventQueue[index].removeFirst().encode(buffer);
 			}
 		}
-		if (buffer.readable()) {
+		if (buffer.readable())
+		{
 			pusher[index].start(buffer);
 		}
 	}
