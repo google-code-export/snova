@@ -35,7 +35,6 @@
 			file="${srcroot}/${versionfile}" />
 	</target>
 
-
 	<target name="compile" depends="prepare">
 		<javac debug="on" destdir="${classes}" target="1.5" source="1.5">
 			<src path="${srcroot}" />
@@ -133,7 +132,6 @@
 		<copy todir="${binreleasedir}" file="${root}/changelog.txt" />
 		<copy todir="${binreleasedir}" file="${root}/licence.txt" />
 		<zip destfile="${releasename}.zip" basedir="${releasedir}" />
-
 		<delete dir="${releasedir}" />
 	</target>
 </project>

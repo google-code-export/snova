@@ -1,5 +1,10 @@
 Snova Changelog
 ===================
+Changes in version 0.22.0(2013.03.09)
+-------------------------------------------
+** Improvement
+   * Bug fix
+
 Changes in version 0.21.0(2013.03.09)
 -------------------------------------------
 ** Features
