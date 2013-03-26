@@ -9,6 +9,7 @@ Snova/GSnova - Release Notes
  * `[GAE]`: Java服务端删除对`GoogleAppengine`的api依赖
  * `[GAE]`: Java服务端新的部署工具（无需单独下载Appengine SDK）
  * `[GAE]`: 替换Java的Snappy压缩库
+ * `[GAE]`: 修改用户Authorize机制；修改用户密码需要修改服务端部署包中snova.conf重新部署
  * `[ALL]`: Range Fetch机制优化
  * 一些Bug fix以及默认设置的优化
 
