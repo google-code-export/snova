@@ -4,6 +4,9 @@
 _You can download the latest version of the Snova/GSnova [http://code.google.com/p/snova/downloads/list here]
 
 Snova/GSnova - Release Notes
+===Version 0.22.1 - (2013.06.15)===
+ * Go1.1重新编译以及一些Bug fix
+
 ===Version 0.22.0 - (2013.03.23)===
  * `[C4]`: NodeJS服务端兼容node 0.6
  * `[GAE]`: Java服务端删除对`GoogleAppengine`的api依赖
